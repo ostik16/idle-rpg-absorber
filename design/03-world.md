@@ -16,12 +16,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - No final boss.
 - Each area has a small chance to spawn mini-bosses, bosses or cursed objects.
 - No unlock conditions. A character can enter any area, but will probably die if it is too weak.
+- Nine areas cover levels 1 to 30, from level 1-5 up to level 25-30 (default, revisit after playtesting).
 - Magical traits belong to enemies, not areas. Areas can still have their own visual or thematic identity.
 
 **Data.** id, name, theme, level range, enemy list with spawn weights, mini-boss/boss/cursed object spawn chances, distance from city.
-
-**Open questions.**
-- How many areas between level 1 and 30?
 
 ---
 
@@ -51,12 +49,9 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 
 **Rules.**
 - Between fights the character moves to the next enemy. This takes time and trains endurance.
-- The player can target one enemy type. This means fewer fights per hour, because the character has to search for that enemy.
+- The player can target one enemy type. This means fewer fights per hour, because the character has to search for that enemy. Targeting doubles the time between fights (default, revisit after playtesting).
 
 **Data.** movement time between enemies, extra time when targeting.
-
-**Open questions.**
-- Exact targeting penalty, for example double the time between fights?
 
 ---
 
@@ -66,9 +61,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 
 **Rules.**
 - All characters progress offline (4.1).
-- Offline efficiency is lower than active play, but not by much.
+- Offline efficiency is lower than active play, but not by much: 90% of active kill rate (default, revisit after playtesting).
+- The offline cap is 12 hours (default, revisit after playtesting).
 - Offline time has a cap, so one character cannot collect too much gold. The cap is set through playtesting.
-- Proficiencies grow offline at a reduced rate.
+- Proficiencies grow offline at a reduced rate: 50% of the active rate (default, revisit after playtesting).
 
 **Proposed.**
 - On return, the game calculates the time away instead of simulating every fight. It estimates kills per hour from the character's stats and the area, then rolls XP, drops and absorption in bulk.
@@ -88,10 +84,24 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - A cursed object must be destroyed and spawns enemies that defend it.
 - Each enemy can have traits. Each trait is magical (absorbable) or physical.
 
+- Baseline stats by level (default, revisit after playtesting). Enemies keep fixed stats in the data table; these formulas give the starting point an author tunes from and the line the balance tools compare against (`constants.enemyScaling`):
+
+| Stat | Formula | Level 1 | Level 5 | Level 10 | Level 20 | Level 30 |
+|---|---|---|---|---|---|---|
+| Health | 24 × 1.11^(L−1) | 24 | 36 | 61 | 174 | 495 |
+| Damage per hit | 5 × 1.07^(L−1) | 5.0 | 6.6 | 9.2 | 18.1 | 35.6 |
+| Defence | 0.5 × (L−1)^1.2 | 0 | 2.6 | 7.0 | 17.1 | 28.4 |
+| Attack speed (per second) | 0.8 + 0.015 × (L−1) | 0.80 | 0.86 | 0.94 | 1.09 | 1.24 |
+| XP per kill | 10 × 1.1^(L−1) | 10 | 15 | 24 | 61 | 159 |
+| Gold per kill (average) | 5 × 1.1^(L−1), range ±50% | 5 | 7 | 12 | 31 | 79 |
+
+- Money is not reduced by level gap (3.8).
+- Check: a level 1 character with STR 8, DEX 6, VIT 6 and a 3-damage starter sword hits a level 1 enemy for 8.8 and kills it in 3 hits, about 3 seconds, and loses about 8% of its health (counting 1 defence from the starter tunic). A level 5 enemy takes 6 hits.
+
 **Proposed.**
 - Cursed objects have health but no attack. They spawn waves of defenders until destroyed and drop bonus loot when destroyed.
 
-**Data.** id, name, level, type, health, damage, attack speed, defence, traits (id, value, magical yes/no), XP reward, money range, drop table id, areas.
+**Data.** id, name, level, type, health, damage, attack speed, defence, traits (id, value, magical yes/no), XP reward, money range, drop table id, areas. Baseline scaling coefficients are in `constants.enemyScaling` and `constants.progression`.
 
 ---
 
@@ -102,6 +112,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Rules.**
 - Real-time. Attack speed decides how often each side attacks.
 - Damage = attacker's damage − defender's defence, as flat numbers. May change later.
+- A hit always counts for at least 1 damage (default, revisit after playtesting).
+- Critical hits deal 1.5 times damage (default, revisit after playtesting).
+- Combat resolves in ticks of 100 ms (default, revisit after playtesting).
+- A critical hit multiplies the damage dealt, after defence and the minimum, by 1.5. Attack intervals are rounded to whole ticks, at least one (default, revisit after playtesting).
 
 **Proposed.**
 - A minimum damage of 1, so a hit always counts.
@@ -119,7 +133,8 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Purpose.** What happens at 0 health. The player is often away, so the outcome has to be safe.
 
 **Rules.**
-- The character returns to the city.
+- The character returns to the city and is back on its feet after 2 minutes (default, revisit after playtesting).
+- It keeps its inventory and equipment. Nothing is lost except XP (default, revisit after playtesting).
 - A random XP loss between 0% and 25%, taken from the XP earned in the current level.
 - A character can never lose a level. At most, XP drops to the start of the current level.
 - An XP protection item prevents the loss (2.8).
@@ -137,7 +152,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 
 **Rules.**
 - Only item drops are affected by level gap. XP and money are not, because high-level characters already earn far more from high-level enemies.
-- Each level the character is above the enemy lowers the drop rate by 10 percentage points. At 10 or more levels above, the drop rate is 0%.
+- Each level the character is above the enemy lowers the level modifier by 0.1, which is 10% of the base chance, not 10 points subtracted from it (a 5% drop at 1 level above is 4.5%, not 4.9%). At 10 or more levels above, the drop rate is 0%.
 - Enemy 1-19 levels above the character: base drop rate.
 - Enemy 20 or more levels above the character: 0%.
 - Bosses, mini-bosses and cursed objects drop rare items (2.8).

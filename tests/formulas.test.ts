@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import constants from '../data/constants.json';
 import {
   absorbOnKill,
   absorptionLevelModifier,
@@ -47,6 +48,16 @@ describe('absorption (design 4.7)', () => {
 
   it('never reaches 0', () => {
     expect(absorptionLevelModifier(30, 1)).toBeGreaterThan(0);
+  });
+
+  it('gives modifier 1 when the enemy is above the character (data/constants.json)', () => {
+    expect(absorptionLevelModifier(5, 10)).toBe(1);
+    expect(absorptionLevelModifier(1, 30)).toBe(1);
+  });
+
+  it('reads the enemy-above modifier from the constants, not from code', () => {
+    const changed = { ...constants.absorption, enemyAboveCharacterModifier: 1.5 };
+    expect(absorptionLevelModifier(5, 10, changed)).toBe(1.5);
   });
 
   it('follows the 10% life steal example: 0.1% per kill, capped at 10% after 100 kills', () => {

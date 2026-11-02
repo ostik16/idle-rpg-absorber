@@ -6,21 +6,21 @@ Rules: every table except `constants.json` is an array of entries with a unique 
 
 | File | Design | Fields to include (from the design's **Data** lines) | State |
 |---|---|---|---|
-| `constants.json` | all | global constants. `null` means not decided yet | decided values filled, open ones `null` |
+| `constants.json` | all | global constants. `null` means not decided yet. Sections `stats`, `progression`, `enemyScaling`, `proficiency`, `potions`, `creation` hold the core numbers | decided and default values filled |
 | `items.json` | [2.1](../design/02-items-and-city.md) | id, name, category, size, stackLimit, requiredLevel, baseStats, bonusAttributePool (attribute, min, max, chance), buyPrice, sellPrice, icon | empty |
 | `equipment-slots.json` | 2.2 | slot list, allowed categories per slot, weapon scaling (attribute, recommendedValue, penaltyCurve) | empty |
 | `shops.json` | 2.5 | id, purpose, itemList, prices. Rare goods: rotationInterval, itemPool with weights, priceRange, itemsPerRotation | empty |
-| `consumables.json` | 2.6 | effectType, amount, duration, tickRate, autoUseDefaultThreshold | empty |
+| `consumables.json` | 2.6 | effectType, amount, duration, tickRate, autoUseDefaultThreshold. Tick rate and reference tiers are in `constants.potions` | empty |
 | `upgrades.json` | 2.7 | per item group: level, goldCost, materialId, materialAmount, statBonus | empty |
 | `rare-items.json` | 2.8 | use (equip, upgrade, consume), effect, dropSources | empty |
 | `areas.json` | [3.1](../design/03-world.md) | id, name, theme, levelRange, enemies (enemyId, spawnWeight), miniBoss/boss/cursedObject spawn chances, distanceFromCity | empty |
 | `teleporters.json` | 3.2 | destinations, fees | empty |
-| `enemies.json` | 3.5 | id, name, level, type, health, damage, attackSpeed, defence, traits (id, value, magical), xpReward, moneyRange, dropTableId, areas | empty |
+| `enemies.json` | 3.5 | id, name, level, type, health, damage, attackSpeed, defence, traits (id, value, magical), xpReward, moneyRange, dropTableId, areas. Baseline stats by level are in `constants.enemyScaling` | empty |
 | `drop-tables.json` | 3.8 | id, entries (itemId, baseChance 0..1, minQuantity, maxQuantity) | empty |
-| `attributes.json` | [4.2](../design/04-characters-and-progression.md) | id, name, feeds. Derived stat formulas still to add | four decided attributes |
-| `xp-table.json` | 4.3 | XP required per level | empty |
+| `attributes.json` | [4.2](../design/04-characters-and-progression.md) | id, name, feeds. Derived stat coefficients are in `constants.stats` | four decided attributes |
+| `xp-table.json` | 4.3 | id, level, xpToNext (XP to go from that level to the next), levels 1 to 30 | default values filled |
 | `spells.json` | 4.5 | id, kind, requiredLevel, manaCost, cooldown, effectPerRank, maxRank, rareItemPerRankAbove10 | empty |
-| `proficiencies.json` | 4.6 | id, trainingActions, gainPerAction, diminishingReturnCurve, effectPerPoint, titleThresholds | six skills named. `speed` has no training action yet |
+| `proficiencies.json` | 4.6 | id, name, trainedBy. Gain per action, the diminishing curve, effect per point and title thresholds are in `constants.proficiency` | six skills named, each with a training action |
 | `traits.json` | 4.7 | id, name, effect, magical | empty |
 | `bestiary-thresholds.json` | 4.8 | kills needed per reveal | decided |
 

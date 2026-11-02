@@ -27,7 +27,7 @@ Upgrades go to +9. Early levels cost only money, later levels need rare material
 Players create multiple characters that all farm at the same time, and move items between them through a shared warehouse with limited space.
 
 **7. Low levels matter.**
-Item drop rates fall by 10 percentage points for each level the character is above the enemy. The materials high-level gear needs only drop from low-level enemies, so players must farm with low-level characters and pass the results up.
+Each level the character is above the enemy cuts the item drop chance by 10% of the base chance (the level modifier falls by 0.1 per level, 3.8). The materials high-level gear needs only drop from low-level enemies, so players must farm with low-level characters and pass the results up.
 
 ### Design intent
 
@@ -41,5 +41,6 @@ The best farmer is often the weakest character. The roster is the build, and pro
 | 3. World | Areas, Travel, Farming, Offline Progress, Enemies, Combat, Death, Drop Rates |
 | 4. Characters and Progression | Character Management, Attributes, Leveling, Character Points, Skill Points and Spells, Proficiency, Absorption, Bestiary |
 | 5. Developer Tools and Data | Data Tables, Content Editor, Balance Tools, Debug Tools, Save System |
+| 6. UI and Design System | Design tokens, components, screen sketches, assumptions made by the sketches |
 
 Detailed rules and open questions for each system live in its section.

@@ -17,17 +17,19 @@ Items are phrased as decisions or tasks. Tick them off here, or turn them into G
 
 ### Numbers nobody has written yet
 
-A fight cannot run without these. 5.3's combat and progression simulators are the way to tune them.
+A fight cannot run without these. 5.3's combat and progression simulators are the way to tune them. All are now set as defaults in [decisions.md](decisions.md) (N1 to N12, C1, C2), pending owner review.
 
-- [ ] Derived stat formulas: how Strength, Dexterity, Vitality and Intelligence become damage, attack speed, crit, health, defence, mana (4.2 lists the Data line, the formulas do not exist).
-- [ ] XP required per level (4.3), and XP reward per enemy level.
-- [ ] Enemy stat scaling by level, and money drop scaling.
-- [ ] Weapon attribute penalty curve (2.2).
-- [ ] Proficiency gain per action, diminishing-return curve, effect per point, title thresholds (4.6).
-- [ ] Attack speed to attack interval, and heal-over-time rates for potions.
-- [ ] Character creation: starting attributes, starting gear, anything the player chooses. The design has no character creation rules and the sketches have no creation screen.
+- [x] Derived stat formulas: how Strength, Dexterity, Vitality and Intelligence become damage, attack speed, crit, health, defence, mana (4.2 lists the Data line, the formulas do not exist).
+- [x] XP required per level (4.3), and XP reward per enemy level.
+- [x] Enemy stat scaling by level, and money drop scaling.
+- [x] Weapon attribute penalty curve (2.2).
+- [x] Proficiency gain per action, diminishing-return curve, effect per point, title thresholds (4.6).
+- [x] Attack speed to attack interval, and heal-over-time rates for potions.
+- [x] Character creation: starting attributes, starting gear, anything the player chooses. The design has no character creation rules and the sketches have no creation screen.
 
 ### The 15 open questions already written in the docs
+
+All 15 are resolved with defaults in [decisions.md](decisions.md) (Q1 to Q15), pending owner review.
 
 | # | Section | Question |
 |---|---|---|
@@ -47,20 +49,20 @@ A fight cannot run without these. 5.3's combat and progression simulators are th
 | 14 | 06 | Is a Warding Seal used up when an upgrade succeeds, or only when it fails? |
 | 15 | 06 | Can low-level characters buy potions they cannot use yet, to pass on through the warehouse? |
 
-`src/game/formulas.ts` has one marked placeholder: question 12 (absorption returns a modifier of 1 for an enemy above the character until decided).
+`src/game/formulas.ts` has one marked placeholder for question 12. The default is now modifier 1 for an enemy above the character, so the placeholder can become a rule.
 
 ## 2. Inconsistencies and gaps in the docs
 
-Small things that will cause arguments during implementation. Each is cheap to settle now.
+Small things that will cause arguments during implementation. All eight are settled with defaults in [decisions.md](decisions.md) (I1 to I8), pending owner review.
 
-- [ ] **Endurance is two things.** 4.2 lists endurance as a visible stat that sets travel speed. 4.6 lists endurance as a hidden skill raised by moving. Are they the same number, or does the visible stat combine proficiency with something else?
-- [ ] **Speed has no trainer.** 4.6 names a hidden `speed` skill but gives it no training action (weapon skills train by hitting, toughness by being hit, endurance by moving).
-- [ ] **Starting character slots.** 4.1 says extra slots unlock at level 30 and does not say how many exist at the start. The roster sketch shows 5 of 5 slots in use with the highest character at Lv 22, so it assumes 5 starting slots. Settle the number, since it sets how fast the roster pillar can be played.
-- [ ] **Death details.** 3.7 says the character returns to the city. The sketches also assume a respawn delay ("back in 1m 40s") and that the character keeps its inventory ("carrying 22 items"). Neither is in the rules.
-- [ ] **Boost items.** 2.6 says move speed, attack speed, crit and defence boosts are rare drops, but the single list of rare items (2.8) holds only the XP and drop-rate boosts. Add them to 2.8 or make them ordinary consumables.
-- [ ] **"Percentage points" wording.** The intro says drop rates fall by 10 percentage points per level. The formula in 3.8 multiplies the base chance by `1 - 0.1 x diff`. That is 10 points of the modifier, not of the chance (a 5% drop does not go to 4.9%, it goes to 4.5%). Reword the intro so nobody implements it as a subtraction.
-- [ ] **Proficiency titles.** 4.6 gives four example titles (Novice, Adept, Expert, Master). The sketches use five (adding Apprentice). Fix the list and the thresholds.
-- [ ] **Document map.** `design/01-introduction.md` lists sections 2 to 5 and leaves out section 6 (UI and Design System).
+- [x] **Endurance is two things.** 4.2 lists endurance as a visible stat that sets travel speed. 4.6 lists endurance as a hidden skill raised by moving. Are they the same number, or does the visible stat combine proficiency with something else?
+- [x] **Speed has no trainer.** 4.6 names a hidden `speed` skill but gives it no training action (weapon skills train by hitting, toughness by being hit, endurance by moving).
+- [x] **Starting character slots.** 4.1 says extra slots unlock at level 30 and does not say how many exist at the start. The roster sketch shows 5 of 5 slots in use with the highest character at Lv 22, so it assumes 5 starting slots. Settle the number, since it sets how fast the roster pillar can be played.
+- [x] **Death details.** 3.7 says the character returns to the city. The sketches also assume a respawn delay ("back in 1m 40s") and that the character keeps its inventory ("carrying 22 items"). Neither is in the rules.
+- [x] **Boost items.** 2.6 says move speed, attack speed, crit and defence boosts are rare drops, but the single list of rare items (2.8) holds only the XP and drop-rate boosts. Add them to 2.8 or make them ordinary consumables.
+- [x] **"Percentage points" wording.** The intro says drop rates fall by 10 percentage points per level. The formula in 3.8 multiplies the base chance by `1 - 0.1 x diff`. That is 10 points of the modifier, not of the chance (a 5% drop does not go to 4.9%, it goes to 4.5%). Reword the intro so nobody implements it as a subtraction.
+- [x] **Proficiency titles.** 4.6 gives four example titles (Novice, Adept, Expert, Master). The sketches use five (adding Apprentice). Fix the list and the thresholds.
+- [x] **Document map.** `design/01-introduction.md` lists sections 2 to 5 and leaves out section 6 (UI and Design System).
 
 ## 3. Design and content still to produce
 

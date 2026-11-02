@@ -3,50 +3,224 @@
   "points": {
     "skillPointsPerLevel": 1,
     "characterPointsPerLevel": 3,
-    "characterPointAwardAtLevelFraction": [0.25, 0.5, 0.75]
+    "characterPointAwardAtLevelFraction": [
+      0.25,
+      0.5,
+      0.75
+    ]
   },
   "drops": {
     "levelFalloffPerLevel": 0.1,
-    "noDropEnemyLevelsAbove": 20
+    "noDropEnemyLevelsAbove": 20,
+    "boostAppliesAfterLevelModifier": true
   },
   "absorption": {
     "perKillFraction": 0.01,
-    "levelFactor": 0.9
+    "levelFactor": 0.9,
+    "enemyAboveCharacterModifier": 1,
+    "cursedObjectDefendersAbsorbable": true
   },
   "upgrade": {
     "maxLevel": 9,
     "startChance": 0.9,
-    "chanceFactor": 0.9
+    "chanceFactor": 0.9,
+    "materialsStartAtLevel": 4,
+    "protectionConsumedOnSuccess": true
   },
   "storage": {
     "materialStackSize": 100
   },
   "death": {
     "xpLossMin": 0,
-    "xpLossMax": 0.25
+    "xpLossMax": 0.25,
+    "respawnSeconds": 120,
+    "keepsInventory": true
   },
   "spells": {
     "baseMaxRank": 10,
-    "maxRankWithRareItems": null
+    "maxRankWithRareItems": 15,
+    "respecGoldPerLevel": 300
   },
   "combat": {
-    "minDamage": null,
-    "critMultiplier": null,
-    "tickMs": null
+    "minDamage": 1,
+    "critMultiplier": 1.5,
+    "tickMs": 100,
+    "weaponPenaltyFloor": 0.25
   },
   "farming": {
-    "targetingExtraTimeMultiplier": null
+    "targetingExtraTimeMultiplier": 2
   },
   "offline": {
-    "efficiency": null,
-    "proficiencyRate": null,
-    "capHours": null
+    "efficiency": 0.9,
+    "proficiencyRate": 0.5,
+    "capHours": 12,
+    "stepSimMaxSeconds": 300
   },
   "characters": {
-    "startingSlots": null,
-    "slotsUnlockedAtLevelCap": null
+    "startingSlots": 5,
+    "slotsUnlockedAtLevelCap": 1
   },
   "shops": {
-    "rareGoodsRotationHours": null
+    "rareGoodsRotationHours": 24,
+    "rareGoodsStockDependsOnCharacterLevel": false,
+    "potionBuyRequiresLevel": false
+  },
+  "items": {
+    "maxBonusAttributes": 3
+  },
+  "world": {
+    "areaCount": 9
+  },
+  "proficiency": {
+    "maxPoints": 100,
+    "titles": [
+      "Novice",
+      "Apprentice",
+      "Adept",
+      "Expert",
+      "Master"
+    ],
+    "titleThresholds": [
+      0,
+      15,
+      35,
+      60,
+      85
+    ],
+    "gainPerAction": {
+      "unarmed": 0.003,
+      "one-handed": 0.003,
+      "two-handed": 0.003,
+      "toughness": 0.003,
+      "endurance": 0.001,
+      "speed": 0.0015
+    },
+    "diminishing": {
+      "levelsPerPoint": 0.3,
+      "minReferenceLevel": 1,
+      "exponent": 2
+    },
+    "effectPerPoint": {
+      "unarmed": 0.003,
+      "one-handed": 0.003,
+      "two-handed": 0.003,
+      "toughness": 0.003,
+      "endurance": 0.005,
+      "speed": 0.002
+    }
+  },
+  "stats": {
+    "physicalDamage": {
+      "base": 1,
+      "perStrength": 0.6
+    },
+    "attackSpeed": {
+      "base": 0.8,
+      "perDexterity": 0.02
+    },
+    "critChance": {
+      "base": 0.02,
+      "perDexterity": 0.002,
+      "cap": 0.5
+    },
+    "health": {
+      "base": 30,
+      "perVitality": 8
+    },
+    "defence": {
+      "perVitality": 0.25
+    },
+    "mana": {
+      "base": 20,
+      "perIntelligence": 4
+    },
+    "spellDamage": {
+      "perIntelligence": 0.02
+    },
+    "moveSpeed": {
+      "perEndurance": 0.005
+    }
+  },
+  "progression": {
+    "xpReward": {
+      "base": 10,
+      "growthPerLevel": 1.1
+    }
+  },
+  "enemyScaling": {
+    "health": {
+      "base": 24,
+      "growthPerLevel": 1.11
+    },
+    "damage": {
+      "base": 5,
+      "growthPerLevel": 1.07
+    },
+    "defence": {
+      "coefficient": 0.5,
+      "exponent": 1.2
+    },
+    "attackSpeed": {
+      "base": 0.8,
+      "perLevel": 0.015
+    },
+    "money": {
+      "base": 5,
+      "growthPerLevel": 1.1,
+      "spread": 0.5
+    }
+  },
+  "potions": {
+    "tickMs": 500,
+    "tiers": [
+      {
+        "id": "minor",
+        "amount": 40,
+        "durationSeconds": 10
+      },
+      {
+        "id": "lesser",
+        "amount": 120,
+        "durationSeconds": 9
+      },
+      {
+        "id": "standard",
+        "amount": 320,
+        "durationSeconds": 8
+      },
+      {
+        "id": "greater",
+        "amount": 800,
+        "durationSeconds": 7
+      },
+      {
+        "id": "grand",
+        "amount": 1800,
+        "durationSeconds": 6
+      }
+    ]
+  },
+  "creation": {
+    "baseAttributes": {
+      "strength": 5,
+      "dexterity": 5,
+      "vitality": 5,
+      "intelligence": 5
+    },
+    "freePoints": 5,
+    "nameMinLength": 1,
+    "nameMaxLength": 16,
+    "startingLevel": 1,
+    "startingGold": 0,
+    "startingEquipment": {
+      "mainHand": "starter-sword",
+      "body": "starter-tunic"
+    },
+    "startingItems": [
+      {
+        "itemId": "minor-health-potion",
+        "quantity": 5
+      }
+    ]
   }
 }

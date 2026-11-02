@@ -6,9 +6,13 @@
 - Design system (tokens, brand book, component guidelines, CSS classes in `components/bundle.css`): https://claude.ai/artifact/3n12SGkJ1VWxMXAQ8HMZrb
 - Screen sketches (13 phone screens linked as a clickable prototype, 2 desktop layouts): https://claude.ai/artifact/MM1u7hrsEdZww1XtTKEiE1
 
-Template: **Proposed** (not yet decided), **Assumed by the sketches**, **Open questions**.
+Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the sketches**, **Open questions**.
 
 ---
+
+**Rules.**
+- A Warding Seal (upgrade protection) is used up on every attempt it is applied to, success or fail (default, revisit after playtesting).
+- Low-level characters can buy potions they cannot use yet, to pass on through the warehouse (default, revisit after playtesting).
 
 **Proposed.**
 - Dark theme only. Grounds `ground`, `surface-1/2/3`.
@@ -37,5 +41,3 @@ Template: **Proposed** (not yet decided), **Assumed by the sketches**, **Open qu
 **Open questions.**
 - The loot filter rule editor (2.3) is not sketched yet.
 - Items have no art yet. Slots show category icons until art exists.
-- Is a Warding Seal used up when an upgrade succeeds, or only when it fails?
-- Can low-level characters buy potions they can't use yet, so they can pass them on through the warehouse? The shop sketch allows it.

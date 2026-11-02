@@ -1,7 +1,6 @@
 /**
  * Pure formulas for rules the design docs have already decided.
  * Constants come from data/constants.json (design 5.1), never hard-coded here.
- * Anything marked OPEN QUESTION is not decided in the design yet.
  */
 import constants from '../../data/constants.json';
 
@@ -34,8 +33,7 @@ export function dropChance(baseChance: number, characterLevel: number, enemyLeve
 
 /**
  * Absorption level modifier (design 4.7): 0.9^diff for a character above the enemy. Never reaches 0.
- * OPEN QUESTION (4.7): whether absorption changes when the enemy is above the character.
- * Until decided this returns 1 for that case.
+ * An enemy above the character gives constants.absorption.enemyAboveCharacterModifier (1, no bonus).
  */
 export function absorptionLevelModifier(
   characterLevel: number,
@@ -43,7 +41,7 @@ export function absorptionLevelModifier(
   c: AbsorptionConstants = constants.absorption,
 ): number {
   const diff = characterLevel - enemyLevel;
-  return diff >= 0 ? c.levelFactor ** diff : 1;
+  return diff >= 0 ? c.levelFactor ** diff : c.enemyAboveCharacterModifier;
 }
 
 /**

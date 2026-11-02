@@ -1,0 +1,61 @@
+# Decisions
+
+Defaults chosen to close the open questions and inconsistencies in `docs/pre-development-checklist.md`. Each one is also written into the design doc's **Rules**, marked "(default, revisit after playtesting)", and into `data/constants.json` where it is a number. The owner reviews these later.
+
+| # | Section | Question | Default chosen | Rationale | Status |
+|---|---|---|---|---|---|
+| Q1 | 2.1 | How many bonus attributes can one item roll? | Up to 3, each pool entry on its own chance (`items.maxBonusAttributes`) | Enough variety to chase good rolls without a combinatorial data burden. | default, awaiting owner review |
+| Q2 | 2.2 | Weapon penalty: gradual or hard cut? | Gradual, proportional to the shortfall, floor of 25% damage (`combat.weaponPenaltyFloor`) | Lets under-statted characters still fight, so a bad build is slow, not stuck. | default, awaiting owner review |
+| Q3 | 2.5 | How often does the rare goods shop rotate? | Every 24 hours (`shops.rareGoodsRotationHours`) | Daily check-in rhythm that suits an idle game, and offline time still counts. | default, awaiting owner review |
+| Q4 | 2.5 | Does its stock depend on character level? | No, one shared pool and stock (`shops.rareGoodsStockDependsOnCharacterLevel`) | Roster is the build and the shop is shared, so a per-character stock would be arbitrary. | default, awaiting owner review |
+| Q5 | 2.6 | Drop boost before or after level-gap penalty? | After: chance × modifier × boost (`drops.boostAppliesAfterLevelModifier`) | Keeps "low levels matter": a boost cannot let a high-level character farm low enemies. | default, awaiting owner review |
+| Q6 | 2.7 | At which upgrade level do materials start? | Upgrades to +4 and above (+0 to +3 gold only) (`upgrade.materialsStartAtLevel`) | Success chance drops below 66% at +4, which is where cost should start to bite. | default, awaiting owner review |
+| Q7 | 3.1 | How many areas between level 1 and 30? | Nine (`world.areaCount`) | Matches the nine areas in the screen sketches. | default, awaiting owner review |
+| Q8 | 3.3 | Exact targeting penalty? | Double the time between fights (`farming.targetingExtraTimeMultiplier` = 2) | Simple, readable trade-off against untargeted farming. | default, awaiting owner review |
+| Q9 | 4.1 | Slots unlocked at level 30? | One, the first time each character reaches 30 (`characters.slotsUnlockedAtLevelCap`) | Slow roster growth keeps the cap meaningful and is easy to raise later. | default, awaiting owner review |
+| Q10 | 4.5 | Max spell rank above 10? | 15 (`spells.maxRankWithRareItems`) | Five rare-item ranks give a long-term goal without breaking the rank-10 baseline. | default, awaiting owner review |
+| Q11 | 4.5 | Spell respec gold formula | 300 gold × character level (`spells.respecGoldPerLevel`) | Reproduces the 4,200 gold at Lv 14 shown in the sketches. | default, awaiting owner review |
+| Q12 | 4.7 | Absorption when the enemy is above the character? | Modifier 1, no bonus (`absorption.enemyAboveCharacterModifier`) | Matches the existing placeholder in `formulas.ts`; the gap penalty only applies downward. | default, awaiting owner review |
+| Q13 | 4.7 | Do cursed-object defenders count as normal enemies? | Yes, absorbable; the cursed object itself is not (`absorption.cursedObjectDefendersAbsorbable`) | Defenders are of type normal, and it makes cursed objects a way to farm absorption. | default, awaiting owner review |
+| Q14 | 06 | Warding Seal used on success too? | Yes, used up on every attempt (`upgrade.protectionConsumedOnSuccess`) | Keeps protection scarce so gear cannot be fully maxed. Needs a per-attempt consume flag in item data. | default, awaiting owner review |
+| Q15 | 06 | Can low-level characters buy potions they cannot use? | Yes (`shops.potionBuyRequiresLevel` = false) | Supports passing items up the roster through the warehouse. | default, awaiting owner review |
+| I1 | 4.2 / 4.6 | Endurance is two things | One number: endurance proficiency plus equipment; the skill list shows its title, the stat shows the total | Avoids two values with the same name. | default, awaiting owner review |
+| I2 | 4.6 | Speed has no trainer | Trained by attacking with any weapon, at a lower gain; raises attack speed. Endurance raises move speed | Gives the skill a clear action and separates it from endurance. | default, awaiting owner review |
+| I3 | 4.1 | Starting character slots | 5 (`characters.startingSlots`) | The roster sketch already shows 5 of 5 slots. | default, awaiting owner review |
+| I4 | 3.7 | Death details | Back in 2 minutes, keeps inventory and equipment (`death.respawnSeconds` = 120, `death.keepsInventory`) | Matches the sketches ("back in 1m 40s"); XP loss is already the penalty. | default, awaiting owner review |
+| I5 | 2.6 / 2.8 | Boost items missing from 2.8 | Added a "Combat boosts" row to 2.8, consumable rare drops | Keeps 2.6 as written and gives 2.8 one complete list. | default, awaiting owner review |
+| I6 | 01 / 3.8 | "Percentage points" wording | Reworded: the modifier falls by 0.1 per level, 10% of the base chance | Formula unchanged; wording no longer reads as a subtraction. | default, awaiting owner review |
+| I7 | 4.6 / 06 | Proficiency titles | Novice, Apprentice, Adept, Expert, Master at 0, 15, 35, 60, 85 of 100 (`proficiency.*`) | Uses the five titles the sketches show. | default, awaiting owner review |
+| I8 | 01 | Document map | Added the section 6 row | Section 6 was missing. | default, awaiting owner review |
+| N1 | 4.2 | Derived stat formulas | Damage 1 + 0.6 STR + weapon; attack speed 0.8 + 0.02 DEX per second; crit 2% + 0.2% DEX (cap 50%); health 30 + 8 VIT; defence 0.25 VIT; mana 20 + 4 INT; spell damage +2% per INT; move speed +0.5% per endurance (`stats.*`) | Linear and readable. Gear is meant to carry most damage and defence, so attributes stay small numbers. Level 1 character kills a level 1 enemy in about 3 s. | default, awaiting owner review |
+| N2 | 3.6 | Attack speed to interval | Attacks per second, interval = 1000 ms / speed rounded to a whole tick (100 ms), at least one tick | The engine acts on ticks, so intervals must be tick multiples. Max speed is 10 attacks per second. | default, awaiting owner review |
+| N3 | 3.6 | Critical hit application | Multiplies the damage dealt after defence and the minimum by `combat.critMultiplier` (1.5) | Literal reading of "1.5 times damage". Multiplying before defence would make crits much stronger against armour. | default, awaiting owner review |
+| N4 | 4.3 | XP per level | XP from level L to L+1 = 100 x L^1.5 x 1.1^(L-1) rounded to 3 significant figures, stored in `data/xp-table.json` (levels 1-30). About 1.49 million total to level 30 | Built from a target of 10 kills (level 1) to 1,560 kills (level 29) of a same-level enemy, so a level goes from 2 minutes to 5 hours. | default, awaiting owner review |
+| N5 | 3.5 / 4.3 | XP reward per enemy level | 10 x 1.1^(L-1), rounded (`progression.xpReward`). No level-gap penalty | XP grows slower than the requirement, so low-level enemies fade out on their own: at level 20 a level 3 enemy needs 5 times the kills of a level 20 enemy. Area 1 is outgrown at level 6-8. | default, awaiting owner review |
+| N6 | 3.5 | Enemy baseline stats | Health 24 x 1.11^(L-1), damage 5 x 1.07^(L-1), defence 0.5 x (L-1)^1.2, attack speed 0.8 + 0.015 (L-1) (`enemyScaling.*`). Enemies keep fixed stats in data; these are the starting line | Tuned against a reference character (attributes split 45/20/25/10 and gear at about 3 + 1.8 x (L-1) weapon damage and 1 + 0.9 x (L-1) armour): kills in 3 to 7 seconds and loses 2% to 5% of its health per fight at its own level. Gear data must be written to roughly that curve. | default, awaiting owner review |
+| N7 | 3.5 | Money drop scaling | Average 5 x 1.1^(L-1) gold, range plus or minus 50% (`enemyScaling.money`), not reduced by level gap | About 5 gold at level 1, 17 at level 14 (about 5,000 gold an hour at 300 kills an hour, enough for a respec at 4,200 in an hour or so). | default, awaiting owner review |
+| N8 | 2.2 | Weapon penalty curve | Product of min(1, attribute / recommended) over the weapon's scaling attributes, floored at 0.25 (`stats.weaponPenaltyMultiplier`) | Gradual and proportional to each shortfall, as Q2 decided. Multiplying makes two weak attributes hurt more than one. | default, awaiting owner review |
+| N9 | 4.6 | Proficiency gain | Per action: G x min(1, actionLevel / R)^2 with R = max(1, 0.3 x points). G = 0.003 per hit (weapon skills, toughness), 0.0015 per attack (speed), 0.001 per second moved (endurance) (`proficiency.*`) | R ties 100 points to level 30. Weak enemies train a high skill very little, but never block a new skill. About 35 hours of at-level hitting for a weapon skill to reach 100. | default, awaiting owner review |
+| N10 | 4.6 | Proficiency effect per point | Weapon skills +0.3% damage, toughness +0.3% health, speed +0.2% attack speed, endurance +0.5% movement speed (`proficiency.effectPerPoint`) | At 100 points that is +30% damage or health, +20% attack speed, +50% movement. A meaningful but not dominant slice next to gear. | default, awaiting owner review |
+| N11 | 2.6 | Potion heal over time | Amount spread evenly over the duration in 500 ms ticks. Reference tiers: minor 40 over 10 s, lesser 120 over 9 s, standard 320 over 8 s, greater 800 over 7 s, grand 1,800 over 6 s (`potions.*`) | Better potions heal more and faster, with no cooldown. Rates are 4 to 300 health per second. Whether potions stack is not decided. | default, awaiting owner review |
+| N12 | 4.4 | When character points are awarded | One point each at 25%, 50% and 75% of the XP of the level being earned, so level 1 yields 3 points before level 2 and 87 by level 30 | Reads "awarded at 25%, 50% and 75% of the level" as progress through the level. | default, awaiting owner review |
+| C1 | 4.1 | Character creation | Player enters a name (1-16 characters, unique, case-insensitive) and spends 5 free points on four attributes that start at 5 (total 25). No class, race or weapon choice (`creation.*`) | Keeps creation to one short screen. The roster is the build, so choices live in the points and in what the character does. | default, awaiting owner review |
+| C2 | 4.1 | Starting gear and items | Level 1, 0 gold, starter sword (main hand), starter tunic (body), 5 minor health potions. Ids `starter-sword`, `starter-tunic`, `minor-health-potion` need entries in `data/items.json` | Enough to fight and to survive the first fights, small enough that finding gear still matters. 0 gold because nothing is sold before the first kills. | default, awaiting owner review |
+
+## Other numbers set at the same time
+
+| Key | Value | Rationale |
+|---|---|---|
+| `offline.efficiency` | 0.9 | Lower than active play, but not by much. |
+| `offline.proficiencyRate` | 0.5 | Reduced offline proficiency gain (3.4). |
+| `offline.capHours` | 12 | Caps gold from one long absence. |
+| `combat.minDamage` | 1 | A hit always counts (3.6). |
+| `combat.critMultiplier` | 1.5 | Modest crit, since crit rate also comes from boosts. |
+| `combat.tickMs` | 100 | Fine enough for attack speeds, cheap to simulate. |
+
+## Needs the owner
+
+- Nothing blocks work. Q14 needs a per-item "consumed on attempt" flag when protection item data is written.
+- The numbers above, and the area count in Q7, are guesses to tune with the balance tools (5.3).
+- N1 to N12 assume about 12 seconds per kill (fight plus moving to the next enemy, 3.3). The real movement time (`world` data) will shift the pace of the XP table.
+- C2 needs three item entries in `data/items.json` (starter sword, starter tunic, minor health potion) before character creation can be built.

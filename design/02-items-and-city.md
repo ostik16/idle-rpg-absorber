@@ -18,11 +18,9 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Base values are fixed per item (attack range, defence, …).
 - Items can also have bonus attributes. Each bonus has a fixed range, and the actual value is rolled within that range when the item drops.
 - Each item has a size in slots and a stack limit.
+- An item can roll up to 3 bonus attributes. Each pool entry rolls on its own chance (default, revisit after playtesting).
 
 **Data.** id, name, category, size (slots), stack limit, required level, base stats, bonus attribute pool (attribute, min, max, chance), buy price, sell price, icon.
-
-**Open questions.**
-- How many bonus attributes can one item roll?
 
 ---
 
@@ -33,6 +31,8 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 **Rules.**
 - Items require only a level.
 - Each weapon benefits from different attributes. A character without enough points in those attributes gets a penalty with that weapon.
+- Weapon penalty is gradual: for each scaling attribute below its recommended value, damage falls in proportion to the shortfall, down to a floor of 25% of normal damage. There is no hard cut (default, revisit after playtesting).
+- Penalty formula (default, revisit after playtesting): each scaling attribute contributes min(1, attribute ÷ recommended). The contributions multiply, and the result is the damage multiplier, never below 0.25. Example: a weapon recommending 20 Strength and 20 Dexterity, used with 10 Strength and 15 Dexterity, deals 0.5 × 0.75 = 37.5% of normal damage. A weapon with no scaling, or no weapon, has no penalty.
 - One designated slot for rare items. Only some rare items can be equipped there (2.8).
 
 **Proposed.**
@@ -42,9 +42,6 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Each weapon lists its scaling attributes and a recommended value per attribute. Below that value, damage is reduced in proportion.
 
 **Data.** slot list, allowed item categories per slot, weapon scaling (attribute, recommended value, penalty curve).
-
-**Open questions.**
-- How harsh is the weapon penalty: a gradual loss of damage, or a hard cut?
 
 ---
 
@@ -93,10 +90,12 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 **Rules.**
 - Separate shops, each with its own purpose: general store, alchemist, blacksmith, upgrade smith, warehouse, teleporter, rare goods shop.
 - Every shop except the rare goods shop has fixed stock.
+- Potions can be bought at any character level. Using one needs its required level, so a low-level character can buy potions to pass on through the warehouse (default, revisit after playtesting).
 - Items are sold to shops for gold.
 
 **Rare goods shop.**
-- Rotating stock.
+- Rotating stock. It rotates every 24 hours (default, revisit after playtesting).
+- The pool does not depend on the level of the player's characters. All characters share one stock (default, revisit after playtesting).
 - Items are rare and expensive.
 - Stock can include rare items normally dropped by bosses, mini-bosses and cursed objects, equipment upgraded to a high level, and equipment with good bonus attributes.
 - Gives late-game gold a use, and gives players without luck a slow route to rare items.
@@ -105,10 +104,6 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Buyback for recently sold items, to undo mistakes.
 
 **Data.** shop id, purpose, item list, prices. Rare goods shop: rotation interval, item pool with weights, price range, number of items per rotation.
-
-**Open questions.**
-- How often does the rare goods shop rotate?
-- Does its stock depend on the level of the player's characters?
 
 ---
 
@@ -119,17 +114,16 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 **Rules.**
 - Health potions heal over time. Better potions heal more, and faster.
 - No cooldowns. The heal-over-time rate is the limit.
+- A potion restores its amount evenly over its duration in ticks of 500 ms (`constants.potions`). Reference tiers (default, revisit after playtesting): minor 40 over 10 s (4 per second), lesser 120 over 9 s (13), standard 320 over 8 s (40), greater 800 over 7 s (114), grand 1,800 over 6 s (300). These are the formula's reference points; potion items set their own amount and duration.
 - Boosts that improve move speed, attack speed, critical rate, defence and similar are rare drops.
 - XP and drop-rate boosts are rare items (2.8).
+- A drop-rate boost is applied after the level-gap modifier (3.8): final chance = base chance × level modifier × boost. A boost cannot rescue a character that is too far above the enemy, because a modifier of 0 stays 0 (default, revisit after playtesting).
 
 **Proposed.**
 - Mana potions work the same way as health potions.
 - Auto-use thresholds set by the player, for example drink a health potion below 40% health.
 
 **Data.** effect type, amount, duration, tick rate, auto-use default threshold.
-
-**Open questions.**
-- Is a drop-rate boost applied before or after the level-gap penalty (3.8)? If before, a boost cannot rescue a character too far above the enemy.
 
 ---
 
@@ -143,6 +137,8 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Early levels cost money only. Later levels need rare materials.
 - Upgrades can fail. A failed upgrade destroys the item.
 - An upgrade protection item makes a failed upgrade lower the level by one instead (2.8).
+- Gold-only upgrades go from +0 to +3. Upgrades to +4 and above also need rare materials (default, revisit after playtesting).
+- A protection item is used up on every attempt it is applied to, whether the upgrade succeeds or fails (default, revisit after playtesting).
 - Success chance starts at 90% and each level is 90% of the previous one.
 - One playthrough or one character cannot max every item.
 
@@ -165,9 +161,6 @@ Without protection, an item has about a 0.9% chance to go from +0 to +9 without 
 
 **Data.** upgrade table per item group: level, gold cost, material id, material amount, stat bonus. Success chance from the global constants (start 90%, factor 0.9).
 
-**Open questions.**
-- At which level do materials start?
-
 ---
 
 ## 2.8 Rare Items [Added]
@@ -186,6 +179,7 @@ Without protection, an item has about a 0.9% chance to go from +0 to +9 without 
 | Spell upgrade material | Upgrade | Raise a spell above rank 10 | 4.5 |
 | XP boost | Consume | More XP for a time | 2.6 |
 | Drop-rate boost | Consume | Higher drop chance for a time | 2.6, 3.8 |
+| Combat boosts (move speed, attack speed, critical rate, defence) | Consume | Stronger stat for a time | 2.6 |
 | Travel skip | Consume | Instant travel | 3.2 |
 | XP protection | Consume | No XP lost on death | 3.7 |
 | Character respec | Consume | Reset character points | 4.4 |
