@@ -1,1 +1,4 @@
-[]
+[
+  { "id": "minor-health-potion", "name": "Minor health potion", "effectType": "heal-over-time", "tier": "minor", "amount": 40, "durationSeconds": 10, "autoUseDefaultThreshold": 0.4 },
+  { "id": "lesser-health-potion", "name": "Lesser health potion", "effectType": "heal-over-time", "tier": "lesser", "amount": 120, "durationSeconds": 9, "autoUseDefaultThreshold": 0.4 }
+]

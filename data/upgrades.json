@@ -1,1 +1,11 @@
-[]
+[
+  { "id": "one-handed-weapon-plus-1", "itemGroup": "one-handed-weapon", "level": 1, "goldCost": 40, "materialId": null, "materialAmount": 0, "statBonus": 0.1 },
+  { "id": "one-handed-weapon-plus-2", "itemGroup": "one-handed-weapon", "level": 2, "goldCost": 90, "materialId": null, "materialAmount": 0, "statBonus": 0.2 },
+  { "id": "one-handed-weapon-plus-3", "itemGroup": "one-handed-weapon", "level": 3, "goldCost": 180, "materialId": null, "materialAmount": 0, "statBonus": 0.3 },
+  { "id": "one-handed-weapon-plus-4", "itemGroup": "one-handed-weapon", "level": 4, "goldCost": 300, "materialId": "whetstone", "materialAmount": 3, "statBonus": 0.4 },
+  { "id": "one-handed-weapon-plus-5", "itemGroup": "one-handed-weapon", "level": 5, "goldCost": 450, "materialId": "whetstone", "materialAmount": 5, "statBonus": 0.5 },
+  { "id": "one-handed-weapon-plus-6", "itemGroup": "one-handed-weapon", "level": 6, "goldCost": 700, "materialId": "whetstone", "materialAmount": 8, "statBonus": 0.6 },
+  { "id": "one-handed-weapon-plus-7", "itemGroup": "one-handed-weapon", "level": 7, "goldCost": 1100, "materialId": "whetstone", "materialAmount": 12, "statBonus": 0.7 },
+  { "id": "one-handed-weapon-plus-8", "itemGroup": "one-handed-weapon", "level": 8, "goldCost": 1700, "materialId": "whetstone", "materialAmount": 18, "statBonus": 0.8 },
+  { "id": "one-handed-weapon-plus-9", "itemGroup": "one-handed-weapon", "level": 9, "goldCost": 2600, "materialId": "whetstone", "materialAmount": 25, "statBonus": 0.9 }
+]

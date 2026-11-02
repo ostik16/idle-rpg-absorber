@@ -48,6 +48,7 @@
     "weaponPenaltyFloor": 0.25
   },
   "farming": {
+    "movementSecondsBetweenEnemies": 8,
     "targetingExtraTimeMultiplier": 2
   },
   "offline": {

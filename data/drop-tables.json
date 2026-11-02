@@ -1,1 +1,54 @@
-[]
+[
+  { "id": "drop-glade-rat", "entries": [
+    { "itemId": "whetstone", "baseChance": 0.10, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "minor-health-potion", "baseChance": 0.06, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "starter-sword", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "hunting-knife", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-moss-grub", "entries": [
+    { "itemId": "hide-scrap", "baseChance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "whetstone", "baseChance": 0.08, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "minor-health-potion", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "leather-cap", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-rime-beetle", "entries": [
+    { "itemId": "whetstone", "baseChance": 0.12, "minQuantity": 1, "maxQuantity": 2 },
+    { "itemId": "hide-scrap", "baseChance": 0.10, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "minor-health-potion", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "worn-boots", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-mossfang-wolf", "entries": [
+    { "itemId": "whetstone", "baseChance": 0.12, "minQuantity": 1, "maxQuantity": 2 },
+    { "itemId": "padded-vest", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "mossfang-sword", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "mossfang-dagger", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "fangtooth-necklace", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-ember-wisp", "entries": [
+    { "itemId": "whetstone", "baseChance": 0.10, "minQuantity": 1, "maxQuantity": 2 },
+    { "itemId": "minor-health-potion", "baseChance": 0.06, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "lesser-health-potion", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "leather-cap", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "fangtooth-necklace", "baseChance": 0.015, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-thornhide-boar", "entries": [
+    { "itemId": "whetstone", "baseChance": 0.15, "minQuantity": 1, "maxQuantity": 2 },
+    { "itemId": "hide-scrap", "baseChance": 0.20, "minQuantity": 1, "maxQuantity": 2 },
+    { "itemId": "lesser-health-potion", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "padded-vest", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "thornhide-vest", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "mossfang-sword", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "oak-greatclub", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 }
+  ] },
+  { "id": "drop-old-mossfang", "entries": [
+    { "itemId": "whetstone", "baseChance": 1, "minQuantity": 3, "maxQuantity": 5, "guaranteed": true },
+    { "itemId": "hide-scrap", "baseChance": 0.6, "minQuantity": 2, "maxQuantity": 3 },
+    { "itemId": "lesser-health-potion", "baseChance": 0.5, "minQuantity": 2, "maxQuantity": 3 },
+    { "itemId": "mossfang-sword", "baseChance": 0.25, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "thornhide-vest", "baseChance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "warding-seal", "baseChance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "tome-of-insight", "baseChance": 0.08, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "arcane-shard", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+    { "itemId": "sigil-of-embers", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 }
+  ] }
+]

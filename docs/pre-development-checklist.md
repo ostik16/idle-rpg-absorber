@@ -66,7 +66,7 @@ Small things that will cause arguments during implementation. All eight are sett
 
 ## 3. Design and content still to produce
 
-- [ ] **First vertical slice.** Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
+- [ ] **First vertical slice.** (Data done, issue #8: see decisions S1 to S8; the loop is still to build.) Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
 - [ ] **Screens not sketched.** Character creation, loot filter rule editor (2.3), save export and import (5.5), settings, a travelling or in-transit state, death state detail, the content editor and debug tools (5.2, 5.4).
 - [ ] **Item art.** None exists. Slots show category icons until it does, and the design system is set up for that.
 - [ ] **Dev tools plan.** 5.2 to 5.4 are large. Suggest order: data validation (done, basic), then the combat simulator and drop calculator as CLI scripts over `data/`, then a proper editor later.

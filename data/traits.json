@@ -1,1 +1,8 @@
-[]
+[
+  { "id": "life-steal", "name": "Life steal", "effect": "Heals for the value in percent of the damage dealt by each hit", "unit": "percent", "magical": true },
+  { "id": "fire-affinity", "name": "Fire affinity", "effect": "Raises fire spell damage by the value in percent", "unit": "percent", "magical": true },
+  { "id": "frost-affinity", "name": "Frost affinity", "effect": "Raises frost spell damage by the value in percent", "unit": "percent", "magical": true },
+  { "id": "regeneration", "name": "Regeneration", "effect": "Restores the value in percent of maximum health every 10 seconds", "unit": "percent", "magical": true },
+  { "id": "thick-hide", "name": "Thick hide", "effect": "Raises defence by the value in percent (physical, cannot be absorbed)", "unit": "percent", "magical": false },
+  { "id": "keen-fangs", "name": "Keen fangs", "effect": "Raises critical chance by the value in percentage points (physical, cannot be absorbed)", "unit": "percent", "magical": false }
+]

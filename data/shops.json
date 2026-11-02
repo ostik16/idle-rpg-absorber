@@ -1,1 +1,14 @@
-[]
+[
+  { "id": "general-store", "name": "General store", "purpose": "Basic weapons and armour", "rotating": false, "itemList": [
+    { "itemId": "starter-sword", "price": 40 },
+    { "itemId": "hunting-knife", "price": 40 },
+    { "itemId": "starter-tunic", "price": 30 },
+    { "itemId": "leather-cap", "price": 25 },
+    { "itemId": "worn-boots", "price": 30 },
+    { "itemId": "padded-vest", "price": 90 }
+  ] },
+  { "id": "alchemist", "name": "Alchemist", "purpose": "Health potions", "rotating": false, "itemList": [
+    { "itemId": "minor-health-potion", "price": 12 },
+    { "itemId": "lesser-health-potion", "price": 40 }
+  ] }
+]
