@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components · items, characters and lists</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 1200px; height: 2600px; box-sizing: border-box; padding: 48px; display: flex; flex-direction: column; gap: 40px; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+
+  <div>
+    <h1 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: 0.02em;">Items, characters and lists</h1>
+    <p style="margin: 4px 0 0; color: #aaa596;">Item slots in every state, equipment, character cards and the list rows used across the game.</p>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Item slot states</h2>
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px 28px; padding: 20px 24px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+      <sc-for list="{{slots}}" as="s" hint-placeholder-count="12">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 76px;">
+          <button aria-label="{{s.cap}}" style="position: relative; display: grid; place-items: center; width: 44px; height: {{s.h}}; padding: 0; box-sizing: border-box; border: {{s.border}}; border-radius: 6px; background: {{s.bg}}; color: {{s.fg}}; cursor: pointer;">
+            <sc-if value="{{s.sword}}" hint-placeholder-val="{{ true }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"></path><path d="m13 19 6-6"></path><path d="m16 16 4 4"></path><path d="m19 21 2-2"></path></svg></sc-if>
+            <sc-if value="{{s.armor}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 3 4 5.5v5L6 12v9h12v-9l2-1.5v-5L16 3c-.7 1.6-2.2 2.5-4 2.5S8.7 4.6 8 3z"></path></svg></sc-if>
+            <sc-if value="{{s.flask}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 3h6"></path><path d="M10 3v5.5L4.8 17.2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.2-3.8L14 8.5V3"></path><path d="M7 15h10"></path></svg></sc-if>
+            <sc-if value="{{s.ore}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m12 3 7.5 5.5-2.5 10.5h-10L4.5 8.5z"></path><path d="m4.5 8.5 7.5 3.5 7.5-3.5M12 12v7"></path></svg></sc-if>
+            <sc-if value="{{s.seal}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="10" r="6"></circle><path d="m9 15-1 6 4-2 4 2-1-6"></path></svg></sc-if>
+            <sc-if value="{{s.ring}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="14.5" r="6"></circle><path d="m9.5 6 2.5-3 2.5 3-2.5 2.5z"></path></svg></sc-if>
+            <sc-if value="{{s.lock}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg></sc-if>
+            <sc-if value="{{s.hasPlus}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 2px; right: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: {{s.plusC}};">{{s.plus}}</span></sc-if>
+            <sc-if value="{{s.hasCount}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 4px; bottom: 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: #eee8d9;">{{s.count}}</span></sc-if>
+            <sc-if value="{{s.sel}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: 2px; left: 2px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #e4b95b; color: #1a1307;"><svg class="ic" viewBox="0 0 24 24" width="10" height="10" style="stroke-width: 3;"><path d="m5 12 5 5 9-10"></path></svg></span></sc-if>
+          </button>
+          <span style="text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 15px; font-weight: 600; color: #aaa596;">{{s.cap}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px;">
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Inventory grid</h2>
+      <div style="padding: 20px 24px; background: #161821; border: 1px solid #323748; border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="position: relative; width: 344px;">
+          <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(7, 44px); grid-auto-rows: 44px; gap: 6px;">
+            <sc-for list="{{cells}}" as="c" hint-placeholder-count="28"><span style="box-sizing: border-box; border: 1px dashed #323748; border-radius: 6px;"></span></sc-for>
+          </div>
+          <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, 44px); grid-template-rows: repeat(4, 44px); gap: 6px;">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="9">
+              <span style="grid-column: {{g.col}}; grid-row: {{g.row}}; position: relative; display: grid; place-items: center; box-sizing: border-box; border: {{g.border}}; border-radius: 6px; background: {{g.bg}}; color: {{g.fg}};">
+                <svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="{{g.d}}"></path></svg>
+                <sc-if value="{{g.hasPlus}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 2px; right: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: {{g.plusC}};">{{g.plus}}</span></sc-if>
+                <sc-if value="{{g.hasCount}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 4px; bottom: 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: #eee8d9;">{{g.count}}</span></sc-if>
+              </span>
+            </sc-for>
+          </div>
+        </div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Grid · 7 columns, 44px cells, 6px gaps · weapons 3 tall, armour 2</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Equipment slots</h2>
+      <div style="padding: 20px 24px; background: #161821; border: 1px solid #323748; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 20px 24px; align-items: flex-start;">
+        <sc-for list="{{equip}}" as="e" hint-placeholder-count="6">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 84px;">
+            <span style="position: relative; display: grid; place-items: center; width: {{e.w}}; height: {{e.h}}; box-sizing: border-box; border: {{e.border}}; border-radius: 6px; background: {{e.bg}}; color: {{e.fg}};">
+              <svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="{{e.d}}"></path></svg>
+              <sc-if value="{{e.hasPlus}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 2px; right: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: {{e.plusC}};">{{e.plus}}</span></sc-if>
+            </span>
+            <span style="text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 15px; font-weight: 600; color: #aaa596;">{{e.cap}}</span>
+          </div>
+        </sc-for>
+        <div style="flex: 1 1 260px; padding: 8px 10px; border: 1px solid #f0a04b; border-radius: 6px; color: #f0a04b; font-size: 13px; line-height: 18px;">Needs Strength 32, Kaela has 30: damage −6%<br><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Weapon attribute penalty note</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Character cards</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 24px;">
+      <sc-for list="{{chars}}" as="c" hint-placeholder-count="7">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <a href="Character-Farm.dc.html" style="display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 12px 14px 12px 12px; background: {{c.bg}}; border: 1px {{c.style}} {{c.edge}}; border-radius: 10px; color: #eee8d9; text-decoration: none;">
+            <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px {{c.style}} #707896; border-radius: 6px; background: {{c.avBg}}; font-family: 'Cinzel', Georgia, serif; font-size: 20px; font-weight: 700; color: {{c.avFg}};">{{c.initial}}</span>
+            <span style="display: flex; flex-direction: column; min-width: 0;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em;">{{c.name}}</span>
+                <sc-if value="{{c.hasLv}}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 6px; box-sizing: border-box; border: 1px solid #b88a2e; border-radius: 3px; background: #2e2614; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">Lv {{c.level}}</span></sc-if>
+                <sc-if value="{{c.hasLv}}" hint-placeholder-val="{{ true }}"><span style="margin-left: auto; height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; background: #1f222d; color: {{c.sc}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;">{{c.status}}</span></sc-if>
+              </span>
+              <span style="margin-top: 2px; font-size: 13px; line-height: 18px; color: #aaa596; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.where}}</span>
+              <sc-if value="{{c.hasLv}}" hint-placeholder-val="{{ true }}">
+                <span style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                  <span style="height: 4px; border-radius: 999px; background: #2a2e3b; overflow: hidden;"><span style="display: block; height: 100%; width: {{c.hp}}; background: #e5484d;"></span></span>
+                  <span style="height: 4px; border-radius: 999px; background: #2a2e3b; overflow: hidden;"><span style="display: block; height: 100%; width: {{c.xp}}; background: #a3d977;"></span></span>
+                </span>
+                <span style="display: flex; gap: 14px; margin-top: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #aaa596;"><span>{{c.gph}} / h</span><span style="color: {{c.bagC}};">Bag {{c.bag}}</span><span style="color: {{c.potC}};">Potions {{c.pots}}</span></span>
+              </sc-if>
+            </span>
+          </a>
+          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">{{c.cap}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Loot feed rows</h2>
+      <ol style="margin: 0; padding: 4px 20px; list-style: none; background: #161821; border: 1px solid #323748; border-radius: 10px; font-size: 13px; line-height: 18px;">
+        <sc-for list="{{feed}}" as="f" hint-placeholder-count="9">
+          <li style="display: grid; grid-template-columns: 36px 16px minmax(0, 1fr) auto 110px; align-items: center; gap: 8px; min-height: 36px; border-bottom: 1px solid {{f.rule}};">
+            <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">{{f.t}}</span>
+            <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: {{f.c}};"><path d="{{f.d}}"></path></svg>
+            <span>{{f.text}}</span>
+            <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: {{f.c}};">{{f.amt}}</span>
+            <span style="text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">{{f.cap}}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Shop, auto-cast and list rows</h2>
+      <div style="padding: 4px 20px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+        <div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #323748;">
+          <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px solid #323748; border-radius: 6px; background: #1f222d; color: #e5484d;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M9 3h6"></path><path d="M10 3v5.5L4.8 17.2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.2-3.8L14 8.5V3"></path><path d="M7 15h10"></path></svg></span>
+          <div style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Health Potion II</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">Heals 300 over 8s</span><span style="display: flex; gap: 10px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700;"><span style="color: #e4b95b;">45 each</span><span style="color: #f0a04b;">Usable at Lv 10</span></span></div>
+          <div style="display: flex; align-items: center; border: 1px solid #707896; border-radius: 6px; background: #1f222d;"><button aria-label="One fewer" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span style="min-width: 28px; text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #e4b95b;">5</span><button aria-label="One more" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+        </div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596; padding: 6px 0;">Shop stock row · price, level warning, stepper</div>
+        <div style="display: grid; grid-template-columns: 22px 36px minmax(0, 1fr) auto 44px; align-items: center; gap: 10px; min-height: 56px; border-top: 1px solid #323748;">
+          <span style="display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #2e2614; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">2</span>
+          <span aria-hidden="true" style="display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; background: #1f222d; color: #eee8d9;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.5 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z"></path></svg></span>
+          <span style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Second Wind</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">When health is below 40%</span></span>
+          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #5b8def;">30 mana</span>
+          <button aria-label="Move Second Wind up" style="display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #aaa596; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+        </div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596; padding: 6px 0;">Auto-cast row · priority, condition, mana, move up</div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 56px; border-top: 1px solid #323748;">
+          <span style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Cracked Buckler</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">Sold 31m ago</span></span>
+          <button style="min-height: 44px; padding: 0 12px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Buy back · <span style="color: #e4b95b;">22</span></button>
+        </div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596; padding: 6px 0;">Buyback row</div>
+        <div style="display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; border-top: 1px solid #323748;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="color: #aaa596;"><path d="m12 3 7.5 5.5-2.5 10.5h-10L4.5 8.5z"></path></svg><span>Wisp Dust ×1–3</span><span style="display: inline-flex; align-items: center; gap: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #aaa596;"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg>??%</span></div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596; padding: 6px 0;">Bestiary drop row · rate not yet revealed</div>
+        <div style="display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; border-top: 1px solid #323748;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="color: #aaa596;"><path d="M5 10a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"></path></svg><span>Bag is full</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600;">31/42</span></div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596; padding: 6px 0;">Return-trigger row</div>
+      </div>
+    </section>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <h2 style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>Spell book rows</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; padding: 4px 24px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+      <sc-for list="{{spells}}" as="b" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 14px 0; border-bottom: 1px solid #323748;">
+          <span aria-hidden="true" style="display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; background: #1f222d; color: {{b.ic}};"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="{{b.d}}"></path></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+            <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; color: {{b.nc}};">{{b.name}}</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #aaa596;">{{b.kind}}</span></div>
+            <span style="font-size: 13px; line-height: 18px;">{{b.effect}}</span>
+            <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #aaa596;">{{b.meta}}</span>
+            <sc-if value="{{b.boosted}}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 3px; background: #0f2e2b; color: #5cd6c6; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600;">{{b.boost}}</span></sc-if>
+            <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #e4b95b;">{{b.cap}}</span>
+          </div>
+          <div style="display: flex; align-items: center; min-height: 44px;">
+            <sc-if value="{{b.rank}}" hint-placeholder-val="{{ true }}"><button aria-label="Add a rank" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px solid #e4b95b; border-radius: 6px; background: #1f222d; color: #e4b95b; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></sc-if>
+            <sc-if value="{{b.learn}}" hint-placeholder-val="{{ false }}"><button style="min-height: 44px; padding: 0 12px; border: 1px solid #e4b95b; border-radius: 6px; background: #1f222d; color: #e4b95b; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Learn</button></sc-if>
+            <sc-if value="{{b.locked}}" hint-placeholder-val="{{ false }}"><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #aaa596;">Lv 16</span></sc-if>
+            <sc-if value="{{b.maxed}}" hint-placeholder-val="{{ false }}"><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 700; color: #b79bff; text-align: right;">Rank 11 needs<br>an Arcane Shard</span></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":2600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var D = {
+      sword: 'M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2',
+      axe: 'M14 4 4 20M12.5 6.5C14 4 17 3 20 3.5c.5 3-.5 6-3 7.5z',
+      armor: 'M8 3 4 5.5v5L6 12v9h12v-9l2-1.5v-5L16 3c-.7 1.6-2.2 2.5-4 2.5S8.7 4.6 8 3z',
+      flask: 'M9 3h6M10 3v5.5L4.8 17.2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.2-3.8L14 8.5V3M7 15h10',
+      ore: 'm12 3 7.5 5.5-2.5 10.5h-10L4.5 8.5zM4.5 8.5l7.5 3.5 7.5-3.5M12 12v7',
+      seal: 'M12 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM9 15l-1 6 4-2 4 2-1-6',
+      ring: 'M12 8.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM9.5 6 12 3l2.5 3L12 8.5z',
+      helm: 'M5 13a7 7 0 0 1 14 0v7h-5v-5h-4v5H5z',
+      gem: 'M6 3h12l4 6-10 12L2 9zM2 9h20M12 21 8 9l4-6 4 6z',
+      lock: 'M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zM8 11V7.5a4 4 0 0 1 8 0V11',
+      neck: 'M5 3c0 6.5 3.1 10 7 10s7-3.5 7-10M12 13l-2.5 3.5L12 21l2.5-4.5z',
+      trend: 'm3 17 6-6 4 4 8-8M15 7h6v6',
+      coin: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z',
+      spark: 'M12 3l1.9 5.6a2 2 0 0 0 1.2 1.2L21 12l-5.9 2.2a2 2 0 0 0-1.2 1.2L12 21l-1.9-5.6a2 2 0 0 0-1.2-1.2L3 12l5.9-2.2a2 2 0 0 0 1.2-1.2z',
+      skull: 'M12 3a7 7 0 0 0-7 7c0 2.6 1.3 4.4 3 5.4V19a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3.6c1.7-1 3-2.8 3-5.4a7 7 0 0 0-7-7z',
+      flame: 'M12 3c2.5 3 5 5.5 5 9.5a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.6 2.4 3C11 9 11 6 12 3z',
+      slash: 'M5 19C9 17 15 12 19 4M9 21c4-2 9-6.5 12-12M3 15c3-1.5 7-5 10-10',
+      bolt: 'M13 3 5 14h6l-1 7 8-11h-6z',
+      shield: 'M12 3 4 6v6c0 4.4 3.4 7.6 8 9 4.6-1.4 8-4.6 8-9V6z',
+      haste: 'm5 7 5 5-5 5M12 7l5 5-5 5',
+      foot: 'M5 12h14M13 6l6 6-6 6'
+    };
+    function slot(kind, cap, o) {
+      o = o || {};
+      var r = { cap: cap, h: o.h || '44px', bg: o.bg || '#1f222d', fg: o.fg || '#aaa596', border: o.border || '1px solid #323748',
+        hasPlus: !!o.plus, plus: '+' + (o.plus || 0), plusC: (o.plus || 0) >= 7 ? '#b79bff' : (o.plus || 0) >= 4 ? '#e4b95b' : '#aaa596',
+        hasCount: !!o.count, count: String(o.count || ''), sel: !!o.sel };
+      ['sword', 'armor', 'flask', 'ore', 'seal', 'ring', 'lock'].forEach(function (k) { r[k] = k === kind; });
+      return r;
+    }
+    function g(kind, col, row, span, o) {
+      o = o || {};
+      return { col: String(col), row: row + ' / span ' + (span || 1), d: D[kind], bg: o.rare ? '#2a2140' : '#1f222d', fg: o.rare ? '#b79bff' : '#aaa596',
+        border: o.sel ? '2px solid #e4b95b' : '1px solid #323748', hasPlus: !!o.plus, plus: '+' + (o.plus || 0), plusC: (o.plus || 0) >= 7 ? '#b79bff' : (o.plus || 0) >= 4 ? '#e4b95b' : '#aaa596',
+        hasCount: !!o.count, count: String(o.count || '') };
+    }
+    function eq(kind, cap, o) {
+      o = o || {};
+      return { d: D[kind], cap: cap, w: o.w || '44px', h: o.h || '44px', bg: o.bg || '#1f222d', fg: o.fg || '#aaa596', border: o.border || '1px solid #323748',
+        hasPlus: !!o.plus, plus: '+' + (o.plus || 0), plusC: (o.plus || 0) >= 4 ? '#e4b95b' : '#aaa596' };
+    }
+    function ch(o) {
+      var sc = { Farming: '#8fd16a', 'Travelling 3m 12s': '#79adff', 'In city': '#e4b95b', Fell: '#f2706a' }[o.status] || '#aaa596';
+      return Object.assign({ hasLv: true, bg: '#161821', edge: '#323748', style: 'solid', avBg: '#292d3b', avFg: '#eee8d9', sc: sc,
+        bagC: o.bagWarn ? '#f0a04b' : '#aaa596', potC: o.potWarn ? '#f0a04b' : '#aaa596' }, o);
+    }
+    var cells = []; for (var i = 0; i < 28; i++) cells.push({ i: i });
+    var feedRows = [
+      ['now', 'trend', '#a3d977', 'Ash Hound slain', '+148 XP', 'XP'],
+      ['now', 'coin', '#e4b95b', 'Gold', '+32', 'Gold'],
+      ['now', 'spark', '#5cd6c6', 'Fire affinity', '+0.06%', 'Absorption'],
+      ['31s', 'ore', '#eee8d9', 'Ash Ember', '×2', 'Material'],
+      ['1m', 'armor', '#aaa596', 'Ember Gauntlets · Lv 10', 'Item', 'Equipment'],
+      ['2m', 'trend', '#e4b95b', 'Two-handed: Adept', 'Title', 'Proficiency'],
+      ['4m', 'seal', '#b79bff', 'Warding Seal from Old Tusk', 'Rare', 'Rare drop'],
+      ['9m', 'skull', '#f2706a', 'Oric fell in Hollow Barrows', '−12% XP', 'Death'],
+      ['9m', 'foot', '#79adff', 'Left for Frostmere Pass', '21m', 'Travel']
+    ];
+    return {
+      slots: [
+        slot('sword', 'Weapon · +6 · 3 cells', { h: '144px', plus: 6 }),
+        slot('armor', 'Armour · +2 · 2 cells', { h: '94px', plus: 2 }),
+        slot('sword', 'Selected', { h: '94px', sel: true, border: '2px solid #e4b95b', plus: 7 }),
+        slot('flask', 'Stack · ×37', { count: 37, fg: '#e5484d' }),
+        slot('ore', 'Stack · full ×100', { count: 100 }),
+        slot('seal', 'Rare · ×2', { count: 2, bg: '#2a2140', fg: '#b79bff', border: '1px solid #2a2140' }),
+        slot('ring', 'Filled · +0', {}),
+        slot('ring', 'Filled · +4', { plus: 4 }),
+        slot('ore', 'Selected · ×3', { count: 3, sel: true, border: '2px solid #e4b95b' }),
+        slot('none', 'Empty', { bg: 'transparent', border: '1px dashed #323748' }),
+        slot('none', 'Drop target', { bg: 'transparent', border: '1px dashed #707896' }),
+        slot('lock', 'Locked row', { bg: 'transparent', fg: '#707896', border: '1px dashed #707896' })
+      ],
+      cells: cells,
+      grid: [
+        g('sword', 1, 1, 3, { plus: 6 }), g('axe', 2, 1, 3, { plus: 7, sel: true }), g('armor', 3, 1, 2, { plus: 2 }),
+        g('flask', 4, 1, 1, { count: 14 }), g('ore', 5, 1, 1, { count: 100 }), g('seal', 6, 1, 1, { count: 2, rare: true }),
+        g('ring', 7, 1), g('helm', 4, 2, 1, { plus: 1 }), g('gem', 5, 2, 1, { count: 3, rare: true })
+      ],
+      equip: [
+        eq('sword', 'Main hand · +4', { h: '94px', plus: 4 }),
+        eq('lock', 'Off hand · blocked by two-handed', { bg: 'transparent', fg: '#707896', border: '1px dashed #707896' }),
+        eq('helm', 'Head · +3', { plus: 3 }),
+        eq('neck', 'Necklace · +2', { plus: 2 }),
+        eq('gem', 'Rare slot', { w: '60px', h: '60px', bg: '#2a2140', fg: '#b79bff', border: '1px solid #b79bff' }),
+        eq('ring', 'Ring · empty, tap to equip', { bg: 'transparent', fg: '#707896', border: '1px dashed #707896' })
+      ],
+      chars: [
+        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'Farming', where: 'Emberroot Vale · Lv 10–16', hp: '82%', xp: '64%', gph: '1,240', bag: '31/42', pots: '14', cap: 'Farming' }),
+        ch({ initial: 'B', name: 'Brann', level: 6, status: 'Farming', where: 'Ashen Ford · targeting Mire Wisp', hp: '54%', xp: '88%', gph: '610', bag: '39/42', pots: '3', bagWarn: true, potWarn: true, cap: 'Return trigger near · bag and potions warn' }),
+        ch({ initial: 'Y', name: 'Ysolde', level: 22, status: 'Travelling 3m 12s', where: 'To Frostmere Pass', hp: '100%', xp: '31%', gph: '—', bag: '9/56', pots: '30', cap: 'Travelling' }),
+        ch({ initial: 'T', name: 'Tamsin', level: 3, status: 'In city', where: 'Restocking at the Alchemist', hp: '100%', xp: '12%', gph: '—', bag: '4/36', pots: '6', cap: 'In city' }),
+        ch({ initial: 'O', name: 'Oric', level: 9, status: 'Fell', where: 'Hollow Barrows · lost 12% XP', hp: '0%', xp: '40%', gph: '—', bag: '22/42', pots: '0', potWarn: true, cap: 'Fell · out of potions' }),
+        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'Farming', where: 'Emberroot Vale · bag 31/42', hp: '82%', xp: '64%', gph: '1,240', bag: '31/42', pots: '14', bg: '#1f222d', edge: '#b88a2e', cap: 'Selected (desktop list)' }),
+        { initial: '', name: 'Slot 6', where: 'Unlocks when a character reaches Lv 30', hasLv: false, bg: 'transparent', edge: '#323748', style: 'dashed', avBg: 'transparent', avFg: '#707896', cap: 'Locked slot' }
+      ],
+      feed: feedRows.map(function (f, i) { return { t: f[0], d: D[f[1]], c: f[2], text: f[3], amt: f[4], cap: f[5], rule: i === feedRows.length - 1 ? 'transparent' : '#323748' }; }),
+      spells: [
+        { d: D.flame, ic: '#5cd6c6', nc: '#eee8d9', name: 'Ember Strike', kind: 'Offensive', effect: 'Fire damage 100 → 120', meta: '24 mana · 8s cooldown · Rank 3 / 10', boosted: true, boost: 'Fire affinity adds 2.8%', rank: true, cap: 'Learned · boosted by absorption' },
+        { d: D.slash, ic: '#eee8d9', nc: '#eee8d9', name: 'Cleave', kind: 'Offensive', effect: 'Hits 3 enemies for 140 → 150% weapon damage', meta: '18 mana · 6s cooldown · Rank 4 / 10', rank: true, cap: 'Learned' },
+        { d: D.haste, ic: '#eee8d9', nc: '#eee8d9', name: 'Haste', kind: 'Support', effect: 'Attack speed +7% for 15s at rank 1', meta: '20 mana · 40s cooldown · Not learned', learn: true, cap: 'Learnable' },
+        { d: D.bolt, ic: '#707896', nc: '#aaa596', name: 'Thunderclap', kind: 'Offensive', effect: 'Lightning damage 85 to all nearby at rank 1', meta: '40 mana · 14s cooldown · Unlocks at Lv 16', locked: true, cap: 'Locked by level' },
+        { d: D.shield, ic: '#eee8d9', nc: '#eee8d9', name: 'Iron Skin', kind: 'Defensive', effect: 'Defence +60% for 10s', meta: '30 mana · 30s cooldown · Rank 10 / 10', maxed: true, cap: 'Rank 10 · needs a rare item' },
+        { d: D.flame, ic: '#5cd6c6', nc: '#eee8d9', name: 'Frost Lance', kind: 'Offensive', effect: 'Frost damage 45 → 60, slows 20%', meta: '22 mana · 10s cooldown · Rank 1 / 10', boosted: true, boost: 'Frost affinity adds 0.6%', rank: true, cap: 'Learned · not in auto-cast order' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

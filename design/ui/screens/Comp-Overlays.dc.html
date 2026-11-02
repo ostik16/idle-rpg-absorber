@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components · Overlays</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 1200px; height: 2140px; box-sizing: border-box; padding: 48px; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px; display: flex; flex-direction: column; gap: 40px;">
+
+  <div>
+    <h1 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: 0.02em;">Overlays</h1>
+    <p style="margin: 4px 0 0; color: #aaa596;">Confirms, sheets, tooltips and popovers: everything that floats over a screen, on desktop and phone.</p>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Confirm dialogs · desktop</h2></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Permanent choice · gold primary</span>
+        <div style="height: 300px; border-radius: 10px; background: rgba(5, 6, 9, 0.72); border: 1px solid #323748; display: grid; place-items: center;">
+          <div role="dialog" aria-modal="true" aria-labelledby="d1" style="width: 440px; box-sizing: border-box; padding: 24px; background: #161821; border: 1px solid #323748; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;"><span style="display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #2e2614; color: #e4b95b;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></span><h3 id="d1" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700;">Spend 3 character points?</h3></div>
+            <p style="margin: 0; color: #aaa596;">Strength +2 and Vitality +1 for Kaela.</p>
+            <p style="margin: 0; font-weight: 600;">Points are permanent. Only a Respec Scroll can undo them.</p>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;"><button style="min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Cancel</button><button style="min-height: 44px; padding: 0 16px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600;">Spend points</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Risk of loss · danger</span>
+        <div style="height: 300px; border-radius: 10px; background: rgba(5, 6, 9, 0.72); border: 1px solid #323748; display: grid; place-items: center;">
+          <div role="dialog" aria-modal="true" aria-labelledby="d2" style="width: 440px; box-sizing: border-box; padding: 24px; background: #161821; border: 1px solid #323748; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;"><span style="display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #3a1a19; color: #f2706a;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7c0 2.6 1.3 4.4 3 5.4V19a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3.6c1.7-1 3-2.8 3-5.4a7 7 0 0 0-7-7z"></path><circle cx="9.5" cy="10.5" r="1.5"></circle><circle cx="14.5" cy="10.5" r="1.5"></circle></svg></span><h3 id="d2" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700;">Upgrade without a seal?</h3></div>
+            <p style="margin: 0; color: #aaa596;">Iron Longsword +6 → +7 · success chance 47.8%</p>
+            <div style="padding: 10px 12px; border: 1px solid #f2706a; border-radius: 6px; background: #3a1a19; color: #f2706a; font-size: 14px; line-height: 20px;"><b style="font-weight: 600;">On failure: the item is destroyed,</b> and its six upgrades with it.</div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;"><button style="min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Use a seal</button><button style="min-height: 44px; padding: 0 16px; border: 1px solid #f2706a; border-radius: 6px; background: #3a1a19; color: #f2706a; font: inherit; font-weight: 600;">Upgrade anyway</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Destructive · type the name</span>
+        <div style="height: 320px; border-radius: 10px; background: rgba(5, 6, 9, 0.72); border: 1px solid #323748; display: grid; place-items: center;">
+          <div role="dialog" aria-modal="true" aria-labelledby="d3" style="width: 440px; box-sizing: border-box; padding: 24px; background: #161821; border: 1px solid #323748; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 14px;">
+            <h3 id="d3" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700;">Delete Oric?</h3>
+            <p style="margin: 0; color: #aaa596;">Lv 9. His 22 bag items and 10 equipped items go to the warehouse. 15 cells are free, so 7 items will be lost.</p>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa596;">Type Oric to confirm<input value="Ori" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit;"></label>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;"><button style="min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Keep Oric</button><button disabled style="min-height: 44px; padding: 0 16px; border: 1px solid #323748; border-radius: 6px; background: #161821; color: #aaa596; font: inherit; font-weight: 600;">Delete Oric</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Worth a second look · warning</span>
+        <div style="height: 320px; border-radius: 10px; background: rgba(5, 6, 9, 0.72); border: 1px solid #323748; display: grid; place-items: center;">
+          <div role="dialog" aria-modal="true" aria-labelledby="d4" style="width: 440px; box-sizing: border-box; padding: 24px; background: #161821; border: 1px solid #323748; border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;"><span style="display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #2a2140; color: #b79bff;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 3h12l4 6-10 12L2 9z"></path><path d="M2 9h20"></path></svg></span><h3 id="d4" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700;">Sell a rare item?</h3></div>
+            <p style="margin: 0; color: #aaa596;">Warding Seal ×1 sells for 2,400 gold. Rare Goods charges 9,250 for one.</p>
+            <div style="display: flex; gap: 8px; padding: 10px 12px; border: 1px solid #f0a04b; border-radius: 6px; color: #f0a04b; font-size: 14px; line-height: 20px;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3 2 20h20z"></path><path d="M12 10v4M12 17h.01"></path></svg><span><b style="font-weight: 600;">Warning:</b> rare items only drop from bosses and cursed objects.</span></div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;"><button style="min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Keep it</button><button style="min-height: 44px; padding: 0 16px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600;">Sell for 2,400</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Sheets and previews · phone</h2></div>
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Confirm as a bottom sheet</span>
+        <div style="width: 340px; height: 440px; border-radius: 20px; overflow: hidden; border: 1px solid #323748; background: rgba(5, 6, 9, 0.72); display: flex; flex-direction: column; justify-content: flex-end;">
+          <div role="dialog" aria-modal="true" aria-labelledby="s1" style="padding: 0 16px 20px; background: #161821; border-top: 1px solid #707896; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; gap: 12px;">
+            <div aria-hidden="true" style="width: 36px; height: 4px; margin: 8px auto 4px; border-radius: 999px; background: #707896;"></div>
+            <h3 id="s1" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700;">Spend 3 character points?</h3>
+            <p style="margin: 0; color: #aaa596;">Strength +2, Vitality +1. Points are permanent.</p>
+            <button style="min-height: 48px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600;">Spend points</button>
+            <button style="min-height: 44px; border: 0; border-radius: 6px; background: transparent; color: #aaa596; font: inherit; font-weight: 600;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Item sheet · tap an item</span>
+        <div style="width: 340px; height: 440px; border-radius: 20px; overflow: hidden; border: 1px solid #323748; background: rgba(5, 6, 9, 0.72); display: flex; flex-direction: column; justify-content: flex-end;">
+          <div role="dialog" aria-modal="true" aria-labelledby="s2" style="padding: 0 16px 16px; background: #161821; border-top: 1px solid #707896; border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; gap: 12px;">
+            <div aria-hidden="true" style="width: 36px; height: 4px; margin: 8px auto 4px; border-radius: 999px; background: #707896;"></div>
+            <div style="display: flex; gap: 12px;">
+              <span style="position: relative; display: grid; place-items: center; width: 44px; height: 94px; box-sizing: border-box; border: 1px solid #323748; border-radius: 6px; background: #1f222d; color: #aaa596;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"></path><path d="m13 19 6-6"></path><path d="m16 16 4 4"></path><path d="m19 21 2-2"></path></svg><span style="position: absolute; top: 2px; right: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700; color: #e4b95b;">+6</span></span>
+              <div><h3 id="s2" style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700;">Iron Longsword +6</h3><div style="font-size: 13px; line-height: 18px; color: #aaa596;">One-handed · Lv 10 · 3 cells</div><div style="margin-top: 6px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600;">Damage 53–67 · Strength +3</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button style="min-height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Upgrade</button>
+              <button style="min-height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">To warehouse</button>
+              <button style="min-height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Sell · 820</button>
+              <button style="min-height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600;">Compare</button>
+              <button style="grid-column: 1 / -1; min-height: 48px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600;">Equip</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Long-press preview · release to close</span>
+        <div style="position: relative; width: 340px; height: 440px; border-radius: 20px; overflow: hidden; border: 1px solid #323748; background: #0d0e13;">
+          <div aria-hidden="true" style="position: absolute; left: 24px; top: 250px; display: grid; grid-template-columns: repeat(5, 44px); gap: 6px; opacity: 0.35;"><span style="height: 44px; border: 1px dashed #323748; border-radius: 6px;"></span><span style="height: 44px; border: 1px dashed #323748; border-radius: 6px;"></span><span style="height: 44px; border: 2px solid #e4b95b; border-radius: 6px;"></span><span style="height: 44px; border: 1px dashed #323748; border-radius: 6px;"></span><span style="height: 44px; border: 1px dashed #323748; border-radius: 6px;"></span></div>
+          <div role="tooltip" style="position: absolute; left: 40px; top: 70px; width: 260px; box-sizing: border-box; padding: 14px; background: #161821; border: 1px solid #707896; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; font-weight: 700;">Ash Ember ×64</span>
+            <span style="font-size: 13px; color: #aaa596;">Upgrade material · stacks to 100</span>
+            <span style="font-size: 13px;">Drops from Ash Hound, Emberroot Vale</span>
+            <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #e4b95b;">Sells for 3 each</span>
+            <span aria-hidden="true" style="position: absolute; left: 118px; bottom: -7px; width: 12px; height: 12px; background: #161821; border-right: 1px solid #707896; border-bottom: 1px solid #707896; transform: rotate(45deg);"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Tooltips and popovers · desktop</h2></div>
+    <div style="display: grid; grid-template-columns: 320px 1fr 1fr; gap: 32px; align-items: start;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Item tooltip comparing with equipped</span>
+        <div role="tooltip" style="padding: 14px 16px; background: #161821; border: 1px solid #707896; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 8px;">
+          <div><div style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; font-weight: 700;">Ash Greataxe <span style="color: #b79bff;">+7</span></div><div style="font-size: 13px; color: #aaa596;">Two-handed · Lv 15 · vs. Warden's Greatsword +4</div></div>
+          <dl style="margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; line-height: 20px;">
+            <dt style="color: #aaa596;">Damage</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #8fd16a;">74–92 ▲ +12</dd>
+            <dt style="color: #aaa596;">Strength bonus</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #8fd16a;">+5 ▲ +2</dd>
+            <dt style="color: #aaa596;">Attack speed</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #f2706a;">0.9 / s ▼ −0.2</dd>
+            <dt style="color: #aaa596;">Crit chance</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #aaa596;">3% · same</dd>
+          </dl>
+          <div style="padding-top: 8px; border-top: 1px solid #323748; font-size: 13px; color: #f0a04b;">Kaela is Lv 14: can't equip until Lv 15</div>
+          <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; color: #aaa596;">Shift for details · right-click for actions</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 28px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Text tooltip with arrow</span>
+          <div style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+            <div role="tooltip" style="position: relative; max-width: 260px; padding: 8px 12px; background: #292d3b; border-radius: 6px; font-size: 13px; line-height: 18px;">Drop rate after the level gap: Kaela is 2 levels above Ash Hound.<span aria-hidden="true" style="position: absolute; left: 20px; bottom: -5px; width: 10px; height: 10px; background: #292d3b; transform: rotate(45deg);"></span></div>
+            <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #1f222d; color: #f0a04b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">Drops 80%</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Popover menu from the gold balance</span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; width: 240px;">
+            <button aria-expanded="true" aria-haspopup="menu" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: #2e2614; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700;"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>48,210</button>
+            <div role="menu" style="width: 240px; padding: 6px; box-sizing: border-box; background: #161821; border: 1px solid #707896; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);">
+              <button role="menuitem" style="display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 6px; background: #292d3b; color: #eee8d9; font: inherit; text-align: left;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>Settings</button>
+              <button role="menuitem" style="display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #eee8d9; font: inherit; text-align: left;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 19h16"></path></svg>Export save</button>
+              <button role="menuitem" style="display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #eee8d9; font: inherit; text-align: left;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m8 8-5 4 5 4M16 8l5 4-5 4"></path></svg>Dev tools<span style="margin-left: auto; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; color: #aaa596;">dev build</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Enemy hover card</span>
+        <div role="tooltip" style="padding: 14px 16px; background: #161821; border: 1px solid #707896; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; font-weight: 700;">Mire Wisp</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 6px; box-sizing: border-box; border: 1px solid #707896; border-radius: 3px; background: #1f222d; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">Lv 7</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid #323748; border-radius: 3px; background: #1f222d; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600;">Normal</span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;"><span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 3px; background: #0f2e2b; color: #5cd6c6; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600;">Life steal 6%</span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #1f222d; color: #f2706a; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">Drops 30% for Kaela</span></div>
+          <dl style="margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 13px;"><dt style="color: #aaa596;">Health</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700;">210</dd><dt style="color: #aaa596;">Kills</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700;">64 · rates at 100</dd><dt style="color: #aaa596;">Kaela absorbed</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #5cd6c6;">1.1% of 6.0%</dd></dl>
+          <a href="Bestiary.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none;">Open in bestiary</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":2140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

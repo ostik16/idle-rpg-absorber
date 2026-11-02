@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>World</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; overflow: hidden; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 8px 0 16px; box-sizing: border-box; background: #161821; border-bottom: 1px solid #323748;">
+    <h1 style="flex: 1; margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: 0.02em;">World</h1>
+    <button aria-label="Gold 48,210. Open menu" style="display: flex; align-items: center; height: 44px; padding: 0 4px; border: 0; background: transparent; cursor: pointer;"><span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 8px; border-radius: 999px; background: #2e2614; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>48,210</span></button>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+
+    <div style="flex: none; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="flex: 1; font-size: 13px; line-height: 18px; color: #aaa596;">Drop rates and travel times for</span>
+      <button aria-label="Choose character: Kaela, level 14" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px 0 6px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; cursor: pointer;">
+        <span aria-hidden="true" style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 700;">K</span>
+        <span style="font-weight: 600;">Kaela</span>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #e4b95b;">Lv 14</span>
+        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: #aaa596;"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+
+    <sc-for list="{{areas}}" as="ar" hint-placeholder-count="9">
+      <a href="World-Area.dc.html" style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #161821; border: 1px solid {{ar.edge}}; border-radius: 10px; color: #eee8d9; text-decoration: none;">
+        <span style="display: flex; align-items: baseline; gap: 8px;">
+          <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em;">{{ar.name}}</span>
+          <span style="flex: 1; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #aaa596;">Lv {{ar.range}}</span>
+          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #1f222d; color: {{ar.dropColor}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ar.drop}}</span>
+        </span>
+        <span aria-hidden="true" style="position: relative; display: block; height: 4px; border-radius: 999px; background: #2a2e3b;">
+          <span style="position: absolute; top: 0; bottom: 0; left: {{ar.barLeft}}; width: {{ar.barWidth}}; border-radius: 999px; background: {{ar.dropColor}};"></span>
+          <span style="position: absolute; top: -4px; bottom: -4px; left: 44.8%; width: 2px; margin-left: -1px; border-radius: 1px; background: #eee8d9;"></span>
+        </span>
+        <span style="display: flex; align-items: center; gap: 12px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; line-height: 18px; font-weight: 600; color: #aaa596; font-variant-numeric: tabular-nums;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 3c-1.7 0-3 2-3 4.5 0 1.8.6 3.6 1.5 5h3c.9-1.4 1.5-3.2 1.5-5C11 5 9.7 3 8 3z"></path><path d="M6.5 15.5h3V17a1.5 1.5 0 0 1-3 0z"></path><path d="M16 7c1.7 0 3 2 3 4.5 0 1.8-.6 3.6-1.5 5h-3c-.9-1.4-1.5-3.2-1.5-5C13 9 14.3 7 16 7z"></path><path d="M14.5 19.5h3V21a1.5 1.5 0 0 1-3 0z"></path></svg>{{ar.walk}}</span>
+          <sc-if value="{{ar.hasPort}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px;"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><ellipse cx="12" cy="12" rx="6" ry="9"></ellipse><ellipse cx="12" cy="12" rx="2.5" ry="5"></ellipse></svg><span style="color: #e4b95b;">{{ar.port}}</span></span></sc-if>
+          <span style="flex: 1; text-align: right; color: {{ar.threatColor}};">{{ar.threat}}</span>
+        </span>
+        <sc-if value="{{ar.hasHere}}" hint-placeholder-val="{{ false }}">
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: #aaa596;">
+            <span aria-hidden="true" style="display: grid; place-items: center; width: 22px; height: 22px; box-sizing: border-box; border: 1px solid #707896; border-radius: 4px; background: #292d3b; color: #eee8d9; font-family: 'Cinzel', Georgia, serif; font-size: 12px; font-weight: 700;">{{ar.hereInitial}}</span>{{ar.here}}
+          </span>
+        </sc-if>
+      </a>
+    </sc-for>
+    <p style="flex: none; margin: 4px 2px 0; font-size: 13px; line-height: 18px; color: #aaa596;">Each level Kaela is above an enemy cuts its drop rate by 10 points. The white mark on each bar is Kaela's level.</p>
+  </main>
+
+  <nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 64px; background: #161821; border-top: 1px solid #323748;">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18 14.3c2 .7 3.5 2.8 3.5 5.7"></path></svg>Roster</a>
+    <a href="World.dc.html" aria-current="page" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #e4b95b; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><span style="position: absolute; top: -1px; left: 32%; right: 32%; height: 2px; border-radius: 0 0 2px 2px; background: #e4b95b;"></span><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5z"></path><path d="M9 4v13.5M15 6.5V20"></path></svg>World</a>
+    <a href="City.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 21V9h3V6h2v3h2V4h2v5h2V6h2v3h3v12z"></path><path d="M10 21v-4a2 2 0 0 1 4 0v4"></path></svg>City</a>
+    <a href="Bestiary.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2.5z"></path><path d="M4 19.5A2 2 0 0 0 6 21h14v-4"></path></svg>Bestiary</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var LV = 14;
+    function mod(e) {
+      var d = LV - e;
+      if (d >= 0) return Math.max(0, 1 - 0.1 * d);
+      if (d >= -19) return 1;
+      return 0;
+    }
+    function area(name, lo, hi, walk, port, here, hereInitial) {
+      var a = Math.round(mod(lo) * 100), b = Math.round(mod(hi) * 100);
+      var mn = Math.min(a, b), mx = Math.max(a, b);
+      var dropColor = mn === 100 ? '#8fd16a' : mx <= 10 ? '#f2706a' : '#f0a04b';
+      var above = hi - LV;
+      var threat = above >= 10 ? 'Up to +' + above + ' levels' : above >= 4 ? 'Up to +' + above + ' levels' : above > 0 ? 'Up to +' + above : 'All below Kaela';
+      var threatColor = above >= 10 ? '#f2706a' : above >= 4 ? '#f0a04b' : '#aaa596';
+      return {
+        name: name, range: lo + '–' + hi,
+        drop: mn === mx ? 'Drops ' + mx + '%' : 'Drops ' + mn + '–' + mx + '%',
+        dropColor: dropColor,
+        barLeft: ((lo - 1) / 29 * 100).toFixed(1) + '%',
+        barWidth: ((hi - lo) / 29 * 100).toFixed(1) + '%',
+        walk: walk, hasPort: !!port, port: port || '',
+        threat: threat, threatColor: threatColor,
+        hasHere: !!here, here: here || '', hereInitial: hereInitial || '',
+        edge: hereInitial === 'K' ? '#b88a2e' : '#323748'
+      };
+    }
+    return {
+      areas: [
+        area('Mossfang Glade', 1, 5, '2m walk'),
+        area('Ashen Ford', 3, 8, '4m walk', null, 'Brann is farming here', 'B'),
+        area('Hollow Barrows', 5, 10, '6m walk', null, 'Oric fell here 4m ago', 'O'),
+        area('Saltmarsh Reach', 8, 13, '9m walk'),
+        area('Emberroot Vale', 10, 16, '12m walk', null, 'Kaela is farming here', 'K'),
+        area('Thornwatch Ruins', 14, 20, '16m walk', '800'),
+        area('Frostmere Pass', 18, 24, '21m walk', '1,200', 'Ysolde arrives in 3m 12s', 'Y'),
+        area('Sunken Crypts', 22, 28, '27m walk', '1,800'),
+        area('Blightspire', 25, 30, '34m walk', '2,500')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

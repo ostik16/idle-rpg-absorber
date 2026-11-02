@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components · Actions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+input::placeholder{color:#aaa596}
+input[type=radio],input[type=checkbox]{accent-color:#e4b95b}
+</style>
+</helmet>
+<div style="width: 1200px; height: 1760px; box-sizing: border-box; padding: 48px; display: flex; flex-direction: column; gap: 36px; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px;">
+    <h1 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: 0.02em;">Actions</h1>
+    <p style="margin: 0; font-size: 15px; color: #aaa596;">Buttons, steppers, switches, segmented controls, tabs and form fields, in every state the game uses.</p>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Buttons · variants and states</h2></div>
+    <div style="display: grid; grid-template-columns: 120px repeat(5, minmax(0, 1fr)); gap: 16px 20px; align-items: center;">
+      <span></span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Default</span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Hover</span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Pressed</span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Keyboard focus</span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Disabled</span>
+
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #eee8d9;">Primary</span>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600; cursor: pointer;">Upgrade to +7</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #f0cd7f; border-radius: 6px; background: #f0cd7f; color: #1a1307; font: inherit; font-weight: 600; cursor: pointer;">Upgrade to +7</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #b88a2e; border-radius: 6px; background: #b88a2e; color: #1a1307; font: inherit; font-weight: 600; cursor: pointer;">Upgrade to +7</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600; outline: 2px solid #e4b95b; outline-offset: 2px; cursor: pointer;">Upgrade to +7</button>
+      <button disabled style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #323748; border-radius: 6px; background: #161821; color: #aaa596; font: inherit; font-weight: 600; cursor: not-allowed;">Upgrade to +7</button>
+
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #eee8d9;">Default</span>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Return to city</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #292d3b; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Return to city</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #eee8d9; border-radius: 6px; background: #292d3b; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Return to city</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600; outline: 2px solid #e4b95b; outline-offset: 2px; cursor: pointer;">Return to city</button>
+      <button disabled style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #323748; border-radius: 6px; background: #161821; color: #aaa596; font: inherit; font-weight: 600; cursor: not-allowed;">Return to city</button>
+
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #eee8d9;">Ghost</span>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #aaa596; font: inherit; font-weight: 600; cursor: pointer;">Details</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Details</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 6px; background: #292d3b; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Details</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #aaa596; font: inherit; font-weight: 600; outline: 2px solid #e4b95b; outline-offset: 2px; cursor: pointer;">Details</button>
+      <button disabled style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #707896; font: inherit; font-weight: 600; cursor: not-allowed;">Details</button>
+
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #eee8d9;">Danger</span>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #f2706a; border-radius: 6px; background: #3a1a19; color: #f2706a; font: inherit; font-weight: 600; cursor: pointer;">Upgrade without a seal</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #f2706a; border-radius: 6px; background: #4a2120; color: #f2706a; font: inherit; font-weight: 600; cursor: pointer;">Upgrade without a seal</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #f2706a; border-radius: 6px; background: #5a2826; color: #f2706a; font: inherit; font-weight: 600; cursor: pointer;">Upgrade without a seal</button>
+      <button style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #f2706a; border-radius: 6px; background: #3a1a19; color: #f2706a; font: inherit; font-weight: 600; outline: 2px solid #e4b95b; outline-offset: 2px; cursor: pointer;">Upgrade without a seal</button>
+      <button disabled style="justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #323748; border-radius: 6px; background: #161821; color: #aaa596; font: inherit; font-weight: 600; cursor: not-allowed;">Upgrade without a seal</button>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Buttons · sizes, icons and badges</h2></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;">Sell</button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Size 44 · touch</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button style="display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Sell</button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Small 36 · desktop only</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-weight: 600; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5z"></path><path d="M9 4v13.5M15 6.5V20"></path></svg>Change area</button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Leading icon</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button aria-label="Move 2 selected to the warehouse" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>To warehouse<span style="display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: #1a1307; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 700;">2</span></button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Icon and count badge</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; gap: 8px;">
+          <button aria-label="Loot filter" style="display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 5h18l-7 8.5V20l-4-2v-4.5z"></path></svg></button>
+          <button aria-label="Return to city" style="display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg></button>
+          <button aria-label="Add a point to Strength" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px solid #e4b95b; border-radius: 6px; background: #1f222d; color: #e4b95b; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+        </div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Icon-only 44 · bordered, bare, add</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 358px;">
+        <button style="display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; font-weight: 600; cursor: pointer;">Collect and continue</button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Block · bottom of a phone screen or sheet</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border: 1px solid #e4b95b; border-radius: 6px; background: #e4b95b; color: #1a1307; font: inherit; cursor: pointer;"><span style="font-weight: 700;">Send Kaela</span><span style="font-size: 13px; line-height: 16px; font-weight: 500;">Arrives in 16m</span></button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Two-line · action and consequence</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Stepper and switch</h2></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; border: 1px solid #707896; border-radius: 6px; background: #1f222d;"><button disabled aria-label="One fewer Mana Potion I" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #707896; cursor: not-allowed;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span style="min-width: 28px; text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700; color: #aaa596;">0</span><button aria-label="One more Mana Potion I" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Stepper · 0, minus disabled</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; border: 1px solid #707896; border-radius: 6px; background: #1f222d;"><button aria-label="One fewer Health Potion I" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span style="min-width: 28px; text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700; color: #e4b95b;">14</span><button aria-label="One more Health Potion I" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Stepper · active</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 12px;"><span id="sw-on" style="font-weight: 600;">Use a Warding Seal</span><button role="switch" aria-checked="true" aria-labelledby="sw-on" style="position: relative; width: 52px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer;"><span style="position: absolute; left: 0; right: 0; top: 8px; height: 28px; box-sizing: border-box; border: 1px solid #e4b95b; border-radius: 999px; background: #e4b95b;"></span><span style="position: absolute; top: 12px; left: 28px; width: 20px; height: 20px; border-radius: 50%; background: #1a1307;"></span></button></div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Switch · on</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 12px;"><span id="sw-off" style="font-weight: 600;">Auto-sell junk</span><button role="switch" aria-checked="false" aria-labelledby="sw-off" style="position: relative; width: 52px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer;"><span style="position: absolute; left: 0; right: 0; top: 8px; height: 28px; box-sizing: border-box; border: 1px solid #707896; border-radius: 999px; background: #292d3b;"></span><span style="position: absolute; top: 12px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #aaa596;"></span></button></div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Switch · off</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 12px; opacity: 1;"><span id="sw-dis" style="font-weight: 600; color: #aaa596;">Auto-sell junk · unlocks later</span><button role="switch" aria-checked="false" aria-labelledby="sw-dis" disabled style="position: relative; width: 52px; height: 44px; padding: 0; border: 0; background: transparent; cursor: not-allowed;"><span style="position: absolute; left: 0; right: 0; top: 8px; height: 28px; box-sizing: border-box; border: 1px dashed #707896; border-radius: 999px; background: transparent;"></span><span style="position: absolute; top: 12px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #323748;"></span></button></div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Switch · locked</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Segmented control and tabs</h2></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 260px;">
+        <div role="radiogroup" aria-label="How to travel" style="display: flex; gap: 2px; padding: 3px; border: 1px solid #323748; border-radius: 6px; background: #1f222d;">
+          <button role="radio" aria-checked="true" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: #292d3b; box-shadow: inset 0 0 0 1px #707896; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Walk</button>
+          <button role="radio" aria-checked="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Teleporter</button>
+        </div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Two segments</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 390px;">
+        <div role="tablist" aria-label="Character view" style="display: flex; gap: 2px; padding: 3px; border: 1px solid #323748; border-radius: 6px; background: #1f222d;">
+          <button role="tab" aria-selected="true" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: #292d3b; box-shadow: inset 0 0 0 1px #707896; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Farm</button>
+          <button role="tab" aria-selected="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Stats <span aria-label="3 points to spend" style="margin-left: 4px; display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 999px; background: #e4b95b; color: #1a1307; font-size: 12px; font-weight: 700;">3</span></button>
+          <button role="tab" aria-selected="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Gear</button>
+          <button role="tab" aria-selected="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Spells</button>
+        </div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Four segments · with badge</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 390px;">
+        <div role="tablist" aria-label="Shop" style="display: flex; gap: 2px; padding: 3px; border: 1px solid #323748; border-radius: 6px; background: #1f222d;">
+          <button role="tab" aria-selected="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Buy</button>
+          <button role="tab" aria-selected="true" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: #292d3b; box-shadow: inset 0 0 0 1px #707896; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Sell</button>
+          <button role="tab" aria-selected="false" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">Buyback · 2</button>
+        </div>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Tabs with counts</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Fields and pickers</h2></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 300px;">
+        <label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #aaa596;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search enemies</span><input type="search" placeholder="Search 23 known enemies" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; color: #eee8d9; font: inherit;"></label>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Search · empty</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 300px;">
+        <label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 4px 0 12px; box-sizing: border-box; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #aaa596;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search enemies</span><input type="search" value="wisp" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; color: #eee8d9; font: inherit;"><button aria-label="Clear search" style="display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 4px; background: transparent; color: #aaa596; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></label>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Search · filled, with clear</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 300px;">
+        <label style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 1px solid #e4b95b; border-radius: 6px; background: #1f222d; color: #eee8d9; outline: 2px solid #e4b95b; outline-offset: 2px;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search enemies</span><input type="search" value="Ash" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; color: #eee8d9; font: inherit;"></label>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Search · focused</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+        <button aria-label="Choose character: Kaela, level 14" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px 0 6px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; cursor: pointer;"><span aria-hidden="true" style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 700;">K</span><span style="font-weight: 600;">Kaela</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 700; color: #e4b95b;">Lv 14</span><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: #aaa596;"><path d="m6 9 6 6 6-6"></path></svg></button>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Character picker chip</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 300px;">
+        <label style="display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Return when health is below</span>
+          <span style="position: relative; display: block;"><select style="width: 100%; min-height: 44px; padding: 0 40px 0 12px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; appearance: none; cursor: pointer;"><option>30%</option><option>40%</option><option>50%</option><option>Never</option></select><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="position: absolute; right: 12px; top: 14px; color: #aaa596; pointer-events: none;"><path d="m6 9 6 6 6-6"></path></svg></span></label>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Select · closed, with label</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span><h2 style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Radio rows and checkbox rows</h2></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 358px;">
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px;">
+          <legend style="padding: 0; margin-bottom: 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Target</legend>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 0 10px; border: 1px solid #e4b95b; border-radius: 6px; background: #1f222d; cursor: pointer;"><input type="radio" name="t" checked style="width: 18px; height: 18px; margin: 0;"><span style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Any enemy</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">Most fights per hour</span></span><span></span></label>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 0 10px; border: 1px solid #323748; border-radius: 6px; background: transparent; cursor: pointer;"><input type="radio" name="t" style="width: 18px; height: 18px; margin: 0;"><span style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Bramble Witch · Lv 19</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">About half as many fights</span></span><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 3px; background: #0f2e2b; color: #5cd6c6; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600;">Poison affinity 10%</span></label>
+        </fieldset>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Radio rows · selected and unselected</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 358px;">
+        <fieldset style="margin: 0; padding: 4px 16px; border: 1px solid #323748; border-radius: 10px; background: #161821;">
+          <legend style="padding: 0 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Loot filter · picks up</legend>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid #323748; cursor: pointer;"><input type="checkbox" checked style="width: 18px; height: 18px; margin: 0;"><span style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Equipment Lv 10 and up</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">Lower levels are left on the ground</span></span></label>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid #323748; cursor: pointer;"><input type="checkbox" checked style="width: 18px; height: 18px; margin: 0;"><span style="font-weight: 600;">Upgrade materials</span></label>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid #323748; cursor: pointer;"><input type="checkbox" checked style="width: 18px; height: 18px; margin: 0;"><span style="font-weight: 600; color: #b79bff;">Rare items</span></label>
+          <label style="display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 48px; cursor: pointer;"><input type="checkbox" style="width: 18px; height: 18px; margin: 0;"><span style="font-weight: 600;">Potions</span></label>
+        </fieldset>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Checkbox rows · loot filter rules</span>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":1760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

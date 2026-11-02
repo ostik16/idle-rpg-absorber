@@ -1,0 +1,30 @@
+<!-- @dsCard group="Overlays" height=420 subtitle="Item details as a phone bottom sheet" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sheet preview</title></head>
+<body>
+<div class="ab-scrim" style="width: 390px; height: 420px; margin: 0 auto;">
+  <section class="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="ab-sheet__grip"></div>
+    <div style="display: flex; gap: var(--space-3); align-items: flex-start;">
+      <span class="ab-slot ab-slot--h2" style="height: 94px;"><svg class="ab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"></path><path d="m13 19 6-6"></path><path d="m16 16 4 4"></path><path d="m19 21 2-2"></path></svg><span class="ab-slot__plus ab-slot__plus--gold">+4</span></span>
+      <div style="flex: 1;">
+        <h2 id="sheet-title" class="ab-title" style="margin: 0;">Iron Longsword +4</h2>
+        <div class="ab-c-muted" style="font-size: 13px; line-height: 18px;">One-handed · Lv 10 · 3 slots</div>
+        <div style="display: flex; gap: 6px; margin-top: var(--space-2);"><span class="ab-tag">Strength +3</span><span class="ab-tag">Crit 2%</span></div>
+      </div>
+    </div>
+    <dl class="ab-dl" style="margin-top: var(--space-4);">
+      <dt>Damage</dt><dd>48–61</dd>
+      <dt>Scales with</dt><dd>Strength 22 · you 26</dd>
+      <dt>Sells for</dt><dd class="ab-c-gold">640</dd>
+    </dl>
+    <div class="ab-sheet__actions">
+      <button class="ab-btn">Sell</button>
+      <button class="ab-btn">Upgrade</button>
+      <button class="ab-btn ab-btn--primary">Equip</button>
+    </div>
+  </section>
+</div>
+</body>
+</html>

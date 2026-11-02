@@ -1,0 +1,63 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-02T17:55:00Z" },
+  "title": "Absorber Screens",
+  "launch": { "view": "canvas" },
+  "pages": [{ "id": "screens", "name": "Screens" }, { "id": "components", "name": "Components" }],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "Roster", "is_interactive": true, "radius": 24 },
+    "Character-Farm.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "Character · Farm", "is_interactive": true, "radius": 24 },
+    "Character-Stats.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "Character · Stats", "is_interactive": true, "radius": 24 },
+    "Character-Gear.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 844, "title": "Character · Gear", "is_interactive": true, "radius": 24 },
+    "Character-Spells.dc.html": { "x": 1880, "y": 0, "w": 390, "h": 844, "title": "Character · Spells", "is_interactive": true, "radius": 24 },
+    "Offline.dc.html": { "x": 2350, "y": 0, "w": 390, "h": 844, "title": "Welcome back (offline summary)", "is_interactive": true, "radius": 24 },
+    "World.dc.html": { "x": 0, "y": 1224, "w": 390, "h": 844, "title": "World", "is_interactive": true, "radius": 24 },
+    "World-Area.dc.html": { "x": 470, "y": 1224, "w": 390, "h": 844, "title": "World · area sheet", "is_interactive": true, "radius": 24 },
+    "City.dc.html": { "x": 940, "y": 1224, "w": 390, "h": 844, "title": "City", "is_interactive": true, "radius": 24 },
+    "Shop.dc.html": { "x": 1410, "y": 1224, "w": 390, "h": 844, "title": "Shop (Alchemist): buy, sell, buyback", "is_interactive": true, "radius": 24 },
+    "Upgrade.dc.html": { "x": 1880, "y": 1224, "w": 390, "h": 844, "title": "Upgrade smith", "is_interactive": true, "radius": 24 },
+    "Warehouse.dc.html": { "x": 2350, "y": 1224, "w": 390, "h": 844, "title": "Warehouse: bag and warehouse together", "is_interactive": true, "radius": 24 },
+    "Bestiary.dc.html": { "x": 2820, "y": 1224, "w": 390, "h": 844, "title": "Bestiary", "is_interactive": true, "radius": 24 },
+    "Desktop-Roster.dc.html": { "x": 0, "y": 2448, "w": 1440, "h": 940, "title": "Desktop · Roster and character", "expand": "fill", "is_interactive": true },
+    "Desktop-Warehouse.dc.html": { "x": 1520, "y": 2448, "w": 1440, "h": 660, "title": "Desktop · Warehouse transfer", "expand": "fill", "is_interactive": true },
+    "Comp-Actions.dc.html": { "x": 0, "y": 0, "w": 1200, "h": 1760, "title": "Actions and inputs", "page": "components" },
+    "Comp-Navigation.dc.html": { "x": 1280, "y": 0, "w": 1200, "h": 1320, "title": "Navigation", "page": "components" },
+    "Comp-Status.dc.html": { "x": 2560, "y": 0, "w": 1200, "h": 2140, "title": "Status and data", "page": "components" },
+    "Comp-Items.dc.html": { "x": 0, "y": 2540, "w": 1200, "h": 2600, "title": "Items, characters and rows", "page": "components" },
+    "Comp-Overlays.dc.html": { "x": 1280, "y": 2540, "w": 1200, "h": 2140, "title": "Overlays: confirms, sheets, tooltips", "page": "components" },
+    "Comp-Feedback.dc.html": { "x": 2560, "y": 2540, "w": 1200, "h": 2360, "title": "Feedback: notifications, banners, empty states", "page": "components" }
+  },
+  "order": [
+    "Main.dc.html",
+    "Character-Farm.dc.html",
+    "Character-Stats.dc.html",
+    "Character-Gear.dc.html",
+    "Character-Spells.dc.html",
+    "Offline.dc.html",
+    "World.dc.html",
+    "World-Area.dc.html",
+    "City.dc.html",
+    "Shop.dc.html",
+    "Upgrade.dc.html",
+    "Warehouse.dc.html",
+    "Bestiary.dc.html",
+    "Desktop-Roster.dc.html",
+    "Desktop-Warehouse.dc.html",
+    "Comp-Actions.dc.html",
+    "Comp-Navigation.dc.html",
+    "Comp-Status.dc.html",
+    "Comp-Items.dc.html",
+    "Comp-Overlays.dc.html",
+    "Comp-Feedback.dc.html"
+  ],
+  "notes": {
+    "rowPhoneA": { "x": 0, "y": -300, "text": "Phone · roster and character", "kind": "title1", "maxW": 2740 },
+    "rowPhoneB": { "x": 0, "y": 944, "text": "Phone · world, city and bestiary", "kind": "title1", "maxW": 3210 },
+    "rowDesktop": { "x": 0, "y": 2168, "text": "Desktop · 900px and wider", "kind": "title1", "maxW": 2960 },
+    "compRowA": { "x": 0, "y": -300, "text": "Components · actions, navigation, status", "kind": "title1", "maxW": 3760, "page": "components" },
+    "compRowB": { "x": 0, "y": 2240, "text": "Components · items, overlays, feedback", "kind": "title1", "maxW": 3760, "page": "components" }
+  },
+  "designSystems": [
+    { "title": "Idle RPG Absorber", "namespace": "absorber", "artifact": "https://claude.ai/artifact/3n12SGkJ1VWxMXAQ8HMZrb", "version": "1793641655-3b25", "copiedAt": "2026-11-02T17:55:00Z" }
+  ]
+}

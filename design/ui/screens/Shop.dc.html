@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alchemist</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; overflow: hidden; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 56px; padding: 0 8px 0 4px; box-sizing: border-box; background: #161821; border-bottom: 1px solid #323748;">
+    <a href="City.dc.html" aria-label="Back to city" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 6px; color: #eee8d9;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+    <h1 style="flex: 1; margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: 0.02em;">Alchemist</h1>
+    <span aria-label="Gold" style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 8px; border-radius: 999px; background: #2e2614; color: #e4b95b; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>{{goldText}}</span>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+
+    <div style="flex: none; display: flex; align-items: center; gap: 8px;">
+      <span style="flex: 1; font-size: 13px; line-height: 18px; color: #aaa596;">Fixed stock. Buys any item.</span>
+      <button aria-label="Shopping as Tamsin. Choose character" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px 0 6px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; cursor: pointer;">
+        <span aria-hidden="true" style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 700;">T</span>
+        <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 16px;"><span style="font-weight: 600;">Tamsin</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">Lv 3 · bag {{bagUsed}}/36</span></span>
+        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: #aaa596;"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+    </div>
+
+    <div role="tablist" aria-label="Shop" style="flex: none; display: flex; gap: 2px; padding: 3px; border: 1px solid #323748; border-radius: 6px; background: #1f222d;">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="flex: 1; min-height: 38px; border: 0; border-radius: 4px; background: {{t.bg}}; box-shadow: {{t.ring}}; color: {{t.fg}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{hasMsg}}" hint-placeholder-val="{{ false }}">
+      <p role="status" style="flex: none; margin: 0; padding: 10px 12px; border: 1px solid {{msgEdge}}; border-radius: 6px; font-size: 13px; line-height: 18px; color: {{msgColor}};">{{msg}}</p>
+    </sc-if>
+
+    <sc-if value="{{isBuy}}" hint-placeholder-val="{{ true }}">
+      <section aria-label="Stock" style="flex: none; padding: 2px 16px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+        <sc-for list="{{stock}}" as="s" hint-placeholder-count="5">
+          <div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid {{s.rule}};">
+            <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px solid #323748; border-radius: 6px; background: #1f222d; color: {{s.iconColor}};"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M9 3h6"></path><path d="M10 3v5.5L4.8 17.2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.2-3.8L14 8.5V3"></path><path d="M7 15h10"></path></svg></span>
+            <div style="display: flex; flex-direction: column; min-width: 0;">
+              <span style="font-weight: 600;">{{s.name}}</span>
+              <span style="font-size: 13px; line-height: 18px; color: #aaa596;">{{s.effect}}</span>
+              <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; line-height: 18px; font-weight: 700;">
+                <span style="display: inline-flex; align-items: center; gap: 4px; color: #e4b95b;"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>{{s.price}} each</span>
+                <sc-if value="{{s.lvWarn}}" hint-placeholder-val="{{ false }}"><span style="color: #f0a04b;">{{s.lvText}}</span></sc-if>
+                <sc-if value="{{s.hasHeld}}" hint-placeholder-val="{{ false }}"><span style="font-weight: 600; color: #aaa596;">{{s.held}}</span></sc-if>
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; border: 1px solid #707896; border-radius: 6px; background: #1f222d;">
+              <button onClick="{{s.minus}}" disabled="{{s.minusDisabled}}" aria-label="{{s.minusLabel}}" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: {{s.minusFg}}; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+              <span aria-live="polite" style="min-width: 28px; text-align: center; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: {{s.qtyColor}};">{{s.qty}}</span>
+              <button onClick="{{s.plus}}" aria-label="{{s.plusLabel}}" style="display: grid; place-items: center; width: 40px; height: 44px; border: 0; background: transparent; color: #eee8d9; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+      <button onClick="{{fill}}" style="flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg>Fill to restock targets (health 20, mana 10)</button>
+    </sc-if>
+
+    <sc-if value="{{isSell}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="sell-h" style="flex: none; padding: 12px 16px 16px; background: #161821; border: 1px solid #323748; border-radius: 10px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <h2 id="sell-h" style="margin: 0; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Tamsin's bag</h2>
+          <span style="flex: 1; text-align: right; font-size: 13px; line-height: 18px; color: #aaa596;">Tap items to sell</span>
+        </div>
+        <div style="position: relative; width: 294px; margin: 0 auto;">
+          <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(6, 44px); grid-auto-rows: 44px; gap: 6px;">
+            <sc-for list="{{bagCells}}" as="cell" hint-placeholder-count="36"><span style="box-sizing: border-box; border: 1px dashed #323748; border-radius: 6px;"></span></sc-for>
+          </div>
+          <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(6, 44px); grid-template-rows: repeat(6, 44px); gap: 6px;">
+            <sc-for list="{{bagItems}}" as="it" hint-placeholder-count="3">
+              <button aria-label="{{it.label}}" aria-pressed="{{it.pressed}}" onClick="{{it.pick}}" style="grid-column: {{it.col}}; grid-row: {{it.row}}; position: relative; display: grid; place-items: center; padding: 0; box-sizing: border-box; border: {{it.border}}; border-radius: 6px; background: #1f222d; color: {{it.fg}}; cursor: pointer;">
+                <sc-if value="{{it.flask}}" hint-placeholder-val="{{ true }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 3h6"></path><path d="M10 3v5.5L4.8 17.2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.2-3.8L14 8.5V3"></path><path d="M7 15h10"></path></svg></sc-if>
+                <sc-if value="{{it.sword}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"></path><path d="m13 19 6-6"></path><path d="m16 16 4 4"></path><path d="m19 21 2-2"></path></svg></sc-if>
+                <sc-if value="{{it.ore}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m12 3 7.5 5.5-2.5 10.5h-10L4.5 8.5z"></path><path d="m4.5 8.5 7.5 3.5 7.5-3.5M12 12v7"></path></svg></sc-if>
+                <sc-if value="{{it.ring}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="14.5" r="6"></circle><path d="m9.5 6 2.5-3 2.5 3-2.5 2.5z"></path></svg></sc-if>
+                <sc-if value="{{it.shield}}" hint-placeholder-val="{{ false }}"><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3 4 6v6c0 4.4 3.4 7.6 8 9 4.6-1.4 8-4.6 8-9V6z"></path></svg></sc-if>
+                <sc-if value="{{it.hasCount}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 4px; bottom: 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; color: #eee8d9; font-variant-numeric: tabular-nums;">{{it.count}}</span></sc-if>
+                <sc-if value="{{it.sel}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: 2px; left: 2px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #e4b95b; color: #1a1307;"><svg class="ic" viewBox="0 0 24 24" width="10" height="10" style="stroke-width: 3;"><path d="m5 12 5 5 9-10"></path></svg></span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{hasSel}}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 4px; padding-top: 10px; border-top: 1px solid #323748;">
+            <sc-for list="{{selList}}" as="x" hint-placeholder-count="2">
+              <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px; line-height: 20px;"><span>{{x.name}}</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #e4b95b;">{{x.value}}</span></div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <p style="margin: 0; font-size: 13px; line-height: 18px; color: #aaa596;">Sold items can be bought back for one hour.</p>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isBack}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="back-h" style="flex: none; padding: 12px 16px 4px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+        <h2 id="back-h" style="margin: 0 0 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Sold in the last hour</h2>
+        <sc-for list="{{buyback}}" as="b" hint-placeholder-count="2">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 60px; border-bottom: 1px solid {{b.rule}};">
+            <span style="display: flex; flex-direction: column; min-width: 0;"><span style="font-weight: 600;">{{b.name}}</span><span style="font-size: 13px; line-height: 18px; color: #aaa596;">Sold {{b.when}}</span></span>
+            <button onClick="{{b.take}}" aria-label="{{b.label}}" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid #707896; border-radius: 6px; background: #1f222d; color: #eee8d9; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Buy back · <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #e4b95b;">{{b.value}}</span></button>
+          </div>
+        </sc-for>
+        <sc-if value="{{bbEmpty}}" hint-placeholder-val="{{ false }}"><p style="margin: 8px 0 12px; font-size: 13px; line-height: 18px; color: #aaa596;">Nothing sold in the last hour.</p></sc-if>
+      </section>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{isBuy}}" hint-placeholder-val="{{ true }}">
+    <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; background: #161821; border-top: 1px solid #707896;">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+        <span style="font-weight: 600;">{{cartText}}</span>
+        <span style="font-size: 13px; line-height: 18px; color: {{bagAfterColor}};">Bag after: {{bagAfter}}/36 · gold after: {{goldAfter}}</span>
+      </div>
+      <button onClick="{{buy}}" disabled="{{buyDisabled}}" style="min-height: 44px; padding: 0 16px; border: 1px solid {{buyBorder}}; border-radius: 6px; background: {{buyBg}}; color: {{buyFg}}; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer;">Buy · {{costText}}</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{isSell}}" hint-placeholder-val="{{ false }}">
+    <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; background: #161821; border-top: 1px solid #707896;">
+      <span style="flex: 1; min-width: 0; font-weight: 600;">{{selText}}</span>
+      <button onClick="{{sell}}" disabled="{{sellDisabled}}" style="min-height: 44px; padding: 0 16px; border: 1px solid {{sellBorder}}; border-radius: 6px; background: {{sellBg}}; color: {{sellFg}}; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer;">Sell · {{sellValue}}</button>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 64px; background: #161821; border-top: 1px solid #323748;">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18 14.3c2 .7 3.5 2.8 3.5 5.7"></path></svg>Roster</a>
+    <a href="World.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5z"></path><path d="M9 4v13.5M15 6.5V20"></path></svg>World</a>
+    <a href="City.dc.html" aria-current="page" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #e4b95b; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><span style="position: absolute; top: -1px; left: 32%; right: 32%; height: 2px; border-radius: 0 0 2px 2px; background: #e4b95b;"></span><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 21V9h3V6h2v3h2V4h2v5h2V6h2v3h3v12z"></path><path d="M10 21v-4a2 2 0 0 1 4 0v4"></path></svg>City</a>
+    <a href="Bestiary.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2.5z"></path><path d="M4 19.5A2 2 0 0 0 6 21h14v-4"></path></svg>Bestiary</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'buy', gold: 48210, seq: 1,
+      bag: [
+        { id: 'b1', name: 'Health Potion I', kind: 'flask', col: 1, row: 1, span: 1, count: 6 },
+        { id: 'b2', name: 'Rusty Dagger', kind: 'sword', col: 2, row: 1, span: 2, count: 0 },
+        { id: 'b3', name: 'Wolf Pelt', kind: 'ore', col: 3, row: 1, span: 1, count: 3 }
+      ],
+      qty: { hp1: 14, hp2: 0, hp3: 0, mp1: 10, mp2: 0 },
+      sel: [],
+      buyback: [
+        { id: 'k1', name: 'Bone Charm', kind: 'ring', span: 1, count: 0, value: 8, when: '12m ago' },
+        { id: 'k2', name: 'Cracked Buckler', kind: 'shield', span: 2, count: 0, value: 22, when: '31m ago' }
+      ],
+      msg: '', msgKind: ''
+    };
+  }
+  stockList() {
+    return [
+      { id: 'hp1', name: 'Health Potion I', lv: 1, price: 15, effect: 'Heals 120 over 10s', hp: true, target: 20 },
+      { id: 'hp2', name: 'Health Potion II', lv: 10, price: 45, effect: 'Heals 300 over 8s', hp: true },
+      { id: 'hp3', name: 'Health Potion III', lv: 20, price: 130, effect: 'Heals 700 over 6s', hp: true },
+      { id: 'mp1', name: 'Mana Potion I', lv: 1, price: 20, effect: 'Restores 60 mana over 10s', hp: false, target: 10 },
+      { id: 'mp2', name: 'Mana Potion II', lv: 10, price: 55, effect: 'Restores 150 mana over 8s', hp: false }
+    ];
+  }
+  sellPrice(x) {
+    var unit = { 'Health Potion I': 4, 'Health Potion II': 11, 'Health Potion III': 32, 'Mana Potion I': 5, 'Mana Potion II': 14, 'Rusty Dagger': 6, 'Wolf Pelt': 4, 'Bone Charm': 8, 'Cracked Buckler': 22 }[x.name] || 1;
+    return unit * Math.max(1, x.count);
+  }
+  fmt(n) { return Number(n).toLocaleString('en-US'); }
+  title(x) { return x.name + (x.count ? ' ×' + x.count : ''); }
+  join(a) {
+    if (a.length <= 1) return a[0] || '';
+    return a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+  }
+  held(bag, name) { return bag.filter(function (x) { return x.name === name; }).reduce(function (n, x) { return n + x.count; }, 0); }
+  place(bag, span) {
+    var g = {};
+    bag.forEach(function (x) { for (var k = 0; k < x.span; k++) g[x.col + ',' + (x.row + k)] = 1; });
+    for (var c = 1; c <= 6; c++) {
+      for (var r = 1; r + span - 1 <= 6; r++) {
+        var ok = true;
+        for (var k = 0; k < span; k++) if (g[c + ',' + (r + k)]) ok = false;
+        if (ok) return { col: c, row: r };
+      }
+    }
+    return null;
+  }
+  newCells(bag, name, q) {
+    var room = bag.filter(function (x) { return x.name === name; }).reduce(function (n, x) { return n + (100 - x.count); }, 0);
+    return Math.ceil(Math.max(0, q - room) / 100);
+  }
+  buy() {
+    var self = this, s = this.state;
+    var bag = s.bag.map(function (x) { return Object.assign({}, x); });
+    var cost = 0, parts = [], seq = s.seq, full = false;
+    this.stockList().forEach(function (it) {
+      var q = s.qty[it.id] || 0, left = q;
+      if (!q) return;
+      bag.forEach(function (x) {
+        if (left > 0 && x.name === it.name && x.count < 100) { var add = Math.min(100 - x.count, left); x.count += add; left -= add; }
+      });
+      while (left > 0) {
+        var spot = self.place(bag, 1);
+        if (!spot) { full = true; break; }
+        var n = Math.min(100, left);
+        bag.push({ id: 'n' + (seq++), name: it.name, kind: 'flask', col: spot.col, row: spot.row, span: 1, count: n });
+        left -= n;
+      }
+      var got = q - left;
+      if (got) { cost += got * it.price; parts.push(got + ' ' + it.name); }
+    });
+    if (cost > s.gold) { this.setState({ msg: 'Not enough gold for this order.', msgKind: 'warn' }); return; }
+    this.setState({
+      bag: bag, gold: s.gold - cost, seq: seq,
+      qty: { hp1: 0, hp2: 0, hp3: 0, mp1: 0, mp2: 0 },
+      msg: (parts.length ? 'Bought ' + this.join(parts) + ' for ' + this.fmt(cost) + ' gold.' : '') + (full ? ' The bag is full.' : ''),
+      msgKind: full ? 'warn' : 'ok'
+    });
+  }
+  sell() {
+    var self = this, s = this.state;
+    var out = s.bag.filter(function (x) { return s.sel.indexOf(x.id) >= 0; });
+    if (!out.length) return;
+    var total = out.reduce(function (n, x) { return n + self.sellPrice(x); }, 0);
+    this.setState({
+      bag: s.bag.filter(function (x) { return s.sel.indexOf(x.id) < 0; }),
+      sel: [], gold: s.gold + total,
+      buyback: out.map(function (x) { return Object.assign({}, x, { value: self.sellPrice(x), when: 'just now' }); }).concat(s.buyback),
+      msg: 'Sold ' + this.join(out.map(function (x) { return self.title(x); })) + ' for ' + this.fmt(total) + ' gold.', msgKind: 'ok'
+    });
+  }
+  takeBack(id) {
+    var s = this.state;
+    var x = s.buyback.filter(function (b) { return b.id === id; })[0];
+    if (!x) return;
+    if (x.value > s.gold) { this.setState({ msg: 'Not enough gold.', msgKind: 'warn' }); return; }
+    var spot = this.place(s.bag, x.span);
+    if (!spot) { this.setState({ msg: "No room in Tamsin's bag for " + this.title(x) + (x.span > 1 ? ': it needs ' + x.span + ' free cells in one column.' : '.'), msgKind: 'warn' }); return; }
+    var item = { id: x.id, name: x.name, kind: x.kind, span: x.span, count: x.count, col: spot.col, row: spot.row };
+    this.setState({
+      bag: s.bag.concat([item]), gold: s.gold - x.value,
+      buyback: s.buyback.filter(function (b) { return b.id !== id; }),
+      msg: 'Bought back ' + this.title(x) + ' for ' + this.fmt(x.value) + ' gold.', msgKind: 'ok'
+    });
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var used = s.bag.reduce(function (n, x) { return n + x.span; }, 0);
+    var stockDefs = this.stockList();
+    var count = 0, cost = 0, cells = 0;
+    stockDefs.forEach(function (it) {
+      var q = s.qty[it.id] || 0;
+      count += q; cost += q * it.price; cells += self.newCells(s.bag, it.name, q);
+    });
+    var bagAfter = used + cells;
+    var canBuy = count > 0 && cost <= s.gold && bagAfter <= 36;
+    var stock = stockDefs.map(function (it, i) {
+      var q = s.qty[it.id] || 0, h = self.held(s.bag, it.name);
+      function setQ(v) { var nq = Object.assign({}, s.qty); nq[it.id] = Math.max(0, v); self.setState({ qty: nq, msg: '' }); }
+      return {
+        name: it.name, effect: it.effect, price: String(it.price), qty: String(q),
+        qtyColor: q > 0 ? '#e4b95b' : '#aaa596',
+        iconColor: it.hp ? '#e5484d' : '#5b8def',
+        lvWarn: it.lv > 3, lvText: 'Usable at Lv ' + it.lv,
+        hasHeld: h > 0, held: 'Tamsin has ' + h,
+        minusDisabled: q === 0, minusFg: q === 0 ? '#707896' : '#eee8d9',
+        minus: function () { setQ(q - 1); }, plus: function () { setQ(q + 1); },
+        minusLabel: 'One fewer ' + it.name, plusLabel: 'One more ' + it.name,
+        rule: i === stockDefs.length - 1 ? 'transparent' : '#323748'
+      };
+    });
+    var tabs = [['buy', 'Buy'], ['sell', 'Sell'], ['back', 'Buyback']].map(function (t) {
+      var on = s.tab === t[0];
+      return {
+        label: t[1] + (t[0] === 'back' && s.buyback.length ? ' · ' + s.buyback.length : ''),
+        on: on ? 'true' : 'false',
+        bg: on ? '#292d3b' : 'transparent', fg: on ? '#e4b95b' : '#aaa596', ring: on ? 'inset 0 0 0 1px #707896' : 'none',
+        pick: function () { self.setState({ tab: t[0], msg: '' }); }
+      };
+    });
+    var KINDS = ['flask', 'sword', 'ore', 'ring', 'shield'];
+    var bagItems = s.bag.map(function (x) {
+      var sel = s.sel.indexOf(x.id) >= 0;
+      var o = {
+        col: String(x.col), row: x.row + ' / span ' + x.span, sel: sel, pressed: sel ? 'true' : 'false',
+        hasCount: x.count > 0, count: String(x.count),
+        fg: x.kind === 'flask' ? (x.name.indexOf('Mana') === 0 ? '#5b8def' : '#e5484d') : '#aaa596',
+        border: sel ? '2px solid #e4b95b' : '1px solid #323748',
+        label: self.title(x) + ', sells for ' + self.sellPrice(x) + ' gold' + (sel ? ', selected' : ''),
+        pick: function () {
+          var ids = s.sel.slice(), i = ids.indexOf(x.id);
+          if (i >= 0) ids.splice(i, 1); else ids.push(x.id);
+          self.setState({ sel: ids, msg: '' });
+        }
+      };
+      KINDS.forEach(function (k) { o[k] = x.kind === k; });
+      return o;
+    });
+    var selItems = s.bag.filter(function (x) { return s.sel.indexOf(x.id) >= 0; });
+    var sellTotal = selItems.reduce(function (n, x) { return n + self.sellPrice(x); }, 0);
+    var bagCells = [];
+    for (var i = 0; i < 36; i++) bagCells.push({ i: i });
+    return {
+      goldText: this.fmt(s.gold), bagUsed: String(used),
+      tabs: tabs,
+      isBuy: s.tab === 'buy', isSell: s.tab === 'sell', isBack: s.tab === 'back',
+      hasMsg: !!s.msg, msg: s.msg,
+      msgColor: s.msgKind === 'warn' ? '#f0a04b' : '#eee8d9', msgEdge: s.msgKind === 'warn' ? '#f0a04b' : '#707896',
+      stock: stock,
+      fill: function () {
+        var nq = Object.assign({}, s.qty);
+        stockDefs.forEach(function (it) { if (it.target) nq[it.id] = Math.max(0, it.target - self.held(s.bag, it.name)); });
+        self.setState({ qty: nq, msg: '' });
+      },
+      cartText: count ? count + ' potions' : 'Nothing chosen yet',
+      bagAfter: String(bagAfter), bagAfterColor: bagAfter > 36 ? '#f0a04b' : '#aaa596',
+      goldAfter: this.fmt(s.gold - cost),
+      costText: this.fmt(cost),
+      buy: function () { if (canBuy) self.buy(); },
+      buyDisabled: !canBuy,
+      buyBg: canBuy ? '#e4b95b' : '#161821', buyBorder: canBuy ? '#e4b95b' : '#323748', buyFg: canBuy ? '#1a1307' : '#aaa596',
+      bagCells: bagCells, bagItems: bagItems,
+      hasSel: selItems.length > 0,
+      selList: selItems.map(function (x) { return { name: self.title(x), value: self.fmt(self.sellPrice(x)) }; }),
+      selText: selItems.length ? selItems.length + ' selected' : 'Select items to sell',
+      sellValue: this.fmt(sellTotal),
+      sell: function () { self.sell(); },
+      sellDisabled: selItems.length === 0,
+      sellBg: selItems.length ? '#e4b95b' : '#161821', sellBorder: selItems.length ? '#e4b95b' : '#323748', sellFg: selItems.length ? '#1a1307' : '#aaa596',
+      buyback: s.buyback.map(function (b, i) {
+        return {
+          name: self.title(b), when: b.when, value: self.fmt(b.value),
+          label: 'Buy back ' + self.title(b) + ' for ' + b.value + ' gold',
+          rule: i === s.buyback.length - 1 ? 'transparent' : '#323748',
+          take: function () { self.takeBack(b.id); }
+        };
+      }),
+      bbEmpty: s.buyback.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

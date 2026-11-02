@@ -1,0 +1,52 @@
+{
+  "levelCap": 30,
+  "points": {
+    "skillPointsPerLevel": 1,
+    "characterPointsPerLevel": 3,
+    "characterPointAwardAtLevelFraction": [0.25, 0.5, 0.75]
+  },
+  "drops": {
+    "levelFalloffPerLevel": 0.1,
+    "noDropEnemyLevelsAbove": 20
+  },
+  "absorption": {
+    "perKillFraction": 0.01,
+    "levelFactor": 0.9
+  },
+  "upgrade": {
+    "maxLevel": 9,
+    "startChance": 0.9,
+    "chanceFactor": 0.9
+  },
+  "storage": {
+    "materialStackSize": 100
+  },
+  "death": {
+    "xpLossMin": 0,
+    "xpLossMax": 0.25
+  },
+  "spells": {
+    "baseMaxRank": 10,
+    "maxRankWithRareItems": null
+  },
+  "combat": {
+    "minDamage": null,
+    "critMultiplier": null,
+    "tickMs": null
+  },
+  "farming": {
+    "targetingExtraTimeMultiplier": null
+  },
+  "offline": {
+    "efficiency": null,
+    "proficiencyRate": null,
+    "capHours": null
+  },
+  "characters": {
+    "startingSlots": null,
+    "slotsUnlockedAtLevelCap": null
+  },
+  "shops": {
+    "rareGoodsRotationHours": null
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "assetGroups": {},
+  "blobs": {},
+  "createdOnFiles": {
+    "at": "2026-11-02T17:50:00Z",
+    "v": 1
+  },
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "groups": [],
+  "lastChange": {
+    "at": "2026-11-02T18:40:00Z",
+    "by": "Claude",
+    "note": "Added the transfer and shop patterns to Mobile and layout",
+    "via": "Claude (cloud session)"
+  },
+  "layout": "files",
+  "libraries": [],
+  "namespace": "Absorber",
+  "sections": {},
+  "title": "Idle RPG Absorber"
+}

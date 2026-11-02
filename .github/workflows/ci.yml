@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # No lockfile yet. After the first local `npm install`, commit package-lock.json and switch this to `npm ci`.
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate:data
+      - run: npm run tokens:check
+      - run: npm run build

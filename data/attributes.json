@@ -1,0 +1,6 @@
+[
+  { "id": "strength", "name": "Strength", "feeds": ["physical-damage"] },
+  { "id": "dexterity", "name": "Dexterity", "feeds": ["attack-speed", "critical-chance"] },
+  { "id": "vitality", "name": "Vitality", "feeds": ["health", "defence"] },
+  { "id": "intelligence", "name": "Intelligence", "feeds": ["mana", "spell-damage"] }
+]

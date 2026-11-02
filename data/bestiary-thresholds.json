@@ -1,0 +1,7 @@
+[
+  { "id": "identity", "kills": 1, "reveals": ["name", "level", "areas"] },
+  { "id": "stats", "kills": 10, "reveals": ["stats"] },
+  { "id": "traits", "kills": 25, "reveals": ["traits", "absorption-progress"] },
+  { "id": "drop-list", "kills": 50, "reveals": ["drop-list"] },
+  { "id": "drop-rates", "kills": 100, "reveals": ["exact-drop-rates"] }
+]
