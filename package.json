@@ -17,6 +17,9 @@
     "tokens": "node tools/build-tokens.mjs",
     "tokens:check": "node tools/build-tokens.mjs --check",
     "validate:data": "node tools/validate-data.mjs",
+    "balance:combat": "vite-node tools/balance/combat-sim.ts --",
+    "balance:drops": "vite-node tools/balance/drop-calc.ts --",
+    "balance:progression": "vite-node tools/balance/progression.ts --",
     "check": "npm run typecheck && npm test && npm run validate:data && npm run tokens:check"
   },
   "devDependencies": {
