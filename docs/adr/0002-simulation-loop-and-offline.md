@@ -1,6 +1,6 @@
 # ADR 0002: Simulation loop and offline progress
 
-Status: proposed default, awaiting owner review.
+Status: accepted, approved by the owner on 2026-11-03. Constants named below as `null` or proposed are now set in `data/constants.json`, and the frame budget is `engine.maxStepsPerFrame`.
 
 ## Context
 
@@ -16,7 +16,7 @@ Status: proposed default, awaiting owner review.
 
 `engine.advanceTo(nowMs)` advances the simulation to a wall-clock time by running whole fixed steps. Nothing else moves game state. The browser runs `requestAnimationFrame` while visible and a `visibilitychange` handler on return. Neither is the clock; they only call `advanceTo(Date.now())`. Tests and tools call it with synthetic times.
 
-- **Step length:** `combat.tickMs` from `data/constants.json` (currently `null`). Proposed value to record there: **100 ms**. Attack intervals, travel and search times are quantised to whole steps by one function in `formulas.ts`. The engine refuses to start while `tickMs` is `null`.
+- **Step length:** `combat.tickMs` from `data/constants.json`, **100 ms**. Attack intervals, travel and search times are quantised to whole steps by one function in `formulas.ts`. The engine refuses to start while `tickMs` is `null`.
 - **Time source:** `Date.now()` for the saved timeline; `performance.now()` for the in-session accumulator, so small clock changes do not add or remove steps while the tab is open.
 - **Online budget:** at most 600 steps (60 s of game time) per frame. A larger backlog is handed to the catch-up path below.
 
@@ -26,7 +26,7 @@ Each character is an independent state machine (travel, search, fight, loot, ret
 
 ### RNG
 
-**sfc32** (four 32-bit words of state), seeded from a 128-bit seed through splitmix32. Pure TypeScript, about 15 lines, fast, passes PractRand. A master seed is stored in the save. Each character has its own stream, derived as `splitmix(masterSeed, characterId, streamIndex)`. Separate streams per purpose (combat, drops, search) keep a change in one system from reshuffling the others, which makes balance diffs readable. Stream state (4 words) is part of the save (ADR 0003). No `Math.random` anywhere in `src/game` or `src/engine`; a lint rule enforces it.
+**sfc32** (four 32-bit words of state), seeded from a 128-bit seed through splitmix32. Pure TypeScript, about 15 lines, fast, passes PractRand. A master seed is stored in the save. Each character has its own stream, derived as `splitmix(masterSeed, characterId, streamIndex)`. Separate streams per purpose (combat, drops, search) keep a change in one system from reshuffling the others, which makes balance diffs readable. Stream state (4 words) is part of the save (ADR 0003). No `Math.random` anywhere in `src/game` or `src/engine`; `tests/purity.test.ts` enforces it.
 
 ### Catch-up on return and offline
 
@@ -36,7 +36,7 @@ On load or tab return, `gap = now - lastSimulatedAt`.
 2. `0 <= gap <= stepSimMaxSeconds`: run the real step simulation for the whole gap (loot appears as normal).
 3. `gap > stepSimMaxSeconds`: capped gap goes through the **offline estimator**; the result becomes a per-character summary for the Welcome back screen (3.4, design 6).
 
-`stepSimMaxSeconds` is a new constant under `offline` in `data/constants.json`. Proposed: 300 (5 minutes). Short gaps use exact simulation so brief tab switches never feel different.
+`stepSimMaxSeconds` is a constant under `offline` in `data/constants.json`: 300 (5 minutes). Short gaps use exact simulation so brief tab switches never feel different.
 
 ### Offline estimator
 
@@ -63,7 +63,7 @@ If `now < lastSimulatedAt` (manual change, NTP step, DST bug): grant no progress
 - One code path for play; offline is the only place with an approximation, and it is tested against ground truth.
 - Reproducibility: seed plus data plus commands gives the same run, which the simulators need.
 - Cost: the estimator duplicates cycle logic in aggregate form. The shared `formulas.ts` and the drift test contain that risk.
-- Several constants are new or still `null`: `combat.tickMs`, `offline.efficiency`, `offline.capHours`, `offline.proficiencyRate`, `offline.stepSimMaxSeconds`.
+- New constants: `combat.tickMs`, `offline.efficiency`, `offline.capHours`, `offline.proficiencyRate`, `offline.stepSimMaxSeconds`, `engine.maxStepsPerFrame`.
 
 ## Alternatives considered
 

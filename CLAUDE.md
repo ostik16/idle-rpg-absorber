@@ -1,6 +1,6 @@
 # Idle RPG Absorber
 
-Browser idle RPG. TypeScript, Vite, Vitest. Pre-development: the design exists, the game does not.
+Browser idle RPG. TypeScript, Vite, Vitest, Preact. Early development: the design, engine skeleton and app shell exist, the game does not yet.
 
 ## Commands
 
@@ -13,6 +13,7 @@ Browser idle RPG. TypeScript, Vite, Vitest. Pre-development: the design exists, 
 
 - **The design docs in `design/` are the source of truth.** Each system lists **Rules** (decided), **Proposed** (not decided) and **Open questions**. Implement Rules. Do not silently turn Proposed or Open items into decisions: ask, or record the choice in `docs/pre-development-checklist.md`.
 - **Content is data, not code.** Numbers, items, enemies and constants go in `data/*.json` (design 5.1). Do not hard-code them in `src/`. A `null` in `data/constants.json` means undecided.
+- **The layers are in `docs/architecture.md` and `docs/adr/`.** The engine takes time as an argument and never touches the DOM, storage or `Math.random`. The UI never mutates state; it dispatches commands.
 - **Formulas live in `src/game/formulas.ts` and are pure.** Add a test for every formula, checked against the numbers printed in the design docs.
 - **UI follows the design system** in `design/ui/design-system/` (read its `README.md`). Use the `ab-` classes from `components/bundle.css` and the tokens in `tokens.css`. Do not introduce colours, fonts or spacing outside the tokens. Do not edit `src/styles/tokens.css` by hand.
 - Screen sketches in `design/ui/screens/*.dc.html` are references to look at, not code to ship. They need the claude.ai Design runtime (`support.js`) to render, so open the artifact link instead.

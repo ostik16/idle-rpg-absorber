@@ -32,7 +32,7 @@ Defaults chosen to close the open questions and inconsistencies in `docs/pre-dev
 | N3 | 3.6 | Critical hit application | Crit multiplies the damage dealt after defence and the minimum (confirmed), by 2 (`combat.critMultiplier`) | Owner confirmed the order and raised the multiplier from 1.5 to 2. | owner decided |
 | N4 | 4.3 | XP per level | XP from level L to L+1 = 100 x L^1.5 x 1.1^(L-1) rounded to 3 significant figures, stored in `data/xp-table.json` (levels 1-30). About 1.49 million total to level 30 | Built from a target of 10 kills (level 1) to 1,560 kills (level 29) of a same-level enemy, so a level goes from 2 minutes to 5 hours. | owner approved, fine for now |
 | N5 | 3.5 / 4.3 | XP reward per enemy level | 10 x 1.1^(L-1), rounded (`progression.xpReward`). No level-gap penalty | XP grows slower than the requirement, so low-level enemies fade out on their own: at level 20 a level 3 enemy needs 5 times the kills of a level 20 enemy. Area 1 is outgrown at level 6-8. | owner approved, fine for now |
-| N6 | 3.5 | Enemy baseline stats | Health 24 x 1.11^(L-1), damage 5 x 1.07^(L-1), defence 0.5 x (L-1)^1.2, attack speed 0.8 + 0.015 (L-1) (`enemyScaling.*`). Enemies keep fixed stats in data; these are the starting line | Tuned against a reference character (attributes split 45/20/25/10 and gear at about 3 + 1.8 x (L-1) weapon damage and 1 + 0.9 x (L-1) armour): kills in 3 to 7 seconds and loses 2% to 5% of its health per fight at its own level. Gear data must be written to roughly that curve. | owner approved, fine for now |
+| N6 | 3.5 | Enemy baseline stats | Health 24 x 1.11^(L-1), damage 5 x 1.07^(L-1), defence 0.5 x (L-1)^1.2, attack speed 0.8 + 0.015 (L-1) (`enemyScaling.*`). Enemies keep fixed stats in data; these are the starting line | Tuned against a reference character (`balance.referenceBuild`: attributes split 45/20/25/10 and gear at about 3 + 1.8 x (L-1) weapon damage and 1 + 0.9 x (L-1) armour): kills in 3 to 7 seconds. Measured with `balance:combat` on 2026-11-03, it loses about 2% of its health per fight at its own level from level 5 to 20, 7.7% at level 1 and 5.5% at level 30. Gear data must be written to roughly that curve. | owner approved, fine for now |
 | N7 | 3.5 | Money drop scaling | Average 5 x 1.1^(L-1) gold, range plus or minus 50% (`enemyScaling.money`), not reduced by level gap | About 5 gold at level 1, 17 at level 14 (about 5,000 gold an hour at 300 kills an hour, enough for a respec at 4,200 in an hour or so). | owner approved, fine for now |
 | N8 | 2.2 | Weapon penalty curve | Multiplier = 1 - min(50%, 1% x total missing points across the weapon's scaling attributes) (`combat.weaponPenalty`) | Answered by Q2. Replaces the earlier product-of-ratios curve. | owner decided |
 | N9 | 4.6 | Proficiency gain | Per action: G x min(1, actionLevel / R)^2 with R = max(1, 0.3 x points). G = 0.003 per hit (weapon skills, toughness), 0.0015 per attack (combat), 0.001 per second moved (speed) (`proficiency.gainPerAction`) | R ties 100 points to level 30. Weak enemies train a high skill very little, but never block a new skill. About 35 hours of at-level hitting for a weapon skill to reach 100. | owner decided (I2 changes) |
@@ -61,6 +61,9 @@ Defaults chosen to close the open questions and inconsistencies in `docs/pre-dev
 | T10 | 3.7 / 4.2 | Health regeneration | Characters regenerate 0.5% of maximum health per second by default (`stats.healthRegen.fractionOfMaxPerSecond` = 0.005). Assumed: always on, in and out of combat. Not enough to make potions obsolete, enough to heal when out of money or potions | Owner's rule; the 0.5% is a default chosen by the lead, to tune. At 70 health it is 0.35 per second. | owner decided; 0.5% is a lead default to tune |
 | T11 | 3.7 | Respawn health | A dead character respawns with 10% health (`death.respawnHealthFraction`) and must heal to full before it farms again (`death.mustHealToFullBeforeFarming`), with potions or regeneration (T10). From 10%, regeneration alone takes 180 seconds | Death costs time on top of XP, and regeneration gives broke players a way back. | owner decided |
 | T12 | 3.8 / 2.7 | Low-level sources for upgrade materials | Every upgrade material has at least one source among enemies of level 10 or below (`balance.upgradeMaterialLowLevelSourceMaxEnemyLevel` = 10, enemy level). A character 10 or more levels above gets no drops from them | Owner's balance principle: high-level characters need what only low-level enemies drop, so players run several characters. See Balance notes. | owner decided |
+| H1 | Repo | Licence and visibility | MIT licence (`LICENSE`). The repo goes public; the owner confirms the switch separately. Fonts and icons keep their own licences (OFL, ISC) | The owner chose to open the code. | owner decided |
+| H2 | Hosting | Deployment | GitHub Pages, deployed on every push to `main` (`.github/workflows/deploy.yml`). The job is skipped while the repo is private | The owner chose to publish every push. A static build needs nothing else. | owner decided |
+| H3 | 6 | Minimum browsers | Vite's default build target: Chrome and Edge 111, Firefox 114, Safari and iOS Safari 16.4. Phone first at 390 px | Baseline widely available. No feature in the plan needs newer, and `bundle.css` uses nothing newer. | lead default, revisit if a player needs older |
 
 ## Other numbers set at the same time
 
@@ -81,6 +84,8 @@ Defaults chosen to close the open questions and inconsistencies in `docs/pre-dev
 | `storage.maxStack` | 100 | Warehouse max stack (T1). |
 | `shops.rareGoodsRefreshGoldCost` | 5,000 | Owner approved, can be adjusted later (Q3). |
 | `balance.upgradeMaterialLowLevelSourceMaxEnemyLevel` | 10 | Owner decided (T12). |
+| `balance.referenceBuild` | see N6 | The build the balance tools compare against (N6). |
+| `engine.maxStepsPerFrame` | 600 | ADR 0002: 60 s of game time per frame, then the catch-up path. |
 
 ## Balance notes
 
@@ -96,7 +101,7 @@ For content writers.
 Nothing blocks work. The owner answered the open questions and approved the earlier assumptions. These soft defaults are still the lead's, to tune with the balance tools (5.3):
 
 - **Health regeneration.** 0.5% of maximum health per second (T10), assumed active in and out of combat.
-- **Backpack numbers.** Base 36 cells and max stack 20 are set. Cells and max stack of each backpack are content to write.
+- **Backpack numbers.** Base 36 cells and max stack 20 are set. Canvas pack adds 4 cells (max stack 40), Leather pack adds 6 (max stack 60), which gives the 42-cell bag the sketches assume (design 6).
 - **Arcane Shard cost for ranks 16 to 20** is not set (S7).
 
 Approved with no objection: weapon penalty on the weapon's own damage (Q2), slot ticket applied automatically (T4), targeting multiplier on movement time only (T5), a forced shop rotation restarts the hourly timer (T8), backpack max stack applies to that character's bag only (T1), boost equipment is normal equipment (T9), XP loss is limited by the floor (T6), the 5,000 gold forced rotation (Q3).
