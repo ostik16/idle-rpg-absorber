@@ -76,8 +76,8 @@ Small things that will cause arguments during implementation. All eight are sett
 ## 4. Repo housekeeping
 
 - [x] **Licence.** MIT (decisions H1).
-- [ ] **Visibility.** Public (decisions H1). The repo is still private until the owner confirms the switch.
-- [x] **Hosting.** GitHub Pages on every push to `main` once the repo is public (decisions H2). The one-time setup is noted in `.github/workflows/deploy.yml`.
+- [x] **Visibility.** Public since 2026-11-03 (decisions H1).
+- [x] **Hosting.** GitHub Pages on every push to `main` (decisions H2): https://ostik16.github.io/idle-rpg-absorber/
 - [x] **Fonts.** Self-hosted through `@fontsource`. A Vite plugin strips the Google Fonts import from `bundle.css`, and CI checks the build has none.
 - [x] **Icons.** `lucide-static`, per-icon imports in `src/ui/icons.ts`.
 - [x] **Issue tracking.** All in GitHub issues and milestones.

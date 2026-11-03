@@ -41,7 +41,7 @@ See [`design/ui/README.md`](design/ui/README.md) for how to read the snapshots.
 
 ## Stack
 
-TypeScript, Vite, Vitest, Preact with signals. Pushes to `main` deploy to GitHub Pages once the repo is public and Pages is set to GitHub Actions.
+TypeScript, Vite, Vitest, Preact with signals. Pushes to `main` deploy to [GitHub Pages](https://ostik16.github.io/idle-rpg-absorber/).
 
 Minimum browsers: Chrome and Edge 111, Firefox 114, Safari and iOS Safari 16.4. Phone first at 390 px.
 
