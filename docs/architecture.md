@@ -27,7 +27,7 @@ main
  |- save ------> state
  |- engine ----> game, state, data
  |- game ------> data (types only)
- |- state -----> data (types only)
+ |- state -----> game, data
  '- data -----> (nothing in src)
 ```
 

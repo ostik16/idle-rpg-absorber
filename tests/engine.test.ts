@@ -10,7 +10,7 @@ import type { Rng } from '../src/game/rng';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import { PHASES, type CharacterState, type CharacterSummary, type GameState } from '../src/state/types';
 
-// Small fixtures, not the real tables. With these constants one step is 100 ms, a frame may run 10 steps (1 s),
+// The real constants with small limits, not the real tables. With these limits one step is 100 ms, a frame may run 10 steps (1 s),
 // real steps cover up to 5 s, and the offline cap is 1 hour.
 const T0 = 1_000_000;
 const TICK = 100;
@@ -27,16 +27,23 @@ function fixtureData(o: FixtureConstants = {}): GameData {
   const c = { tickMs: TICK, maxStepsPerFrame: 10, stepSimMaxSeconds: 5, capHours: 1, ...o };
   return createGameData({
     constants: {
-      combat: { tickMs: c.tickMs },
+      ...constants,
+      combat: { ...constants.combat, tickMs: c.tickMs },
       engine: { maxStepsPerFrame: c.maxStepsPerFrame },
-      offline: { stepSimMaxSeconds: c.stepSimMaxSeconds, capHours: c.capHours },
+      offline: { ...constants.offline, stepSimMaxSeconds: c.stepSimMaxSeconds, capHours: c.capHours },
     },
   });
 }
 
+function newCharacter(id: string, name: string): CharacterState {
+  return createCharacterState(id, name, loadGameData());
+}
+
+/** All slots are open, so commands can add characters next to the ones listed. */
 function makeState(ids: readonly string[] = ['a']): GameState {
-  const state = createGameState(SEED, T0);
-  for (const id of ids) state.roster.push(createCharacterState(id, `Name ${id}`));
+  const state = createGameState(SEED, T0, loadGameData());
+  state.account.unlockedSlots = constants.characters.maxSlots;
+  for (const id of ids) state.roster.push(newCharacter(id, `Name ${id}`));
   return state;
 }
 
@@ -189,7 +196,7 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
       emit: (event) => void emitted.push(event),
     };
     for (const phase of PHASES) {
-      const character: CharacterState = { ...createCharacterState('a', 'A'), phase };
+      const character: CharacterState = { ...newCharacter('a', 'A'), phase };
       stepCharacter(character, ctx);
       stepCharacter(character, ctx);
       expect(character).toMatchObject({ phase, timeInPhaseMs: 2 * TICK });
@@ -205,7 +212,7 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
       streams: createCharacterStreams(SEED, 'a'),
       emit: (event) => void emitted.push(event),
     };
-    const character: CharacterState = { ...createCharacterState('a', 'A'), phase: 'fighting', timeInPhaseMs: 700 };
+    const character: CharacterState = { ...newCharacter('a', 'A'), phase: 'fighting', timeInPhaseMs: 700 };
 
     enterPhase(character, 'looting', ctx);
 
@@ -217,7 +224,7 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
 describe('commands (ADR 0002, architecture "Data flow")', () => {
   it('waits for a step: dispatch does not change state, and a call with no whole step leaves it queued', () => {
     const engine = makeEngine(['a']);
-    engine.dispatch({ type: 'addCharacter', id: 'b', name: 'Bea' });
+    engine.dispatch({ type: 'createCharacter', name: 'Bea' });
 
     expect(engine.state.roster).toHaveLength(1);
     engine.advanceTo(T0 + 50); // no whole step
@@ -225,38 +232,38 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
     expect(engine.drainEvents()).toEqual([]);
 
     engine.advanceTo(T0 + TICK);
-    expect(engine.state.roster.map((c) => c.id)).toEqual(['a', 'b']);
-    expect(engine.drainEvents()).toEqual([{ type: 'characterAdded', characterId: 'b' }]);
+    expect(engine.state.roster.map((c) => c.id)).toEqual(['a', 'c1']);
+    expect(engine.drainEvents()).toEqual([{ type: 'characterCreated', characterId: 'c1' }]);
   });
 
   it('applies at the start of a step, so the new character is stepped in that same step', () => {
     const engine = makeEngine(['a']);
     engine.advanceTo(T0 + 3 * TICK);
-    engine.dispatch({ type: 'addCharacter', id: 'b', name: 'Bea' });
+    engine.dispatch({ type: 'createCharacter', name: 'Bea' });
     engine.advanceTo(T0 + 5 * TICK);
 
     expect(find(engine.state, 'a').timeInPhaseMs).toBe(5 * TICK);
-    expect(find(engine.state, 'b').timeInPhaseMs).toBe(2 * TICK);
+    expect(find(engine.state, 'c1').timeInPhaseMs).toBe(2 * TICK);
   });
 
   it('applies once, in the order dispatched', () => {
     const engine = makeEngine(['a']);
-    engine.dispatch({ type: 'addCharacter', id: 'z', name: 'Zed' });
-    engine.dispatch({ type: 'addCharacter', id: 'y', name: 'Yan' });
+    engine.dispatch({ type: 'createCharacter', name: 'Zed' });
+    engine.dispatch({ type: 'createCharacter', name: 'Yan' });
     engine.advanceTo(T0 + 5 * TICK);
     engine.advanceTo(T0 + 6 * TICK);
 
-    expect(engine.state.roster.map((c) => c.id)).toEqual(['a', 'z', 'y']);
+    expect(engine.state.roster.map((c) => c.name)).toEqual(['Name a', 'Zed', 'Yan']);
     expect(engine.drainEvents()).toEqual([
-      { type: 'characterAdded', characterId: 'z' },
-      { type: 'characterAdded', characterId: 'y' },
+      { type: 'characterCreated', characterId: 'c1' },
+      { type: 'characterCreated', characterId: 'c2' },
     ]);
   });
 
-  it('rejects a duplicate or empty id with an event, changes nothing and does not throw', () => {
+  it('rejects a bad name with an event, changes nothing and does not throw', () => {
     const engine = makeEngine(['a']);
-    const duplicate = { type: 'addCharacter', id: 'a', name: 'Again' } as const;
-    const empty = { type: 'addCharacter', id: '', name: 'Nobody' } as const;
+    const duplicate = { type: 'createCharacter', name: 'Name a' } as const;
+    const empty = { type: 'createCharacter', name: '' } as const;
     engine.dispatch(duplicate);
     engine.dispatch(empty);
 
@@ -265,17 +272,17 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
     expect(engine.state.roster).toHaveLength(1);
     expect(find(engine.state, 'a').name).toBe('Name a');
     expect(engine.drainEvents()).toEqual([
-      { type: 'commandRejected', command: duplicate, reason: expect.stringContaining('already exists') },
-      { type: 'commandRejected', command: empty, reason: expect.stringContaining('empty') },
+      { type: 'commandRejected', command: duplicate, reason: expect.stringContaining('already has that name') },
+      { type: 'commandRejected', command: empty, reason: 'Enter a name.' },
     ]);
   });
 
-  it('gives a character added by a command its own streams, in the state', () => {
+  it('gives a character created by a command its own streams, in the state', () => {
     const engine = makeEngine([]);
-    engine.dispatch({ type: 'addCharacter', id: 'b', name: 'Bea' });
+    engine.dispatch({ type: 'createCharacter', name: 'Bea' });
     engine.advanceTo(T0 + TICK);
 
-    expect(find(engine.state, 'b').rng).toEqual(readStreamStates(createCharacterStreams(SEED, 'b')));
+    expect(find(engine.state, 'c1').rng).toEqual(readStreamStates(createCharacterStreams(SEED, 'c1')));
   });
 
   it('dismissSummary clears the pending summary', () => {
@@ -291,17 +298,17 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
   it('applies commands queued before a long absence ahead of the estimate', () => {
     const { calls, estimate } = recordingEstimator();
     const engine = makeEngine(['a'], fixtureData(), estimate);
-    engine.dispatch({ type: 'addCharacter', id: 'b', name: 'Bea' });
+    engine.dispatch({ type: 'createCharacter', name: 'Bea' });
 
     engine.advanceTo(T0 + 60_000);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.ids).toEqual(['a', 'b']);
+    expect(calls[0]?.ids).toEqual(['a', 'c1']);
   });
 
   it('keeps commands queued across a clock rewind', () => {
     const engine = makeEngine(['a']);
-    engine.dispatch({ type: 'addCharacter', id: 'b', name: 'Bea' });
+    engine.dispatch({ type: 'createCharacter', name: 'Bea' });
 
     engine.advanceTo(T0 - 1);
     expect(engine.state.roster).toHaveLength(1);
