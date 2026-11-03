@@ -28,7 +28,25 @@
     "protectionConsumedOnSuccess": true
   },
   "storage": {
-    "maxStack": 100
+    "maxStack": 100,
+    "startingTabs": 1,
+    "cellsPerTab": 56,
+    "tabCosts": [25000]
+  },
+  "returnTriggers": {
+    "healthThreshold": 0.2
+  },
+  "restock": {
+    "defaultList": [
+      {
+        "itemId": "minor-health-potion",
+        "quantity": 10
+      }
+    ]
+  },
+  "cityHealing": {
+    "defaultMode": "balanced",
+    "balancedFraction": 0.65
   },
   "death": {
     "xpLossMin": 0,
@@ -48,6 +66,7 @@
     "minDamage": 1,
     "critMultiplier": 2,
     "tickMs": 100,
+    "fleeSeconds": 1,
     "weaponPenalty": {
       "perMissingPoint": 0.01,
       "cap": 0.5

@@ -1,12 +1,14 @@
 [
-  { "id": "general-store", "name": "General store", "purpose": "Basic weapons, armour and packs", "itemList": [
+  { "id": "general-store", "name": "General store", "purpose": "Basic weapons, armour, packs and valuables", "itemList": [
     { "itemId": "rusty-sword", "price": 40 },
     { "itemId": "hunting-knife", "price": 40 },
     { "itemId": "ragged-tunic", "price": 30 },
     { "itemId": "leather-cap", "price": 25 },
     { "itemId": "worn-boots", "price": 30 },
     { "itemId": "padded-vest", "price": 90 },
-    { "itemId": "canvas-pack", "price": 120 }
+    { "itemId": "canvas-pack", "price": 120 },
+    { "itemId": "silver-bar", "price": 110 },
+    { "itemId": "gold-bar", "price": 1100 }
   ] },
   { "id": "alchemist", "name": "Alchemist", "purpose": "Health potions and draughts", "itemList": [
     { "itemId": "minor-health-potion", "price": 12 },

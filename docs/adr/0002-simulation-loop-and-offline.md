@@ -1,6 +1,6 @@
 # ADR 0002: Simulation loop and offline progress
 
-Status: accepted, approved by the owner on 2026-11-03. Constants named below as `null` or proposed are now set in `data/constants.json`, and the frame budget is `engine.maxStepsPerFrame`.
+Status: accepted, approved by the owner on 2026-11-03. Constants named below as `null` or proposed are now set in `data/constants.json`, and the frame budget is `engine.maxStepsPerFrame`. Amended on 2026-11-03: gold is per character (decisions L16).
 
 ## Context
 
@@ -22,7 +22,7 @@ Status: accepted, approved by the owner on 2026-11-03. Constants named below as 
 
 ### Multiple characters
 
-Each character is an independent state machine (travel, search, fight, loot, return, restock, dead) with no shared mutable state except the warehouse and gold. Each step iterates characters in stable id order and advances each one step. Shared effects (warehouse deposits, bestiary reveals, gold) are applied through an ordered event list at the end of the step, so results do not depend on iteration order beyond id order. Characters never interact in combat, so a character can also be advanced alone for a time range (used by catch-up and tests).
+Each character is an independent state machine (travel, search, fight, loot, return, restock, dead) with no shared mutable state except the warehouse. Each step iterates characters in stable id order and advances each one step. Shared effects (warehouse deposits, bestiary reveals) are applied through an ordered event list at the end of the step, so results do not depend on iteration order beyond id order. Characters never interact in combat, so a character can also be advanced alone for a time range (used by catch-up and tests).
 
 ### RNG
 
@@ -40,7 +40,7 @@ On load or tab return, `gap = now - lastSimulatedAt`.
 
 ### Offline estimator
 
-For each character, from state at `lastSimulatedAt`: build one **farming cycle** from the same formulas the step sim uses (`formulas.ts`): time to kill each enemy type weighted by area spawn weights (3.1), movement between enemies, the targeting extra-time multiplier (3.3), expected damage taken and potion use, and the return triggers (bag full, potions out, health threshold, 3.2). A cycle is search + fights + travel back + restock + travel out. From cycle length and expected yields, compute the number of kills in the capped time. Then **roll in bulk** with the character's RNG: drops via binomial draws (normal approximation above a size threshold), money by sum of ranges, absorption and bestiary kills added in aggregate, proficiency at `offline.proficiencyRate`. XP and levels are applied by walking the XP table, since level changes alter the cycle; the estimator is re-run per level band. Death risk: if expected damage per fight exceeds what potions cover, the estimator ends the character's farming at the expected death time and applies the 3.7 penalty, never silently.
+For each character, from state at `lastSimulatedAt`: build one **farming cycle** from the same formulas the step sim uses (`formulas.ts`): time to kill each enemy type weighted by area spawn weights (3.1), movement between enemies, the targeting extra-time multiplier (3.3), expected damage taken and potion use, and the return triggers (bag full, health threshold, 3.2). A cycle is search + fights + travel back + sell, restock and heal + travel out. From cycle length and expected yields, compute the number of kills in the capped time. Then **roll in bulk** with the character's RNG: drops via binomial draws (normal approximation above a size threshold), money by sum of ranges, absorption and bestiary kills added in aggregate, proficiency at `offline.proficiencyRate`. XP and levels are applied by walking the XP table, since level changes alter the cycle; the estimator is re-run per level band. Death risk: if expected damage per fight exceeds what potions cover, the estimator ends the character's farming at the expected death time and applies the 3.7 penalty, never silently.
 
 Yields are multiplied by `offline.efficiency`. Time beyond `offline.capHours` is discarded, and the summary says so.
 

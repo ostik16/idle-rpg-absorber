@@ -3,6 +3,7 @@ import archive from 'lucide-static/icons/archive.svg?raw';
 import backpack from 'lucide-static/icons/backpack.svg?raw';
 import bookOpen from 'lucide-static/icons/book-open.svg?raw';
 import castle from 'lucide-static/icons/castle.svg?raw';
+import circleDot from 'lucide-static/icons/circle-dot.svg?raw';
 import coins from 'lucide-static/icons/coins.svg?raw';
 import crosshair from 'lucide-static/icons/crosshair.svg?raw';
 import filter from 'lucide-static/icons/filter.svg?raw';
@@ -24,8 +25,6 @@ import swords from 'lucide-static/icons/swords.svg?raw';
 import undo2 from 'lucide-static/icons/undo-2.svg?raw';
 import users from 'lucide-static/icons/users.svg?raw';
 
-// Item categories: the README also names flask and ring. lucide-static has neither (flask-round and
-// flask-conical exist, ring does not), so they are left out until the owner picks icons.
 const rawIcons = {
   roster: users,
   world: map,
@@ -50,7 +49,10 @@ const rawIcons = {
   bag: backpack,
   categorySword: sword,
   categoryShield: shield,
+  categoryFlask: flaskRound,
   categoryGem: gem,
+  // Lucide has no ring (decisions L19).
+  categoryRing: circleDot,
   categoryScroll: scroll,
 } as const;
 
