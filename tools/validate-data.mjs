@@ -155,6 +155,15 @@ for (const a of tables['areas'] ?? []) {
   }
 }
 
+// Simulation limits and the reference build for the balance tools.
+if (!(Number.isInteger(C.engine?.maxStepsPerFrame) && C.engine.maxStepsPerFrame >= 1)) errors.push('constants.engine.maxStepsPerFrame must be a whole number of 1 or more');
+const referenceBuild = C.balance?.referenceBuild ?? {};
+for (const key of ['weaponBase', 'weaponPerLevel', 'armourBase', 'armourPerLevel']) {
+  if (!isFinite(referenceBuild[key]) || referenceBuild[key] < 0) errors.push(`constants.balance.referenceBuild.${key} must be a number of 0 or more`);
+}
+const referenceSplit = Object.values(referenceBuild.attributeSplit ?? {});
+if (Math.abs(referenceSplit.reduce((sum, share) => sum + share, 0) - 1) > 1e-9) errors.push('constants.balance.referenceBuild.attributeSplit must add up to 1');
+
 // Items.
 const attributeIds = ids('attributes');
 const baseMaxStack = C.inventory?.baseMaxStack;

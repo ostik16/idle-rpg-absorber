@@ -1,0 +1,29 @@
+/**
+ * What the engine reports (ADR 0002, architecture "Data flow"). The UI reads them with `drainEvents()`.
+ * Events a character step emits are also the ordered list that carries shared effects at the end of the step
+ * (ADR 0002 "Multiple characters").
+ */
+import type { Phase } from '../state/types';
+import type { Command } from './commands';
+
+export type EngineEvent =
+  /** The clock went backwards: `lastSimulatedAt` was `from`, now is `to`. The UI shows a one-line notice. */
+  | { type: 'clockRewind'; from: number; to: number }
+  /** An offline summary was added to `state.pendingSummary`. */
+  | { type: 'summaryReady' }
+  | { type: 'characterAdded'; characterId: string }
+  /** A command could not be applied. Nothing changed. */
+  | { type: 'commandRejected'; command: Command; reason: string }
+  /** Emitted by a character step through `enterPhase`; nothing emits it until phase transitions exist. */
+  | { type: 'phaseChanged'; characterId: string; from: Phase; to: Phase };
+
+/**
+ * End of a step: publishes the events the characters emitted, in the order they were emitted
+ * (characters run in id order, so the order never depends on roster order), then empties `stepEvents`.
+ * Changes to shared state (gold, warehouse deposits, bestiary reveals) are applied here, one case per
+ * event type, by the issues that add them. None exist yet, so this only publishes.
+ */
+export function publishStepEvents(stepEvents: EngineEvent[], outbox: EngineEvent[]): void {
+  for (const event of stepEvents) outbox.push(event);
+  stepEvents.length = 0;
+}
