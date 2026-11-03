@@ -2,7 +2,7 @@
 import { enemyOrBaseline, referenceFightSeconds } from './combat';
 import { intFlag, parseFlags, usage, type FlagSpec } from './args';
 import { runCli } from './cli';
-import { areaReport, type Pace } from './drops';
+import { areaReport, unfarmableItems, type Pace } from './drops';
 import { num, pct, table } from './format';
 import { BalanceError, findArea, levelRangeText, loadBalanceData, type EnemyEntry } from './load-data';
 
@@ -65,7 +65,7 @@ function main(argv: string[]): string {
       out.push(
         ...table(
           ['  Item', 'Base', 'Final', 'Avg qty', 'Per kill', 'Per hour'],
-          e.drops.map((d) => [`  ${d.itemName}${d.poolId === null ? '' : ` [every kill, pool ${d.poolId}]`}`, pct(d.baseChance), pct(d.finalChance, 2), num(d.avgQuantity), num(d.dropsPerKill, 3), num(d.dropsPerHour, 2)]),
+          e.drops.map((d) => [`  ${d.itemName}${d.poolId === null ? '' : ` [every kill, pool ${d.poolId}]`}${d.finalChance === 0 ? ' [cannot be farmed by this character (drop rate 0%)]' : ''}`, pct(d.baseChance), pct(d.finalChance, 2), num(d.avgQuantity), num(d.dropsPerKill, 3), num(d.dropsPerHour, 2)]),
         ).split('\n'),
       );
     }
@@ -80,6 +80,11 @@ function main(argv: string[]): string {
   if (report.dropValuePerHour > 0) out.push(`  Items  ${num(report.dropValuePerHour, 0)} gold if sold`);
   if (report.items.length > 0) {
     out.push('', table(['Item', 'Drops/h'], report.items.map((i) => [i.itemName, num(i.dropsPerHour, 2)])));
+  }
+  const unfarmable = unfarmableItems(report);
+  if (unfarmable.length > 0) {
+    out.push('', `Needs a lower-level character (drop rate 0% at level ${level})`);
+    for (const u of unfarmable) out.push(`  ${u.itemName}: ${u.enemyNames.join(', ')}`);
   }
   return out.join('\n');
 }

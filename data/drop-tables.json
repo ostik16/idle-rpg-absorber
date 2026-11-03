@@ -31,7 +31,10 @@
       { "itemId": "minor-health-potion", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "worn-boots", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "whetstone", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "padded-lining", "baseChance": 0.005, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "padded-lining", "baseChance": 0.005, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "plate-fragment", "baseChance": 0.002, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "iron-plate", "baseChance": 0.0005, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ironbark-core", "baseChance": 0.001, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-mire-toad",
     "entries": [
@@ -39,7 +42,9 @@
       { "itemId": "minor-health-potion", "baseChance": 0.06, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "leather-cap", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "canvas-pack", "baseChance": 0.005, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "rough-gem", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "rough-gem", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "flawless-gem", "baseChance": 0.001, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "radiant-gem", "baseChance": 0.0003, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-mossfang-wolf",
     "entries": [
@@ -51,7 +56,9 @@
       { "itemId": "mossfang-dagger", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "fangtooth-necklace", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "wolf-pelt", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "whetstone", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "whetstone", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "fangsteel-shard", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "moonsteel-sliver", "baseChance": 0.0012, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-gloom-bat",
     "entries": [
@@ -61,7 +68,9 @@
       { "itemId": "worn-boots", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "fleetfoot-charm", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "sturdy-thread", "baseChance": 0.006, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "honed-whetstone", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "honed-whetstone", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "windweave", "baseChance": 0.0005, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ember-silk", "baseChance": 0.001, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-ember-wisp",
     "entries": [
@@ -70,7 +79,11 @@
       { "itemId": "leather-cap", "baseChance": 0.02, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "fangtooth-necklace", "baseChance": 0.015, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "rough-gem", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "honed-whetstone", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "honed-whetstone", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ember-silk", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "windweave", "baseChance": 0.0012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "flawless-gem", "baseChance": 0.0015, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "radiant-gem", "baseChance": 0.0005, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-gnarl-sapling",
     "entries": [
@@ -79,7 +92,9 @@
       { "itemId": "padded-vest", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "oak-greatclub", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "heartwood-chip", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "tanned-hide", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "tanned-hide", "baseChance": 0.004, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ironbark-core", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "titan-sinew", "baseChance": 0.0008, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-thornhide-boar",
     "entries": [
@@ -91,7 +106,12 @@
       { "itemId": "oak-greatclub", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "whetstone", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "tanned-hide", "baseChance": 0.006, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "iron-bar", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "iron-bar", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "fangsteel-shard", "baseChance": 0.002, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "plate-fragment", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "iron-plate", "baseChance": 0.0012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "titan-sinew", "baseChance": 0.0015, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "leather-pack", "baseChance": 0.002, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-glade-stag",
     "entries": [
@@ -101,7 +121,11 @@
       { "itemId": "mossfang-dagger", "baseChance": 0.01, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "wolf-pelt", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "heartwood-chip", "baseChance": 0.008, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "polished-gem", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "polished-gem", "baseChance": 0.003, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "radiant-gem", "baseChance": 0.0005, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "windweave", "baseChance": 0.0008, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "moonsteel-sliver", "baseChance": 0.0005, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "leather-pack", "baseChance": 0.002, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-old-mossfang",
     "guaranteedPools": [
@@ -113,7 +137,17 @@
         { "itemId": "sturdy-thread", "weight": 12, "minQuantity": 3, "maxQuantity": 5 },
         { "itemId": "rough-gem", "weight": 8, "minQuantity": 1, "maxQuantity": 2 },
         { "itemId": "iron-bar", "weight": 3, "minQuantity": 1, "maxQuantity": 2 },
-        { "itemId": "tanned-hide", "weight": 3, "minQuantity": 1, "maxQuantity": 2 }
+        { "itemId": "tanned-hide", "weight": 3, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "fangsteel-shard", "weight": 3, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "ironbark-core", "weight": 3, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "plate-fragment", "weight": 3, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "ember-silk", "weight": 3, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "flawless-gem", "weight": 3, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "moonsteel-sliver", "weight": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "titan-sinew", "weight": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "iron-plate", "weight": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "windweave", "weight": 1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "radiant-gem", "weight": 1, "minQuantity": 1, "maxQuantity": 1 }
       ] }
     ],
     "entries": [
@@ -126,7 +160,18 @@
       { "itemId": "mossfang-sword", "baseChance": 0.25, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "thornhide-vest", "baseChance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "oak-greatclub", "baseChance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "fangtooth-necklace", "baseChance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "fangtooth-necklace", "baseChance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "fangsteel-shard", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ironbark-core", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "plate-fragment", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ember-silk", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "flawless-gem", "baseChance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "moonsteel-sliver", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "titan-sinew", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "iron-plate", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "windweave", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "radiant-gem", "baseChance": 0.012, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "leather-pack", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 }
     ] },
   { "id": "drop-mossfang-matriarch",
     "guaranteedPools": [
@@ -153,6 +198,15 @@
       { "itemId": "oak-greatclub", "baseChance": 0.25, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "thornhide-vest", "baseChance": 0.3, "minQuantity": 1, "maxQuantity": 1 },
       { "itemId": "fangtooth-necklace", "baseChance": 0.25, "minQuantity": 1, "maxQuantity": 1 },
-      { "itemId": "fleetfoot-charm", "baseChance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      { "itemId": "fleetfoot-charm", "baseChance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ironbark-core", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "ember-silk", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "flawless-gem", "baseChance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "moonsteel-sliver", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "titan-sinew", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "iron-plate", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "windweave", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "radiant-gem", "baseChance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "leather-pack", "baseChance": 0.15, "minQuantity": 1, "maxQuantity": 1 }
     ] }
 ]

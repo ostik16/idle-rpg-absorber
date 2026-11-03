@@ -6,6 +6,7 @@ import {
   characterNameError,
   critChance,
   defence,
+  healthRegenPerSecond,
   hitDamage,
   maxHealth,
   maxMana,
@@ -14,6 +15,8 @@ import {
   potionHealPerTick,
   potionTickCount,
   queuePotions,
+  regenOverSeconds,
+  secondsToHealToFull,
   spellDamageMultiplier,
   startingAttributes,
   weaponDamageOrUnarmed,
@@ -186,7 +189,8 @@ describe('character creation (design 4.1)', () => {
   it('starts with no free points, no equipment and no items', () => {
     expect(constants.creation.freePoints).toBe(0);
     expect(constants.creation.startingEquipment).toEqual({});
-    expect(constants.creation.startingItems).toEqual([]);
+    expect(constants.creation.startingGold).toBe(0);
+    expect(constants.creation.startingItems).toEqual([{ itemId: 'minor-health-potion', quantity: 10 }]);
   });
 
   it('starts at the base attributes, 5 in each', () => {
@@ -260,5 +264,36 @@ describe('potion queue (design 2.6)', () => {
 
   it('is empty for no potions', () => {
     expect(queuePotions([])).toEqual({ healPerTick: [], totalTicks: 0, totalHeal: 0 });
+  });
+});
+
+describe('default health regeneration (design 3.7)', () => {
+  it('is 0.5% of max health per second', () => {
+    expect(constants.stats.healthRegen.fractionOfMaxPerSecond).toBe(0.005);
+    expect(healthRegenPerSecond(70)).toBeCloseTo(0.35);
+    expect(healthRegenPerSecond(200)).toBeCloseTo(1);
+  });
+
+  it('is far slower than the weakest potion (minor: 4 health per second)', () => {
+    expect(healthRegenPerSecond(1000)).toBeLessThan(potionHealPerSecond({ amount: 40, durationSeconds: 10 }) * 2);
+    expect(healthRegenPerSecond(70)).toBeLessThan(4);
+  });
+
+  it('adds up over time', () => {
+    expect(regenOverSeconds(70, 6)).toBeCloseTo(2.1);
+    expect(regenOverSeconds(200, 60)).toBeCloseTo(60);
+    expect(regenOverSeconds(70, 0)).toBe(0);
+    expect(() => regenOverSeconds(70, -1)).toThrow(RangeError);
+  });
+
+  it('heals from 10% to full in 180 s whatever the max health', () => {
+    expect(secondsToHealToFull(70, 7)).toBeCloseTo(180); // 63 missing / 0.35
+    expect(secondsToHealToFull(200, 20)).toBeCloseTo(180); // 180 / 1
+  });
+
+  it('a potion on top shortens it, full health needs no time', () => {
+    expect(secondsToHealToFull(200, 20, 4)).toBeCloseTo(36); // 180 / (1 + 4)
+    expect(secondsToHealToFull(200, 200)).toBe(0);
+    expect(secondsToHealToFull(200, 250)).toBe(0);
   });
 });

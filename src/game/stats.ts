@@ -131,7 +131,7 @@ const NO_ALLOCATION: Attributes = { strength: 0, dexterity: 0, vitality: 0, inte
 /**
  * Starting attributes for a new character: the base values plus the player's allocation of free points.
  * constants.creation.freePoints is 0, so by default the allocation is empty and the result is the base values.
- * Starting equipment and items are empty too (constants.creation.startingEquipment, startingItems).
+ * There is no starting gear (constants.creation.startingEquipment); the only starting items are constants.creation.startingItems.
  */
 export function startingAttributes(
   allocation: Attributes = NO_ALLOCATION,
@@ -228,4 +228,35 @@ export function queuePotions(
     for (let i = 0; i < ticks; i++) healPerTick.push(perTick);
   }
   return { healPerTick, totalTicks: healPerTick.length, totalHeal: healPerTick.reduce((s, h) => s + h, 0) };
+}
+
+/**
+ * Default health regeneration (design 3.7): constants.stats.healthRegen.fractionOfMaxPerSecond (0.5%) of max health
+ * per second, always on. Meant to be too slow to replace potions, but enough to heal without potions or money.
+ */
+export function healthRegenPerSecond(maxHealthValue: number, c: StatsConstants = constants.stats): number {
+  return maxHealthValue * c.healthRegen.fractionOfMaxPerSecond;
+}
+
+/** Health regained over `seconds` seconds of default regeneration (not capped at max health). */
+export function regenOverSeconds(maxHealthValue: number, seconds: number, c: StatsConstants = constants.stats): number {
+  if (!(seconds >= 0)) throw new RangeError(`seconds must be 0 or more, got ${seconds}`);
+  return healthRegenPerSecond(maxHealthValue, c) * seconds;
+}
+
+/**
+ * Seconds to heal from `currentHealth` to full: missing health / (default regeneration + `extraHealPerSecond`,
+ * for example a potion's rate). 0 when already full.
+ */
+export function secondsToHealToFull(
+  maxHealthValue: number,
+  currentHealth: number,
+  extraHealPerSecond = 0,
+  c: StatsConstants = constants.stats,
+): number {
+  const missing = maxHealthValue - currentHealth;
+  if (missing <= 0) return 0;
+  const rate = healthRegenPerSecond(maxHealthValue, c) + extraHealPerSecond;
+  if (!(rate > 0)) throw new RangeError(`heal rate must be above 0, got ${rate}`);
+  return missing / rate;
 }

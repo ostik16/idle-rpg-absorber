@@ -321,3 +321,30 @@ export function areaReport(
     dropValuePerHour: sum(itemList.map((t) => t.sellValuePerHour ?? 0)),
   };
 }
+
+export interface UnfarmableItem {
+  itemId: string;
+  itemName: string;
+  /** Enemies of the area that drop it (all at a final chance of 0%). */
+  enemyNames: string[];
+}
+
+/**
+ * Items this character cannot farm in the area: every drop row of the item has a final chance of 0, because the
+ * drop level modifier is 0 for a character 10 or more levels above the enemy (3.8). A higher-level character needs
+ * to take these from a lower-level one. An item that drops with a chance above 0 from any enemy is not listed.
+ */
+export function unfarmableItems(report: AreaReport): UnfarmableItem[] {
+  const byItem = new Map<string, { itemName: string; enemyNames: string[]; farmable: boolean }>();
+  for (const e of report.enemies) {
+    for (const row of e.drops) {
+      const entry = byItem.get(row.itemId) ?? { itemName: row.itemName, enemyNames: [], farmable: false };
+      if (row.finalChance > 0) entry.farmable = true;
+      else if (!entry.enemyNames.includes(e.name)) entry.enemyNames.push(e.name);
+      byItem.set(row.itemId, entry);
+    }
+  }
+  return [...byItem.entries()]
+    .filter(([, v]) => !v.farmable)
+    .map(([itemId, v]) => ({ itemId, itemName: v.itemName, enemyNames: v.enemyNames }));
+}

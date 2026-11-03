@@ -18,7 +18,7 @@ Each level gives 1 skill point for spells. It also gives 3 character points, awa
 Characters can absorb the magical strengths of normal enemies, such as life steal or magic affinities. Each kill grants 1% of the enemy's value, up to that value.
 
 **4. Areas, enemies and loot.**
-Areas up to level 30, each with a range of enemy levels. Areas can spawn bosses, mini-bosses or cursed objects. Enemies drop money, equipment and upgrade materials. Mini-bosses drop upgrade materials, and bosses and cursed objects drop rare items. An enemy with a guaranteed drop draws it from a pool, so a kill never repeats one fixed item.
+Areas up to level 30, each with a range of enemy levels. Areas can spawn bosses, mini-bosses or cursed objects. Enemies drop money, equipment and upgrade materials. Mini-bosses drop upgrade materials, and bosses and cursed objects drop rare items, all on top of their ordinary drops. An enemy with a guaranteed drop draws it from a pool, so a kill never repeats one fixed item.
 
 **5. Gear that cannot be fully maxed.**
 Upgrades go to +9. Early levels cost only money, later levels need rare materials, and a failed upgrade destroys the item. One playthrough or one character cannot max every item.
@@ -27,7 +27,7 @@ Upgrades go to +9. Early levels cost only money, later levels need rare material
 Players create multiple characters that all farm at the same time, and move items between them through a shared warehouse with limited space.
 
 **7. Low levels matter.**
-Each level the character is above the enemy cuts the item drop chance by 10% of the base chance (the level modifier falls by 0.1 per level, 3.8). The materials high-level gear needs only drop from low-level enemies, so players must farm with low-level characters and pass the results up.
+Each level the character is above the enemy cuts the item drop chance by 10% of the base chance (the level modifier falls by 0.1 per level, 3.8). Every upgrade material has a source among low-level enemies (level 10 or below), and a character 10 or more levels above an enemy gets no drops from it. High-level characters cannot farm those materials themselves, so players run several characters and pass the results up.
 
 ### Design intent
 

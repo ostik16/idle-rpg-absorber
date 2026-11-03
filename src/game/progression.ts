@@ -138,11 +138,23 @@ export function characterPointsEarned(
 }
 
 /**
- * Seconds until a dead character is back (design 3.7): level x constants.death.respawnMinutesPerLevel minutes.
+ * Seconds until a dead character is back (design 3.7): level x constants.death.respawnSecondsPerLevel (4),
+ * so level 30 waits 120 s.
  */
 export function respawnSeconds(level: number, c: typeof constants.death = constants.death): number {
   if (!Number.isInteger(level) || level < 1) throw new RangeError(`level must be a whole number of 1 or more, got ${level}`);
-  return level * c.respawnMinutesPerLevel * 60;
+  return level * c.respawnSecondsPerLevel;
+}
+
+/**
+ * Health a character comes back with after respawning (design 3.7): constants.death.respawnHealthFraction (10%)
+ * of its max health, rounded up, at least 1. It must heal to full (constants.death.mustHealToFullBeforeFarming)
+ * before it farms again; see secondsToHealToFull in stats.ts.
+ */
+export function respawnHealth(maxHealth: number, c: typeof constants.death = constants.death): number {
+  if (!(maxHealth > 0)) throw new RangeError(`max health must be above 0, got ${maxHealth}`);
+  // The small offset keeps float noise (70 x 0.1 = 7.000000000000001) from rounding up an exact result.
+  return Math.max(1, Math.ceil(maxHealth * c.respawnHealthFraction - 1e-9));
 }
 
 /**
@@ -161,4 +173,15 @@ export function slotTicketsEarned(
 /** Skill points earned (design 4.5): skillPointsPerLevel for every level gained after level 1. */
 export function skillPointsEarned(level: number, c: PointsConstants = constants.points): number {
   return (level - 1) * c.skillPointsPerLevel;
+}
+
+/** Slots unlocked (design 4.1): constants.characters.startingUnlockedSlots plus one per ticket used, up to maxSlots. */
+export function unlockedSlots(ticketsUsed: number, c: typeof constants.characters = constants.characters): number {
+  if (!Number.isInteger(ticketsUsed) || ticketsUsed < 0) throw new RangeError(`tickets used must be a whole number of 0 or more, got ${ticketsUsed}`);
+  return Math.min(c.maxSlots, c.startingUnlockedSlots + ticketsUsed);
+}
+
+/** Slots still locked: maxSlots minus the unlocked ones. */
+export function lockedSlots(ticketsUsed: number, c: typeof constants.characters = constants.characters): number {
+  return c.maxSlots - unlockedSlots(ticketsUsed, c);
 }

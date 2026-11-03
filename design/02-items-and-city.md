@@ -18,11 +18,11 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - The gap between item levels must be large enough that upgrading each item is worth it before replacing it.
 - Base values are fixed per item (attack range, defence, …).
 - Items can also have bonus attributes. Each bonus has a fixed range, and the actual value is rolled within that range when the item drops.
-- Each item has a size in slots and a stack limit. A backpack can raise stack limits (2.3).
+- Each item has a size in slots and is either stackable or not. There is no per-item stack limit: the container sets the max stack, and all stackable items stack to it (2.3, 2.4).
 - An item can roll up to 3 bonus attributes for now. Each pool entry rolls on its own chance.
 - More bonus attributes will be added later, together with two rare items: one adds attribute slots to an item and one rerolls all its bonus attributes at once (2.8).
 
-**Data.** id, name, category (equipment, consumable, material, rare), size (slots), stack limit, required level, base stats, bonus attribute pool (attribute, min, max, chance), buy price, sell price, icon. Effect fields by category: the slot types an equipment item fits, the effect of a consumable or rare item (amount, duration, use), backpack cells and stack-limit multiplier.
+**Data.** id, name, category (equipment, consumable, material, rare), size (slots), stackable (yes/no), required level, base stats, bonus attribute pool (attribute, min, max, chance), buy price, sell price, icon. Effect fields by category: the slot types an equipment item fits, the effect of a consumable or rare item (amount, duration, use), backpack cells and backpack max stack.
 
 ---
 
@@ -37,7 +37,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Example: a weapon requiring 20 Strength and 20 Dexterity, used with 10 Strength and 15 Dexterity, is 10 + 5 = 15 points short, so it works at 1 − 0.15 = 85%. At 50 or more missing points it stays at 50%. A weapon with no scaling, or no weapon, has no penalty.
 - Slots: main hand, off hand, head, body, hands, legs, feet, necklace, ring 1, ring 2 (default, revisit after playtesting), the special-item-slot and the backpack.
 - The special-item-slot accepts only items that can be placed there, usually rare items (2.8).
-- The backpack slot holds a backpack. A backpack adds bag cells and can raise item stack limits through a stack-limit multiplier, so a better backpack allows larger potion stacks (2.3).
+- The backpack slot holds a backpack. A backpack adds bag cells and sets the bag's max stack, so a better backpack allows larger stacks of potions and materials (2.3).
 - A two-handed weapon blocks the off hand (default, revisit after playtesting).
 
 **Proposed.**
@@ -53,7 +53,8 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 
 **Rules.**
 - Each character has their own inventory.
-- The base bag is 36 cells (`constants.inventory.baseCells`). A backpack in the backpack slot (2.2) adds cells and can raise stack limits in that character's bag.
+- The base bag is 36 cells (`constants.inventory.baseCells`). A backpack in the backpack slot (2.2) adds cells and sets the max stack of that character's bag.
+- The bag has a max stack, and all stackable items stack to that amount. Without a backpack the base max stack is 20 (`constants.inventory.baseMaxStack`). A backpack sets a higher max stack for that character's bag only. A stack moved from the warehouse is split to fit the bag's max stack.
 - Loot filter: the player chooses what to pick up.
 - Auto-sell is a later upgrade.
 - The loot filter is the idle trade-off: keep space for rare equipment, or farm only for XP and money.
@@ -63,7 +64,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - A full inventory triggers a return to the city (see 3.2 Travel).
 - Filter rules by category, required level and bonus attributes.
 
-**Data.** base inventory size (`constants.inventory`), backpack cells and stack-limit multiplier (on the backpack item), auto-sell unlock condition.
+**Data.** base inventory size (`constants.inventory`), base max stack (`constants.inventory.baseMaxStack`), backpack cells and backpack max stack (on the backpack item), auto-sell unlock condition.
 
 ---
 
@@ -75,7 +76,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Tabs, each with a grid.
 - Limited slots.
 - Large items take more space. A weapon takes 2-3 slots.
-- Materials take 1 slot and stack up to 100.
+- Stackable items (materials, potions and other consumables) take 1 slot per stack. The warehouse stacks all of them to 100 (`constants.storage.maxStack`).
 
 **Proposed.**
 - More tabs bought with gold. Acts as a long-term gold sink.
@@ -97,7 +98,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 
 **Rare goods shop.**
 - Rotating stock. It rotates every hour.
-- A rotation can be forced with a rare "Rotation token" (placeholder name) or with gold: 5,000 (`constants.shops.rareGoodsRefreshGoldCost`, a default to review). A forced rotation restarts the hourly timer (assumption).
+- A rotation can be forced with a rare "Rotation token" (placeholder name) or with gold: 5,000 (`constants.shops.rareGoodsRefreshGoldCost`, owner approved, can be adjusted later). A forced rotation restarts the hourly timer (assumption).
 - The pool does not depend on the level of the player's characters. All characters share one stock.
 - Items are rare and expensive.
 - Stock can include rare items normally dropped by bosses and cursed objects, equipment upgraded to a high level, and equipment with good bonus attributes.
@@ -118,7 +119,8 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Health potions heal over time. Better potions heal more, and faster.
 - Potions have no level requirement. Amounts are fixed, so a strong potion is wasted on a low-level character.
 - No cooldowns. The heal-over-time rate is the limit.
-- Potions do not stack. A potion used while another is healing is queued and starts when the first ends (`constants.potions.stacking` = queue).
+- Potions are the fast way to heal. Natural health regeneration (4.2) is slow and does not replace them; it only lets a character with no money or potions heal up, in the city or in the field.
+- Potion effects do not add up. A potion used while another is healing is queued and starts when the first ends (`constants.potions.stacking` = queue).
 - A potion restores its amount evenly over its duration in ticks of 500 ms (`constants.potions`). Reference tiers: minor 40 over 10 s (4 per second), lesser 120 over 9 s (13), standard 320 over 8 s (40), greater 800 over 7 s (114), grand 1,800 over 6 s (300). These are the formula's reference points; potion items set their own amount and duration.
 - Boost items are consumables like potions, but they grant a timed buff instead of health: move speed, attack speed, critical rate, defence, XP, drop rate and similar. They are rare items (2.8).
 - Boost equipment is a different thing: equipment that gives boost-type bonuses while worn (2.8).
@@ -145,6 +147,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Upgrades up to +5 cost only gold. Upgrades to +6 and above also need upgrade materials (`constants.upgrade.materialsStartAtLevel` = 6).
 - Different equipment types need different upgrade items and amounts, and each upgrade level can need a different item. There is no single material for all levels.
 - Upgrade items have a small drop chance (3.8).
+- Every upgrade material has at least one low-level source: an enemy of level 10 or below that can drop it (`constants.balance.upgradeMaterialLowLevelSourceMaxEnemyLevel`, 3.8). High-level gear needs materials that a high-level character cannot farm itself, so it relies on the rest of the roster.
 - A protection item is used up on every attempt it is applied to, whether the upgrade succeeds or fails.
 - Success chance starts at 90% and each level is 90% of the previous one.
 - One playthrough or one character cannot max every item.
@@ -175,7 +178,7 @@ Without protection, an item has about a 0.9% chance to go from +0 to +9 without 
 **Purpose.** One list of the rare items that bend the rules. Several systems rely on them, so they get one definition. Stored in the items table (2.1) with category rare.
 
 **Rules.**
-- Dropped by bosses and cursed objects. Cursed objects keep dropping rare items (assumption to confirm). Mini-bosses drop upgrade materials (3.8).
+- Dropped by bosses and cursed objects, from a guaranteed pool of rare items. They also roll their ordinary drop table, so they drop ordinary items too. Mini-bosses drop upgrade materials from a guaranteed pool, plus normal rolls (3.8).
 - Some are sold in the rare goods shop (2.5).
 - Each rare item has one use: equipped in the special-item-slot, used for upgrading, or consumed.
 - Names marked as placeholders will change.

@@ -8,8 +8,7 @@ type ProficiencyConstants = typeof constants.proficiency;
 
 /**
  * The hidden skills (design 4.6): unarmed, one-handed, two-handed, toughness, speed and combat.
- * The endurance skill is removed; owner question I1 (what the visible endurance stat is) is pending,
- * so no endurance stat is modelled anywhere in src/game.
+ * Endurance was dropped (owner decision I1): there is no endurance skill or stat anywhere in src/game.
  */
 export type ProficiencyId = keyof ProficiencyConstants['gainPerAction'];
 

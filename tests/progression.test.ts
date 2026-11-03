@@ -8,7 +8,10 @@ import {
   newlyAwardedPoints,
   pointMarks,
   pointsAwardedAt,
+  respawnHealth,
   respawnSeconds,
+  unlockedSlots,
+  lockedSlots,
   slotTicketsEarned,
   xpAfterDeath,
   xpFloor,
@@ -211,9 +214,9 @@ describe('awarding points once (design 4.4)', () => {
 
 describe('respawn time (design 3.7)', () => {
   it('is 2 minutes per character level', () => {
-    expect(respawnSeconds(1)).toBe(120);
-    expect(respawnSeconds(14)).toBe(1680);
-    expect(respawnSeconds(30)).toBe(3600);
+    expect(respawnSeconds(1)).toBe(4);
+    expect(respawnSeconds(14)).toBe(56);
+    expect(respawnSeconds(30)).toBe(120);
   });
 
   it('rejects an invalid level', () => {
@@ -239,6 +242,44 @@ describe('slot tickets (design 4.1)', () => {
     let total = 0;
     for (let level = 2; level <= 30; level++) total += slotTicketsEarned(level - 1, level);
     expect(total).toBe(1);
-    expect(constants.characters.startingSlots).toBe(4);
+  });
+});
+
+describe('respawn health (design 3.7)', () => {
+  it('is 10% of max health, rounded up, at least 1', () => {
+    expect(constants.death.respawnHealthFraction).toBe(0.1);
+    expect(constants.death.mustHealToFullBeforeFarming).toBe(true);
+    expect(respawnHealth(70)).toBe(7); // exact: no float round-up to 8
+    expect(respawnHealth(110)).toBe(11);
+    expect(respawnHealth(75)).toBe(8); // 7.5 rounds up
+    expect(respawnHealth(5)).toBe(1); // 0.5 -> 1
+    expect(respawnHealth(0.2)).toBe(1); // at least 1
+  });
+
+  it('rejects a max health of 0 or less', () => {
+    expect(() => respawnHealth(0)).toThrow(RangeError);
+  });
+});
+
+describe('roster slots (design 4.1)', () => {
+  it('starts with 1 of 4 slots unlocked', () => {
+    expect(constants.characters.maxSlots).toBe(4);
+    expect(constants.characters.startingUnlockedSlots).toBe(1);
+    expect(unlockedSlots(0)).toBe(1);
+    expect(lockedSlots(0)).toBe(3);
+  });
+
+  it('each ticket unlocks one slot, up to the maximum', () => {
+    expect(unlockedSlots(1)).toBe(2);
+    expect(lockedSlots(2)).toBe(1);
+    expect(unlockedSlots(3)).toBe(4);
+    expect(lockedSlots(3)).toBe(0);
+    expect(unlockedSlots(10)).toBe(4);
+    expect(lockedSlots(10)).toBe(0);
+  });
+
+  it('rejects a negative or fractional ticket count', () => {
+    expect(() => unlockedSlots(-1)).toThrow(RangeError);
+    expect(() => unlockedSlots(0.5)).toThrow(RangeError);
   });
 });

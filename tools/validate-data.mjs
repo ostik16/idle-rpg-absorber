@@ -114,8 +114,13 @@ for (const d of tables['drop-tables'] ?? []) {
 const poolItems = (d) => (d?.guaranteedPools ?? []).flatMap((p) => p.entries ?? []).map((x) => itemById[x.itemId]).filter(Boolean);
 for (const e of tables['enemies'] ?? []) {
   const d = dropTableById[e.dropTableId];
+  if (e.type === 'boss' || e.type === 'cursed-object') {
+    if (!poolItems(d).some((i) => i.category === 'rare')) errors.push(`enemies.${e.id}: a ${e.type} drop table needs a guaranteed pool with rare items`);
+    if (!(d?.entries ?? []).some((x) => itemById[x.itemId] && itemById[x.itemId].category !== 'rare')) errors.push(`enemies.${e.id}: a ${e.type} drop table also needs at least one normal roll entry for a non-rare item`);
+  }
+  if (e.type === 'mini-boss' && !(d?.entries ?? []).some((x) => ['equipment', 'material'].includes(itemById[x.itemId]?.category))) errors.push(`enemies.${e.id}: a mini-boss drop table needs normal rolls for equipment or materials`);
+  if (e.type === 'mini-boss' && (d?.entries ?? []).some((x) => itemById[x.itemId]?.category === 'rare')) errors.push(`enemies.${e.id}: a mini-boss must not roll rare items`);
   if (e.type === 'mini-boss' && !poolItems(d).some((i) => i.category === 'material')) errors.push(`enemies.${e.id}: a mini-boss drop table needs a guaranteed pool with material items`);
-  if (e.type === 'boss' && !poolItems(d).some((i) => i.category === 'rare')) errors.push(`enemies.${e.id}: a boss drop table needs a guaranteed pool with rare items`);
   if (e.type === 'mini-boss' && poolItems(d).some((i) => i.category === 'rare')) errors.push(`enemies.${e.id}: a mini-boss guaranteed pool must not hold rare items`);
   if (e.type === 'normal' && (d?.guaranteedPools ?? []).length) errors.push(`enemies.${e.id}: ordinary enemies have no guaranteed pools`);
 }
@@ -152,7 +157,9 @@ for (const a of tables['areas'] ?? []) {
 
 // Items.
 const attributeIds = ids('attributes');
-const stackMax = C.storage?.materialStackSize;
+const baseMaxStack = C.inventory?.baseMaxStack;
+if (!isFinite(baseMaxStack) || baseMaxStack < 1) errors.push('constants.inventory.baseMaxStack must be a number of 1 or more');
+if (!(C.storage?.maxStack >= 1)) errors.push('constants.storage.maxStack must be a number of 1 or more');
 const slotTypes = new Set((tables['equipment-slots'] ?? []).flatMap((s) => s.allowedTypes ?? []));
 const maxBonus = C.items?.maxBonusAttributes;
 const categories = ['equipment', 'consumable', 'material', 'rare'];
@@ -163,7 +170,7 @@ for (const it of tables['items'] ?? []) {
   const from = `items.${it.id}`;
   for (const k of ['name', 'category', 'icon']) if (typeof it[k] !== 'string' || !it[k]) errors.push(`${from}: missing ${k}`);
   if (!categories.includes(it.category)) errors.push(`${from}: category must be one of ${categories.join(', ')}`);
-  for (const k of ['size', 'stackLimit', 'requiredLevel']) if (!isInt(it[k], 1)) errors.push(`${from}: ${k} must be a whole number of 1 or more`);
+  for (const k of ['size', 'requiredLevel']) if (!isInt(it[k], 1)) errors.push(`${from}: ${k} must be a whole number of 1 or more`);
   if (!isInt(it.sellPrice, 0)) errors.push(`${from}: sellPrice must be a whole number of 0 or more`);
   if (it.buyPrice !== null && !isInt(it.buyPrice, 0)) errors.push(`${from}: buyPrice must be a whole number of 0 or more, or null when not purchasable`);
   if (it.buyPrice !== null && it.sellPrice > it.buyPrice) errors.push(`${from}: sellPrice is above buyPrice`);
@@ -176,12 +183,13 @@ for (const it of tables['items'] ?? []) {
     inRange01(from, `bonus ${b.attribute} chance`, b.chance);
   }
   if (maxBonus != null && (it.bonusAttributePool ?? []).length > 0 && maxBonus < 1) errors.push(`${from}: has a bonus pool but items.maxBonusAttributes is ${maxBonus}`);
-  if (it.category === 'material' && stackMax != null && it.stackLimit > stackMax) errors.push(`${from}: stackLimit ${it.stackLimit} is above storage.materialStackSize ${stackMax}`);
+  if ('stackLimit' in it) errors.push(`${from}: stackLimit is gone, use stackable (the stack size comes from the backpack)`);
+  if (typeof it.stackable !== 'boolean') errors.push(`${from}: stackable must be true or false`);
   if (it.category !== 'equipment' && it.category !== 'rare' && 'equipmentType' in it) errors.push(`${from}: only equipment and equip-use rare items have equipmentType`);
   if ('scaling' in it && it.category !== 'equipment') errors.push(`${from}: only equipment has scaling`);
 
   if (it.category === 'equipment') {
-    if (it.stackLimit !== 1) errors.push(`${from}: equipment must have stackLimit 1`);
+    if (it.stackable !== false) errors.push(`${from}: equipment is not stackable`);
     if (!slotTypes.has(it.equipmentType)) errors.push(`${from}: equipmentType "${it.equipmentType}" is not allowed in any slot of equipment-slots.json`);
     if (it.equipmentType === 'special-item') errors.push(`${from}: special-item belongs to rare items, not equipment`);
     if (!('upgradeGroup' in it)) errors.push(`${from}: equipment needs upgradeGroup (null for a backpack)`);
@@ -201,8 +209,9 @@ for (const it of tables['items'] ?? []) {
     }
     if (it.equipmentType === 'backpack') {
       if (!isInt(it.bagCells, 1)) errors.push(`${from}: backpack needs bagCells, a whole number of 1 or more`);
-      if (typeof it.stackLimitMultiplier !== 'number' || it.stackLimitMultiplier < 1) errors.push(`${from}: backpack needs stackLimitMultiplier of 1 or more`);
-    } else if ('bagCells' in it || 'stackLimitMultiplier' in it) errors.push(`${from}: bagCells and stackLimitMultiplier belong to backpacks only`);
+      if (!isInt(it.maxStack, 1) || (baseMaxStack != null && it.maxStack <= baseMaxStack)) errors.push(`${from}: backpack needs maxStack, a whole number above constants.inventory.baseMaxStack (${baseMaxStack})`);
+      if ('stackLimitMultiplier' in it) errors.push(`${from}: stackLimitMultiplier is gone, use maxStack`);
+    } else if ('bagCells' in it || 'maxStack' in it || 'stackLimitMultiplier' in it) errors.push(`${from}: bagCells and maxStack belong to backpacks only`);
   }
 
   if (it.category === 'consumable') {
@@ -320,6 +329,38 @@ for (const [slot, itemId] of Object.entries(creation.startingEquipment ?? {})) {
 for (const s of creation.startingItems ?? []) {
   itemRef('constants.creation', 'startingItems', s.itemId);
   if (!isInt(s.quantity ?? 1, 1)) errors.push(`constants.creation: startingItems quantity for "${s.itemId}" must be a whole number of 1 or more`);
+}
+
+// Drop quantities stay within the base max stack.
+for (const d of tables['drop-tables'] ?? []) {
+  for (const x of [...(d.entries ?? []), ...(d.guaranteedPools ?? []).flatMap((p) => p.entries ?? [])]) {
+    if (baseMaxStack != null && x.maxQuantity > baseMaxStack) errors.push(`drop-tables.${d.id}: maxQuantity ${x.maxQuantity} for "${x.itemId}" is above constants.inventory.baseMaxStack ${baseMaxStack}`);
+  }
+}
+// Starting items: valid, stackable quantity within the base max stack, non-stackable at quantity 1.
+for (const s of creation.startingItems ?? []) {
+  const it = itemById[s.itemId];
+  if (!it) continue;
+  const q = s.quantity ?? 1;
+  if (it.stackable === false && q !== 1) errors.push(`constants.creation: non-stackable "${s.itemId}" must have quantity 1`);
+  if (it.stackable && baseMaxStack != null && q > baseMaxStack) errors.push(`constants.creation: startingItems quantity ${q} for "${s.itemId}" is above constants.inventory.baseMaxStack ${baseMaxStack}`);
+}
+
+// Balance principle: every upgrade material has a drop source, and levels 6 to 9 materials
+// each drop from at least one low-level enemy (so a roster of low-level characters can farm them).
+const lowMax = C.balance?.upgradeMaterialLowLevelSourceMaxEnemyLevel;
+if (!isFinite(lowMax)) errors.push('constants.balance.upgradeMaterialLowLevelSourceMaxEnemyLevel must be a number');
+const sourcesOf = {};
+for (const e of tables['enemies'] ?? []) {
+  const d = dropTableById[e.dropTableId];
+  for (const x of [...(d?.entries ?? []), ...(d?.guaranteedPools ?? []).flatMap((p) => p.entries ?? [])]) (sourcesOf[x.itemId] ??= []).push(e);
+}
+const upgradeMats = new Set();
+for (const u of tables['upgrades'] ?? []) for (const m of u.materials ?? []) upgradeMats.add(m.itemId);
+for (const m of upgradeMats) {
+  const src = sourcesOf[m] ?? [];
+  if (!src.length) errors.push(`balance: upgrade material "${m}" has no drop source`);
+  else if (isFinite(lowMax) && !src.some((e) => e.level <= lowMax)) errors.push(`balance: upgrade material "${m}" has no drop source from an enemy of level ${lowMax} or lower`);
 }
 
 // Undecided constants.

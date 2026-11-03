@@ -14,7 +14,8 @@ Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the 
 - A Warding Seal (upgrade protection) is used up on every attempt it is applied to, success or fail.
 - Potions have no level requirement. Any character can buy and use any potion, so the UI shows no level gate on them.
 - The equipment slot for rare items is called special-item-slot. The gear screen also has a backpack slot (2.2).
-- A new character starts with no gear, no items and no gold (4.1).
+- A new character starts with no gear and no gold, and 10 minor health potions (4.1).
+- The roster has at most 4 character slots, 1 unlocked at the start and 3 locked, each unlocked by a ticket earned at level 20 (4.1).
 
 **Proposed.**
 - Dark theme only. Grounds `ground`, `surface-1/2/3`.
@@ -45,16 +46,17 @@ Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the 
 - Items have no art yet. Slots show category icons until art exists.
 
 **Sketches to update** (the sketches in `design/ui/` are not edited here; this lists what no longer matches the rules).
-- Roster: shows 5 of 5 slots in use and an unlock-at-Lv-30 slot. It should show 4 starting slots, and a slot unlocked by the ticket a character receives at level 20 (4.1).
+- Roster: shows 5 of 5 slots in use and an unlock-at-Lv-30 slot. It should show 4 slots with 1 unlocked and 3 locked, each locked slot with a hint that it needs a slot ticket, earned when a character first reaches level 20 (4.1).
 - Potions: the Alchemist and bag show a level requirement on potions. Potions have none (2.6).
-- Starter gear: any screen that shows a new character with a starter sword, starter tunic or starter potions. New characters have nothing (4.1).
+- Starter items: any screen that shows a new character with a starter sword or starter tunic. New characters have no gear and no gold. They must show 10 minor health potions in the bag (4.1).
 - Rare item slot: the gear screen calls it the rare item slot. It is the special-item-slot (2.2).
-- Backpack: no backpack slot on the gear screen and no backpack in the bag screen (2.2, 2.3).
-- Death timer: "back in 1m 40s" is a fixed example. Respawn is level × 2 minutes (3.7), unit to confirm.
+- Backpack: no backpack slot on the gear screen and no backpack in the bag screen (2.2, 2.3). The bag screen should show the bag's max stack (20 without a backpack), and the warehouse stacks to 100 (2.4).
+- Character screen: show health regeneration (0.5% of max health per second) and, after a death, the 10% respawn health and the heal-to-full state (3.7, 4.2).
+- Death timer: "back in 1m 40s" is a fixed example. Respawn is level × 4 seconds (3.7), so level 30 waits 2 minutes. The dead state also shows that the character respawns with 10% health and must heal to full before farming.
 - Pacing: walking times and 12 s per kill assume the old pacing. Movement between enemies is 6 s by default and Area 1 is 10 s from the city (3.1, 3.3). The "2m walk" to Mossfang Glade no longer holds.
 - Upgrade smith: materials are needed from +6, not +4, and materials differ per equipment type and per level (2.7). Gold-only up to +5.
 - Character creation: no screen exists. It needs a name field only, no free points and no gear (4.1).
 - Weapon stats: the sketches say "recommended" for weapon attribute values. The word is now "required" (2.2).
 - Targeting: the area sheet should show the targeting multiplier of each enemy (3.3).
 - Rare goods shop: hourly rotation, with a Rotation token or gold to force one (2.5).
-- Proficiency list: skills are unarmed, one-handed, two-handed, toughness, speed and combat. Endurance is under review (4.6).
+- Proficiency list and stats: skills are unarmed, one-handed, two-handed, toughness, speed and combat. Endurance is dropped, so remove it from the visible stats (health and mana only, 4.2, 4.6).

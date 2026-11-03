@@ -10,6 +10,7 @@ import {
   referenceFightSeconds,
   percentile,
   referenceBuild,
+  regenReport,
   resolveFight,
   runFights,
   summarise,
@@ -17,7 +18,7 @@ import {
   type FightResult,
 } from '../tools/balance/combat';
 import { levelCurve } from '../tools/balance/curve';
-import { areaAverageXp, areaReport, areaSecondsPerKill, type AreaReportData, type Pace } from '../tools/balance/drops';
+import { areaAverageXp, areaReport, areaSecondsPerKill, unfarmableItems, type AreaReportData, type Pace } from '../tools/balance/drops';
 import { BalanceError, baseMovementSeconds, targetingMultiplier } from '../tools/balance/load-data';
 import { duration } from '../tools/balance/format';
 import { createRng } from '../src/game/rng';
@@ -463,5 +464,52 @@ describe('script helpers', () => {
     expect(duration(90)).toBe('1m 30s');
     expect(duration(5400)).toBe('1h 30m');
     expect(duration(200000)).toBe('2d 7h'); // 55 h 33 min
+  });
+});
+
+describe('regeneration report (3.7)', () => {
+  it('works out the gap regeneration and the net loss per cycle by hand', () => {
+    // 200 max health: 0.5% = 1 HP/s. 6 s gap -> 6 HP = 3% of max. Fight 4 s + gap 6 s = 10 s -> 10 HP regained.
+    // 18 damage taken per fight -> net loss 8 HP = 4% of max.
+    const r = regenReport(200, 18, 4, 6);
+    expect(r.regenPerSecond).toBeCloseTo(1);
+    expect(r.gapRegenHp).toBeCloseTo(6);
+    expect(r.gapRegenFraction).toBeCloseTo(0.03);
+    expect(r.cycleSeconds).toBeCloseTo(10);
+    expect(r.cycleRegenHp).toBeCloseTo(10);
+    expect(r.netHpLost).toBeCloseTo(8);
+    expect(r.netHpLostFraction).toBeCloseTo(0.04);
+  });
+
+  it('is a net gain when regeneration beats the damage', () => {
+    // 100 max health: 0.5 HP/s, 10 s cycle -> 5 HP; 2 damage -> -3.
+    expect(regenReport(100, 2, 4, 6).netHpLost).toBeCloseTo(-3);
+  });
+
+  it('rejects bad input', () => {
+    expect(() => regenReport(0, 1, 1, 1)).toThrow(BalanceError);
+    expect(() => regenReport(100, 1, 1, -1)).toThrow(BalanceError);
+  });
+});
+
+describe('items a character cannot farm (3.8)', () => {
+  // Drop modifier is 1 - 0.1 x (character level - enemy level), 0 from 10 levels above. e1 is level 3, e2 is level 8.
+  // Character level 13: e1 gap 10 -> 0 (gem, from e1, 0%); e2 gap 5 -> 0.5. Gem drops from e2 too, so it is farmable.
+  // Character level 20: gaps 17 and 12 -> both 0. Bone (e2 only) is 0%. Gem is 0% in both normal entries, but e2's
+  // guaranteed pool also holds gem (no level modifier), so gem stays farmable; only bone is listed.
+  it('lists only items that every dropping enemy gives at 0%', () => {
+    const at13 = areaReport(data, 'a1', 13, pace);
+    expect(unfarmableItems(at13)).toEqual([]);
+    const at20 = areaReport(data, 'a1', 20, pace);
+    expect(unfarmableItems(at20)).toEqual([{ itemId: 'bone', itemName: 'bone', enemyNames: ['e2'] }]);
+  });
+
+  it('keeps guaranteed pool items farmable at any level (no level modifier)', () => {
+    const at20 = areaReport(data, 'a1', 20, pace);
+    expect(unfarmableItems(at20).some((u) => u.itemId === 'ore')).toBe(false);
+  });
+
+  it('is empty when the character is not far above the enemies', () => {
+    expect(unfarmableItems(areaReport(data, 'a1', 5, pace))).toEqual([]);
   });
 });

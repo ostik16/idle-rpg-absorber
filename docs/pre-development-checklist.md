@@ -17,7 +17,7 @@ Items are phrased as decisions or tasks. Tick them off here, or turn them into G
 
 ### Numbers nobody has written yet
 
-A fight cannot run without these. 5.3's combat and progression simulators are the way to tune them. All are now set in [decisions.md](decisions.md) (N1 to N12, C1, C2). The owner reviewed them: N1 to N7 approved, N3, N8 to N12, C1 and C2 decided or changed. Open: respawn unit, no starting potions (see "Needs the owner").
+A fight cannot run without these. 5.3's combat and progression simulators are the way to tune them. All are now set in [decisions.md](decisions.md) (N1 to N12, C1, C2). The owner reviewed them: N1 to N7 approved, N3, N8 to N12, C1 and C2 decided or changed. Nothing is open; the XP table and pacing are approved as they are.
 
 - [x] Derived stat formulas: how Strength, Dexterity, Vitality and Intelligence become damage, attack speed, crit, health, defence, mana (4.2 lists the Data line, the formulas do not exist).
 - [x] XP required per level (4.3), and XP reward per enemy level.
@@ -29,7 +29,7 @@ A fight cannot run without these. 5.3's combat and progression simulators are th
 
 ### The 15 open questions already written in the docs
 
-All 15 are answered by the owner in [decisions.md](decisions.md) (Q1 to Q15). Q4, Q5, Q7, Q11 to Q14 approved as proposed; Q1 to Q3, Q6, Q8 to Q10 and Q15 decided differently or in more detail. One value is still a lead default to review: the 5,000 gold forced shop rotation (Q3).
+All 15 are answered by the owner in [decisions.md](decisions.md) (Q1 to Q15). Q4, Q5, Q7, Q11 to Q14 approved as proposed; Q1 to Q3, Q6, Q8 to Q10 and Q15 decided differently or in more detail. The 5,000 gold forced shop rotation (Q3) is approved and can be adjusted later.
 
 | # | Section | Question |
 |---|---|---|
@@ -53,12 +53,12 @@ All 15 are answered by the owner in [decisions.md](decisions.md) (Q1 to Q15). Q4
 
 ## 2. Inconsistencies and gaps in the docs
 
-Small things that will cause arguments during implementation. Seven of eight are settled by the owner in [decisions.md](decisions.md) (I2 to I8). I1 (endurance) is an open owner question.
+Small things that will cause arguments during implementation. All eight are settled by the owner in [decisions.md](decisions.md) (I1 to I8).
 
-- [ ] **Endurance is two things.** OWNER QUESTION OPEN (I1). The owner's answer to I2 moved travel speed to the hidden speed skill, which makes endurance redundant. Drop it or give it another job? Until decided, endurance has no effect.
+- [x] **Endurance is two things.** Settled (I1): endurance is dropped. Speed covers travel, toughness covers health, dexterity covers attack speed. Visible stats are health and mana.
 - [x] **Speed has no trainer.** Settled (I2): speed is trained by moving and shortens travel and between-enemy time. A new hidden combat skill, trained by attacking, adds to attack speed.
-- [x] **Starting character slots.** Settled (I3, Q9): 4 starting slots, and a ticket at level 20 unlocks one more per character. The roster sketch still shows 5 of 5.
-- [x] **Death details.** Settled (I4): respawn after level x 2 minutes (unit to confirm), inventory and equipment kept. XP loss has a floor at the point marks (T6).
+- [x] **Starting character slots.** Settled (I3, Q9): at most 4 slots, 1 unlocked at the start, 3 locked and each unlocked by a ticket a character earns at level 20. The roster sketch still shows 5 of 5.
+- [x] **Death details.** Settled (I4): respawn after 4 seconds per level with 10% health, healing to full before farming (T11), inventory and equipment kept. XP loss has a floor at the point marks (T6). Health regeneration is T10.
 - [x] **Boost items.** Settled (I5): boost consumables grant a buff like a potion grants health, and boost equipment gives permanent bonuses. Both are in 2.8.
 - [x] **"Percentage points" wording.** The intro says drop rates fall by 10 percentage points per level. The formula in 3.8 multiplies the base chance by `1 - 0.1 x diff`. That is 10 points of the modifier, not of the chance (a 5% drop does not go to 4.9%, it goes to 4.5%). Reword the intro so nobody implements it as a subtraction.
 - [x] **Proficiency titles.** 4.6 gives four example titles (Novice, Adept, Expert, Master). The sketches use five (adding Apprentice). Fix the list and the thresholds.
@@ -84,9 +84,10 @@ Small things that will cause arguments during implementation. Seven of eight are
 
 ## 5. Follow-ups from the owner review
 
-- [ ] **Answer I1.** Drop endurance or give it another job (decisions, "Needs the owner").
-- [ ] **Confirm assumptions.** Respawn unit, no starting potions, 5,000 gold shop refresh, cursed objects dropping rare items, weapon penalty on weapon damage only, slot ticket applied automatically, targeting multiplier on movement time.
-- [ ] **Update the UI sketches** listed in design/06 ("Sketches to update"). They are edited in the claude.ai artifact, then re-snapshotted.
-- [ ] **Items table.** One table for equipment, consumables, materials and rare items (T2). Add the placeholder rare items: Rotation token, Attribute slot stone, Attribute reroll stone.
-- [ ] **Re-run pacing.** Movement is 6 s, not 8 or 12. Check the XP table and gold per hour with the balance tools (5.3).
-- [ ] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6).
+- [x] **Answer I1.** Endurance dropped (I1).
+- [x] **Confirm assumptions.** Answered or approved by the owner: respawn 4 s per level, 10 starting minor health potions, 5,000 gold shop refresh, cursed objects dropping rare items, weapon penalty on weapon damage only, slot ticket applied automatically, targeting multiplier on movement time. Still the lead's defaults, to tune: health regeneration of 0.5% per second (T10) and backpack numbers.
+- [ ] **Update the UI sketches** listed in design/06 ("Sketches to update"): 4 slots with 1 unlocked, 10 starter potions, respawn timer level x 4 s, health regeneration and 10% respawn health on the character screen, backpack max stack, no endurance. They are edited in the claude.ai artifact, then re-snapshotted.
+- [ ] **Items table.** One table for equipment, consumables, materials and rare items (T2). Items are stackable or not, with no per-item stack limit (T1). Add the placeholder rare items: Rotation token, Attribute slot stone, Attribute reroll stone.
+- [x] **Pacing.** The owner approved the XP table as it is. Gold per hour can still be checked with the balance tools (5.3).
+- [ ] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). Every material needs a low-level source (enemy level 10 or below, T12).
+- [ ] **Check the drop tables** against the balance principle (decisions, "Balance notes"): bosses and cursed objects roll rare items from a pool plus ordinary items; mini-bosses roll materials from a pool plus normal rolls (S8).

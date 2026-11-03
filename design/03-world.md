@@ -136,7 +136,8 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Purpose.** What happens at 0 health. The player is often away, so the outcome has to be safe.
 
 **Rules.**
-- The character returns to the city and is back on its feet after its level × 2 minutes (`constants.death.respawnMinutesPerLevel`). The unit is assumed to be minutes, to confirm.
+- The character returns to the city and is back on its feet after 4 seconds per level (`constants.death.respawnSecondsPerLevel`). Level 30 waits 120 seconds, 2 minutes.
+- It respawns with 10% of its health (`constants.death.respawnHealthFraction`) and must heal to full before it farms again (`constants.death.mustHealToFullBeforeFarming`). It heals with potions or with natural regeneration (4.2): from 10%, regeneration alone takes 180 seconds at the default 0.5% per second.
 - It keeps its inventory and equipment. Nothing is lost except XP.
 - XP loss is random, up to 25% of the XP the current level requires.
 - XP can never fall below the highest point mark already passed in the current level (25%, 50% or 75% of the level's XP, 4.4). This stops a character from earning the same character point twice. Loss = random amount up to 25% of the level's XP requirement, limited so XP stays at or above that floor.
@@ -147,7 +148,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Proposed.**
 - The auto-retreat threshold (3.2) lets players avoid death.
 
-**Data.** XP loss range (0-25%), floor at point marks, respawn time per level.
+**Data.** XP loss range (0-25%), floor at point marks, respawn seconds per level, respawn health fraction, must heal to full before farming.
 
 ---
 
@@ -160,9 +161,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Each level the character is above the enemy lowers the level modifier by 0.1, which is 10% of the base chance, not 10 points subtracted from it (a 5% drop at 1 level above is 4.5%, not 4.9%). At 10 or more levels above, the drop rate is 0%.
 - Enemy 1-19 levels above the character: base drop rate.
 - Enemy 20 or more levels above the character: 0%.
-- Mini-bosses drop upgrade materials. Basic enemies can drop upgrade materials too, with a very low chance. Upgrade items in general have a small drop chance.
-- Bosses and cursed objects drop rare items (2.8). Cursed objects dropping rare items is an assumption to confirm.
-- An enemy with a guaranteed drop has a guaranteed pool, not one fixed item. Every kill yields exactly one item chosen by weight from the pool, with a quantity range per entry. The guaranteed roll is separate from the normal rolls.
+- Mini-bosses drop upgrade materials from a guaranteed pool, plus normal rolls of their drop table. Basic enemies can drop upgrade materials too, with a very low chance. Upgrade items in general have a small drop chance.
+- Bosses and cursed objects drop rare items from a guaranteed pool (2.8), plus normal rolls of ordinary items from their drop table.
+- An enemy with a guaranteed drop has a guaranteed pool, not one fixed item. Every kill yields exactly one item chosen by weight from the pool, with a quantity range per entry. The guaranteed roll is separate from the normal rolls, which still happen.
+- Balance rule: every upgrade material has at least one low-level source, an enemy of level 10 or below that can drop it (`constants.balance.upgradeMaterialLowLevelSourceMaxEnemyLevel` = 10, enemy level). A character 10 or more levels above an enemy has a level modifier of 0, so it cannot farm that source itself. Players are meant to run several characters, with low-level ones farming the materials that high-level characters need or could need.
 - Drop rates are shown to the player (revealed through the bestiary, 4.8).
 
 **Formula.**

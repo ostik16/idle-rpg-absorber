@@ -3,6 +3,6 @@
   { "id": "one-handed", "name": "One-handed", "trainedBy": "hitting with a one-handed weapon" },
   { "id": "two-handed", "name": "Two-handed", "trainedBy": "hitting with a two-handed weapon" },
   { "id": "toughness", "name": "Toughness", "trainedBy": "taking hits" },
-  { "id": "endurance", "name": "Endurance", "trainedBy": "moving" },
-  { "id": "speed", "name": "Speed", "trainedBy": "attacking with any weapon" }
+  { "id": "speed", "name": "Speed", "trainedBy": "moving between locations and enemies" },
+  { "id": "combat", "name": "Combat", "trainedBy": "attacking with any weapon" }
 ]

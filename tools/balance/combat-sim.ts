@@ -9,6 +9,7 @@ import {
   defaultBuild,
   enemyFromData,
   referenceBuild,
+  regenReport,
   runFights,
   type Combatant,
   type PlayerBuild,
@@ -36,6 +37,7 @@ const SPEC: FlagSpec = {
   'enemy-level': { kind: 'number', help: 'baseline enemy of this level (constants.enemyScaling). Default: --level' },
   runs: { kind: 'number', help: 'number of fights (default 1000)' },
   seed: { kind: 'number', help: 'master seed (default 1)' },
+  'gap-seconds': { kind: 'number', help: 'average seconds between two fights, for the health regeneration lines (default: constants.farming.movementSecondsBetweenEnemies)' },
   'max-seconds': { kind: 'number', help: 'a fight longer than this counts as a timeout (default 600)' },
   help: { kind: 'boolean', help: 'show this text' },
 };
@@ -84,6 +86,8 @@ export function main(argv: string[]): string {
   };
   const runs = intFlag(flags, 'runs', 1000, 1);
   const seed = flags.number('seed') ?? 1;
+  const gapSeconds = flags.number('gap-seconds') ?? constants.farming.movementSecondsBetweenEnemies;
+  if (!(gapSeconds >= 0)) throw new BalanceError('--gap-seconds must be 0 or more.');
   const maxSeconds = flags.number('max-seconds') ?? 600;
 
   let enemy: Combatant;
@@ -129,6 +133,12 @@ export function main(argv: string[]): string {
     ['Damage taken per fight', num(summary.meanDamageTaken)],
     ['HP lost per fight', `${pct(summary.meanHpLostFraction)} of max health`],
     ['Fights per full health bar', num(summary.fightsPerFullHealth, 1)],
+  );
+  const regen = regenReport(summary.playerMaxHp, summary.meanDamageTaken, t?.mean ?? 0, gapSeconds);
+  rows.push(
+    ['Health regeneration', `${num(regen.regenPerSecond, 3)} HP/s (${pct(constants.stats.healthRegen.fractionOfMaxPerSecond)} of max health per second)`],
+    [`Regained in a ${num(gapSeconds, 1)} s gap`, `${num(regen.gapRegenHp)} HP = ${pct(regen.gapRegenFraction)} of max health`],
+    [`Net HP lost per cycle (${num(regen.cycleSeconds, 1)} s)`, `${num(regen.netHpLost)} HP = ${pct(regen.netHpLostFraction)} of max health${regen.netHpLost < 0 ? ' (net gain)' : ''}`],
   );
   lines.push(table(['Result', 'Value'], rows));
   return lines.join('\n');

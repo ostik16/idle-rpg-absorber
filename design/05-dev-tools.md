@@ -34,7 +34,7 @@
 | Proficiencies | 4.6 |
 | Traits | 4.7 |
 | Bestiary thresholds | 4.8 |
-| Global constants | all (10-point drop falloff, 0.9 absorption factor, 1% absorption per kill, upgrade chance 90% × 0.9, stack size 100, death XP loss 0-25%, base bag cells, weapon penalty, targeting multipliers, offline efficiency, …) |
+| Global constants | all (10-point drop falloff, 0.9 absorption factor, 1% absorption per kill, upgrade chance 90% × 0.9, warehouse max stack 100, base bag max stack 20, health regeneration, respawn time and health, slot limits, death XP loss 0-25%, base bag cells, weapon penalty, targeting multipliers, offline efficiency, …) |
 
 **Proposed.**
 - Keep the JSON files in a version-controlled repository, so every balance change is tracked.

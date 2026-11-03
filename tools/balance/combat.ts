@@ -17,9 +17,11 @@ import {
   attackSpeed,
   critChance,
   defence,
+  healthRegenPerSecond,
   hitDamage,
   maxHealth,
   physicalDamage,
+  regenOverSeconds,
   weaponPenaltyMultiplier,
   type Attributes,
   type WeaponScaling,
@@ -283,4 +285,47 @@ export function runFights(player: Combatant, enemy: Combatant, runs: number, rng
   const results: FightResult[] = [];
   for (let i = 0; i < runs; i++) results.push(resolveFight(player, enemy, rng, options));
   return summarise(results, player.maxHp);
+}
+
+export interface RegenReport {
+  /** Default regeneration in health per second (constants.stats.healthRegen). */
+  regenPerSecond: number;
+  /** Seconds between two fights: movement to the next enemy. */
+  gapSeconds: number;
+  /** Health regained during the gap. */
+  gapRegenHp: number;
+  /** The gap regeneration as a fraction of max health. */
+  gapRegenFraction: number;
+  /** Fight time plus gap. */
+  cycleSeconds: number;
+  /** Health regained over the whole cycle. */
+  cycleRegenHp: number;
+  /** Health lost per fight cycle: damage taken minus regeneration over fight time plus gap. Negative means a net gain. */
+  netHpLost: number;
+  /** netHpLost as a fraction of max health. */
+  netHpLostFraction: number;
+}
+
+/**
+ * Default health regeneration (3.7) against a fight cycle: how much health comes back in the average gap between
+ * fights, and the net loss per cycle (damage taken minus regeneration over fight time plus gap).
+ * Regeneration is not capped at max health here: it is the average, and a character at full health is simply wasting it.
+ */
+export function regenReport(maxHp: number, damageTaken: number, fightSeconds: number, gapSeconds: number): RegenReport {
+  if (!(maxHp > 0)) throw new BalanceError(`Max health must be above 0, got ${maxHp}.`);
+  if (!(gapSeconds >= 0)) throw new BalanceError(`Gap seconds must be 0 or more, got ${gapSeconds}.`);
+  const gapRegenHp = regenOverSeconds(maxHp, gapSeconds);
+  const cycleSeconds = fightSeconds + gapSeconds;
+  const cycleRegenHp = regenOverSeconds(maxHp, cycleSeconds);
+  const netHpLost = damageTaken - cycleRegenHp;
+  return {
+    regenPerSecond: healthRegenPerSecond(maxHp),
+    gapSeconds,
+    gapRegenHp,
+    gapRegenFraction: gapRegenHp / maxHp,
+    cycleSeconds,
+    cycleRegenHp,
+    netHpLost,
+    netHpLostFraction: netHpLost / maxHp,
+  };
 }

@@ -28,14 +28,16 @@
     "protectionConsumedOnSuccess": true
   },
   "storage": {
-    "materialStackSize": 100
+    "maxStack": 100
   },
   "death": {
     "xpLossMin": 0,
     "xpLossMax": 0.25,
     "keepsInventory": true,
-    "respawnMinutesPerLevel": 2,
-    "xpLossFloorsAtPointMarks": true
+    "xpLossFloorsAtPointMarks": true,
+    "respawnSecondsPerLevel": 4,
+    "respawnHealthFraction": 0.1,
+    "mustHealToFullBeforeFarming": true
   },
   "spells": {
     "baseMaxRank": 10,
@@ -65,9 +67,10 @@
     "stepSimMaxSeconds": 300
   },
   "characters": {
-    "startingSlots": 4,
     "slotTicketLevel": 20,
-    "slotTicketsPerCharacter": 1
+    "slotTicketsPerCharacter": 1,
+    "maxSlots": 4,
+    "startingUnlockedSlots": 1
   },
   "shops": {
     "rareGoodsRotationHours": 1,
@@ -153,7 +156,10 @@
     "spellDamage": {
       "perIntelligence": 0.02
     },
-    "unarmedDamage": 2
+    "unarmedDamage": 2,
+    "healthRegen": {
+      "fractionOfMaxPerSecond": 0.005
+    }
   },
   "progression": {
     "xpReward": {
@@ -228,9 +234,18 @@
     "startingLevel": 1,
     "startingGold": 0,
     "startingEquipment": {},
-    "startingItems": []
+    "startingItems": [
+      {
+        "itemId": "minor-health-potion",
+        "quantity": 10
+      }
+    ]
   },
   "inventory": {
-    "baseCells": 36
+    "baseCells": 36,
+    "baseMaxStack": 20
+  },
+  "balance": {
+    "upgradeMaterialLowLevelSourceMaxEnemyLevel": 10
   }
 }

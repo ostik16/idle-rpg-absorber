@@ -13,13 +13,13 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Rules.**
 - Players can create multiple characters.
 - All characters farm at the same time, online and offline.
-- Players start with 4 character slots (`constants.characters.startingSlots`).
-- When a character reaches level 20 it receives a ticket that unlocks a new character slot. Each character gives one ticket, once (`constants.characters`). Assumed: the ticket is applied automatically, it is not a bag item. This will change as content is added.
+- There are at most 4 character slots for now (`constants.characters.maxSlots`). Only 1 is unlocked at the start (`startingUnlockedSlots`). The other 3 are locked, and each needs a slot ticket to unlock.
+- A character earns 1 ticket when it first reaches level 20, once per character (`slotTicketLevel`, `slotTicketsPerCharacter`). Assumed: the ticket is applied automatically, it is not a bag item. The slot count will grow as content is added.
 - All characters share the warehouse.
 - Character creation:
   - The player types a name (1 to 16 characters, unique in the roster, case-insensitive). There are no free points to spend.
   - Every attribute starts at the default of 5 (total 20). There is no class, no race and no weapon choice.
-  - A new character is level 1 with 0 gold, no gear and no items. Everything is farmed. Assumed: this includes potions, so no starting potions.
+  - A new character is level 1 with 0 gold, no gear. Its only items are 10 minor health potions (`constants.creation.startingItems`). Everything else is farmed.
   - The first enemies must be killable bare-handed. Unarmed damage is `constants.stats.unarmedDamage` (2).
   - Example: all attributes 5 gives 6 damage unarmed (1 + 0.6 × 5 + 2), 0.9 attacks per second and 70 health.
 
@@ -27,7 +27,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - A roster screen showing each character's level, current area and status (farming, travelling, in city, dead).
 - When a character is deleted, its inventory and equipment go to the warehouse if there is space.
 
-**Data.** starting slots, slot ticket level and tickets per character (`constants.characters`), base attributes, free points (0), name length, starting gold, gear and items (`constants.creation`).
+**Data.** max slots, starting unlocked slots, slot ticket level and tickets per character (`constants.characters`), base attributes, free points (0), name length, starting gold, gear and items (10 minor health potions) (`constants.creation`).
 
 ---
 
@@ -36,7 +36,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Purpose.** The numbers that define a character.
 
 **Rules.**
-- Visible stats: health, mana. Endurance was a visible stat that set travel speed. It is now redundant with the speed skill (4.6) and is under review: the owner decides whether to drop it or give it another job (decisions I1). Until then it has no effect.
+- Visible stats: health, mana. There is no endurance stat: travel speed comes from the speed skill, health from toughness and vitality, attack speed from dexterity (decisions I1).
 - Travel and between-enemy movement time come from the speed skill, not from a visible stat.
 - Main attributes (final):
 
@@ -61,8 +61,11 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 | Mana | 20 + 4 × Intelligence + gear | 40 / 220 |
 | Spell damage | spell damage × (1 + 0.02 × Intelligence) | ×1.10 / ×2.00 |
 | Movement speed | 1 + 0.005 × speed skill points | ×1.025 / ×1.25 |
+| Health regeneration | 0.5% of maximum health per second (`constants.stats.healthRegen.fractionOfMaxPerSecond`) | 0.35 / 2.15 per second |
 
 - The weapon penalty (2.2) is assumed to apply to the weapon's own damage ("1% of the weapon's stats"), then the weapon proficiency bonus (4.6) multiplies the total. Movement speed divides travel time and the time between enemies (3.3). Gear is meant to give most of a character's damage and defence: as a target, the weapon at required level L has about 3 + 1.8 × (L − 1) damage and a full set of armour adds about 1 + 0.9 × (L − 1) defence.
+
+- Characters regenerate health by default, at all times, in and out of combat (assumption). The rate is small: it does not make potions obsolete (2.6), but it lets a character heal when it is out of money or potions. A dead character respawns with 10% health and must heal to full before farming (3.7). The 0.5% per second is a default chosen by the lead, to tune.
 
 **Data.** attribute list, derived stat formulas (`constants.stats`).
 
@@ -89,7 +92,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 | 29 | 225,000 | 145 | 1,563 |
 | 30 | 261,000 | 159 | 1,642 |
 
-- Total XP from level 1 to level 30 is about 1.49 million. The times below assume 12 seconds per kill (travel included). Movement is now 6 seconds by default (3.3), so a kill takes nearer 10 seconds and levels come about 15% faster; the balance tools should re-run this. At 12 seconds, a level takes 2 minutes at level 1, 20 minutes at level 5, an hour at level 10 and 5 hours near the cap.
+- Total XP from level 1 to level 30 is about 1.49 million. The times below assume 12 seconds per kill (travel included). Movement is now 6 seconds by default (3.3), so a kill takes nearer 10 seconds and levels come about 15% faster; the owner approved the XP table as it is. At 12 seconds, a level takes 2 minutes at level 1, 20 minutes at level 5, an hour at level 10 and 5 hours near the cap.
 - Area 1 (levels 1-5, an average kill gives about 12 XP) is outgrown at about level 6 to 8, where a level takes 40 to 70 minutes there. At level 20, a level 3 enemy needs 4,559 kills for a level, five times the kills of a level 20 enemy.
 - Level cap is 30. The table has a level 30 row for when the cap is raised.
 
@@ -136,7 +139,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 
 **Rules.**
 - Hidden skills are raised by actions: fighting raises the weapon skill in use and the combat skill, taking hits raises toughness, moving raises speed.
-- Hidden skills: unarmed, one-handed, two-handed, toughness, speed, combat. (Lock picking and sneak removed for now. Endurance is removed from the skill list pending the owner's decision, I1.)
+- Hidden skills: unarmed, one-handed, two-handed, toughness, speed, combat. (Lock picking, sneak and endurance are removed.)
 - Speed is trained by moving, between locations and between enemies. It lowers the time to travel between locations and enemies.
 - Combat is trained by attacking, with any weapon or none. Attack speed grows with fighting: it comes from the weapon-style proficiency in use plus the combat skill.
 - They improve damage, attack speed, movement speed, health and more.
