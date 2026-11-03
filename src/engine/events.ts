@@ -12,6 +12,9 @@ export type EngineEvent =
   /** An offline summary was added to `state.pendingSummary`. */
   | { type: 'summaryReady' }
   | { type: 'characterCreated'; characterId: string }
+  /** A character won a fight. XP, drops and absorption hang off this. */
+  | { type: 'enemyKilled'; characterId: string; enemyId: string }
+  | { type: 'characterDied'; characterId: string; enemyId: string }
   /** A command could not be applied. Nothing changed. */
   | { type: 'commandRejected'; command: Command; reason: string }
   /** Emitted by a character step through `enterPhase`; nothing emits it until phase transitions exist. */

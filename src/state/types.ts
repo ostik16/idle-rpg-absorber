@@ -12,6 +12,7 @@ export const PHASES = [
   'travelling',
   'searching',
   'fighting',
+  'fleeing',
   'looting',
   'returning',
   'restocking',
@@ -94,6 +95,24 @@ export interface SpellsState {
   autoCastOrder: string[];
 }
 
+/** The fight in progress (design 3.6). The enemy's numbers stay in the table, by id. */
+export interface FightState {
+  enemyId: string;
+  enemyHp: number;
+  /** Ticks since the fight started. Attacks land on whole intervals of it, also while fleeing. */
+  ticks: number;
+}
+
+/** Potions in drinking order, the running one first (design 2.6). */
+export interface PotionsState {
+  /** Item ids. */
+  queue: string[];
+  /** Heal ticks the running potion has delivered. */
+  ticksDone: number;
+  /** Time since its last heal tick, in ms. */
+  msIntoTick: number;
+}
+
 export interface CharacterState {
   /** Unique and never reused. Step order, merge order and stream seeds all follow it. */
   id: string;
@@ -112,6 +131,9 @@ export interface CharacterState {
   bag: ItemStack[];
   health: number;
   mana: number;
+  potions: PotionsState;
+  /** Null when the character is not in a fight. */
+  fight: FightState | null;
   /** The area the character farms, or null when it has none. */
   areaId: string | null;
   /** The enemy type it targets, or null when it fights whatever it finds (design 3.3). */
