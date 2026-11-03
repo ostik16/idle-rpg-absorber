@@ -80,6 +80,8 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
         <dt style="color: #aaa596; padding-left: 12px; border-left: 1px solid #323748;">Mana</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 600;">180</dd>
         <dt style="color: #aaa596;">Travel speed</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 600;">112%</dd>
         <dt style="color: #aaa596; padding-left: 12px; border-left: 1px solid #323748;">Spell dmg</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 600;">+12%</dd>
+        <dt style="color: #aaa596;">Health regen</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 600;">2.8 / s</dd>
+        <dt style="color: #aaa596; padding-left: 12px; border-left: 1px solid #323748;">Of max health</dt><dd style="margin: 0; text-align: right; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 15px; font-weight: 600;">0.5% / s</dd>
       </dl>
     </section>
 
@@ -175,7 +177,7 @@ class Component extends DCLogic {
     });
     var parts = keys.filter(function (k) { return s.pend[k] > 0; }).map(function (k) { return meta[k].name + ' +' + s.pend[k]; });
     var titles = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master'];
-    var profList = [['Two-handed', 3], ['One-handed', 1], ['Unarmed', 1], ['Toughness', 2], ['Endurance', 3], ['Speed', 2]];
+    var profList = [['Two-handed', 3], ['One-handed', 1], ['Unarmed', 1], ['Toughness', 2], ['Combat', 3], ['Speed', 2]];
     var profs = profList.map(function (p, i) {
       return {
         name: p[0], title: titles[p[1] - 1], pipLabel: 'Title ' + p[1] + ' of 5',

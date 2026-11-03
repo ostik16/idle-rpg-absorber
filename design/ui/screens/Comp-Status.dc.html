@@ -173,7 +173,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
 class Component extends DCLogic {
   renderVals() {
     var titles = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master'];
-    var skills = ['Unarmed', 'Toughness', 'Two-handed', 'Endurance', 'Speed'];
+    var skills = ['Unarmed', 'Toughness', 'Two-handed', 'Combat', 'Speed'];
     var chances = [90.0, 81.0, 72.9, 65.6, 59.0, 53.1, 47.8, 43.0, 38.7];
     function node(label, on, align) { return { label: label, align: align, edge: on ? '#e4b95b' : '#707896', fill: on ? '#e4b95b' : '#161821', tc: on ? '#eee8d9' : '#aaa596' }; }
     function track(n, pct, cap) {
@@ -222,7 +222,7 @@ class Component extends DCLogic {
         rng(14, 20, '#8fd16a', 'Range · Lv 14–20, full drops')
       ],
       tiles: [
-        { label: 'Farming', value: '2 of 5', c: '#eee8d9', rule: '#323748' },
+        { label: 'Farming', value: '2 of 4', c: '#eee8d9', rule: '#323748' },
         { label: 'Gold / h', value: '1,850', c: '#e4b95b', rule: '#323748' },
         { label: 'Levels', value: '+2', c: '#a3d977', rule: '#323748' },
         { label: 'Absorbed', value: '+2.0%', c: '#5cd6c6', rule: 'transparent' }

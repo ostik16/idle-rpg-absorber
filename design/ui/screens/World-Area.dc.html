@@ -70,7 +70,7 @@ input[type=radio]{accent-color:#e4b95b}
       </div>
 
       <div role="radiogroup" aria-label="How to travel" style="display: flex; gap: 2px; padding: 3px; border: 1px solid #323748; border-radius: 6px; background: #1f222d;">
-        <button role="radio" aria-checked="{{walkOn}}" onClick="{{pickWalk}}" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 46px; border: 0; border-radius: 4px; background: {{walkBg}}; box-shadow: {{walkRing}}; color: {{walkFg}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;"><span>Walk</span><span style="font-size: 12px; color: #aaa596;">16m · free</span></button>
+        <button role="radio" aria-checked="{{walkOn}}" onClick="{{pickWalk}}" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 46px; border: 0; border-radius: 4px; background: {{walkBg}}; box-shadow: {{walkRing}}; color: {{walkFg}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;"><span>Walk</span><span style="font-size: 12px; color: #aaa596;">1m 20s · free</span></button>
         <button role="radio" aria-checked="{{portOn}}" onClick="{{pickPort}}" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 46px; border: 0; border-radius: 4px; background: {{portBg}}; box-shadow: {{portRing}}; color: {{portFg}}; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer;"><span>Teleporter</span><span style="font-size: 12px; color: #aaa596;">now · 800 gold</span></button>
       </div>
 
@@ -89,10 +89,10 @@ class Component extends DCLogic {
     var self = this;
     var s = this.state;
     var list = [
-      { id: 'any', name: 'Any enemy', sub: 'Most fights per hour' },
-      { id: 'hound', name: 'Thorn Hound · Lv 14', sub: 'About half as many fights', trait: 'Thorns 5%', magic: false },
-      { id: 'sentinel', name: 'Ruin Sentinel · Lv 17', sub: 'About half as many fights', trait: 'Frost affinity 6%', magic: true },
-      { id: 'witch', name: 'Bramble Witch · Lv 19', sub: 'About half as many fights', trait: 'Poison affinity 10%', magic: true }
+      { id: 'any', name: 'Any enemy', sub: '6s between fights' },
+      { id: 'hound', name: 'Thorn Hound · Lv 14', sub: 'Targeting ×2 · 12s between fights', trait: 'Thorns 5%', magic: false },
+      { id: 'sentinel', name: 'Ruin Sentinel · Lv 17', sub: 'Targeting ×4 · 24s between fights', trait: 'Frost affinity 6%', magic: true },
+      { id: 'witch', name: 'Bramble Witch · Lv 19', sub: 'Targeting ×6 · 36s between fights', trait: 'Poison affinity 10%', magic: true }
     ];
     var targets = list.map(function (t) {
       var on = s.target === t.id;
@@ -114,7 +114,7 @@ class Component extends DCLogic {
       walkFg: walk ? '#e4b95b' : '#eee8d9', portFg: walk ? '#eee8d9' : '#e4b95b',
       pickWalk: function () { self.setState({ travel: 'walk' }); },
       pickPort: function () { self.setState({ travel: 'port' }); },
-      sendNote: walk ? 'Arrives in 16m' : 'Arrives now · 800 gold'
+      sendNote: walk ? 'Arrives in 1m 20s' : 'Arrives now · 800 gold'
     };
   }
 }
