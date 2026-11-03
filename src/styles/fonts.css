@@ -1,0 +1,20 @@
+/*
+ * Self-hosted fonts. Weights match what design/ui/design-system/components/bundle.css asks for.
+ * Each file declares its subsets with a unicode-range, so the browser fetches a subset only when a glyph needs it.
+ * Family names match --font-display, --font-sans and --font-condensed in tokens.css.
+ */
+
+/* Barlow (sans) */
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+
+/* Barlow Semi Condensed (condensed) */
+@import '@fontsource/barlow-semi-condensed/500.css';
+@import '@fontsource/barlow-semi-condensed/600.css';
+@import '@fontsource/barlow-semi-condensed/700.css';
+
+/* Cinzel (display) */
+@import '@fontsource/cinzel/600.css';
+@import '@fontsource/cinzel/700.css';

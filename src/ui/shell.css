@@ -1,0 +1,18 @@
+/* App shell layout. Components come from bundle.css; this file only places them, using tokens. */
+
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+.app__col { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.app__main { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-4); }
+.app__content { max-width: var(--size-content); margin: 0 auto; }
+.app__rail { display: none; }
+.app h1 { margin: 0; }
+.app__text { margin: 0; }
+.app__text + .app__text { margin-top: var(--space-1); }
+
+/* bp-desktop (900px, tokens.json): the tab bar becomes a left rail. Media queries cannot read custom properties. */
+@media (min-width: 900px) {
+  .app { flex-direction: row; }
+  .app__rail { display: flex; }
+  .app__tabbar { display: none; }
+  .app__main { padding: var(--space-6); }
+}

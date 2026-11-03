@@ -1,6 +1,6 @@
 # UI design artifacts
 
-Snapshots of two claude.ai artifacts, taken 2026-11-02. The artifacts are the live versions. These copies exist so development can proceed without them and so changes show up in git history.
+Snapshots of two claude.ai artifacts: the design system taken 2026-11-02, the screens updated 2026-11-03. The artifacts are the live versions. These copies exist so development can proceed without them and so changes show up in git history.
 
 ## design-system/
 
@@ -16,6 +16,8 @@ Snapshot of https://claude.ai/artifact/3n12SGkJ1VWxMXAQ8HMZrb
 | `design-system.json` | Artifact metadata |
 
 There is no script bundle. Components are CSS classes, so each one has to be implemented in whatever UI approach the project chooses.
+
+`components/bundle.css` starts with an `@import` from fonts.googleapis.com, because the artifact's runtime needs it. The game self-hosts its fonts (`src/styles/fonts.css`), so a small Vite plugin in `vite.config.ts` removes that one `@import` from that one file, in dev and in build. The snapshot itself stays byte-for-byte as copied.
 
 `tokens.css` is not in the snapshot because the artifact generates it. The repo generates its own at `src/styles/tokens.css`: run `npm run tokens`.
 
