@@ -4,6 +4,7 @@
  * Bonuses from equipment and proficiency are passed in by the caller.
  */
 import constants from '../../data/constants.json';
+import { quantiseToSteps } from './formulas';
 
 type StatsConstants = typeof constants.stats;
 type CombatConstants = typeof constants.combat;
@@ -51,8 +52,7 @@ export function attackIntervalMs(
   tickMs: number = constants.combat.tickMs,
 ): number {
   if (!(attacksPerSecond > 0)) throw new RangeError(`attacks per second must be above 0, got ${attacksPerSecond}`);
-  const ticks = Math.max(1, Math.round(1000 / attacksPerSecond / tickMs));
-  return ticks * tickMs;
+  return quantiseToSteps(1000 / attacksPerSecond, tickMs);
 }
 
 /** Critical chance 0..1: base + perDexterity x Dexterity + bonus, capped. */

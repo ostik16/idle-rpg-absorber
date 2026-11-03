@@ -10,7 +10,7 @@ type UpgradeConstants = typeof constants.upgrade;
 
 /**
  * A time in ms as a whole number of engine steps, rounded to the nearest and at least one (ADR 0002
- * "One engine, driven by timestamps"). Attack intervals have their own rounding in stats.ts.
+ * "One engine, driven by timestamps").
  */
 export function quantiseToSteps(ms: number, tickMs: number): number {
   return Math.max(1, Math.round(ms / tickMs)) * tickMs;

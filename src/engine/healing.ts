@@ -18,11 +18,18 @@ interface PotionItem {
   autoUseDefaultThreshold?: number;
 }
 
+function findPotionItem(itemId: string, data: GameData): PotionItem | undefined {
+  return data.items.find((row) => row.id === itemId) as PotionItem | undefined;
+}
+
 /** Amount and duration of a potion item (constants.potions.tiers), or null when the item is not a potion. */
-function potionTierOf(itemId: string, data: GameData): PotionTier | null {
-  const item = data.items.find((row) => row.id === itemId) as PotionItem | undefined;
+function tierOfItem(item: PotionItem | undefined, data: GameData): PotionTier | null {
   if (item?.effect?.type !== 'heal-over-time') return null;
   return constantSection(data, 'potions').tiers.find((tier) => tier.id === item.effect?.tier) ?? null;
+}
+
+function potionTierOf(itemId: string, data: GameData): PotionTier | null {
+  return tierOfItem(findPotionItem(itemId, data), data);
 }
 
 function queuedTiers(character: CharacterState, data: GameData): PotionTier[] {
@@ -66,10 +73,11 @@ export function stepHealing(character: CharacterState, ctx: StepContext): void {
 function heldPotions(character: CharacterState, data: GameData): HeldPotion[] {
   const held = new Map<string, HeldPotion>();
   for (const { itemId, qty } of character.bag) {
-    const tier = qty > 0 && !held.has(itemId) ? potionTierOf(itemId, data) : null;
+    if (qty <= 0 || held.has(itemId)) continue;
+    const item = findPotionItem(itemId, data);
+    const tier = tierOfItem(item, data);
     if (tier === null) continue;
-    const item = data.items.find((row) => row.id === itemId) as PotionItem;
-    const threshold = character.settings.potionThresholds[itemId] ?? item.autoUseDefaultThreshold ?? 0;
+    const threshold = character.settings.potionThresholds[itemId] ?? item?.autoUseDefaultThreshold ?? 0;
     held.set(itemId, { itemId, amount: tier.amount, threshold });
   }
   return [...held.values()];
