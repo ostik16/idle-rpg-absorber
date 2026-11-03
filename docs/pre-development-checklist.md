@@ -65,6 +65,9 @@ Small things that will cause arguments during implementation. All eight are sett
 - [x] **"Percentage points" wording.** The intro says drop rates fall by 10 percentage points per level. The formula in 3.8 multiplies the base chance by `1 - 0.1 x diff`. That is 10 points of the modifier, not of the chance (a 5% drop does not go to 4.9%, it goes to 4.5%). Reword the intro so nobody implements it as a subtraction.
 - [x] **Proficiency titles.** 4.6 gives four example titles (Novice, Adept, Expert, Master). The sketches use five (adding Apprentice). Fix the list and the thresholds.
 - [x] **Document map.** `design/01-introduction.md` lists sections 2 to 5 and leaves out section 6 (UI and Design System).
+- [ ] **In-session clock.** ADR 0002 asks for `performance.now()` as the in-session accumulator, and also says the loop calls `advanceTo(Date.now())`. Issue #31 built the second, the only one the engine's timeline supports today, so a small clock change while the tab is open adds or removes steps, or shows the rewind notice. The owner can keep this or ask for the accumulator.
+- [ ] **Change notice.** The architecture says the engine "emits a throttled change notice". The engine has none, so `src/ui/frame-loop.ts` refreshes the signals after a frame that ran steps. That caps updates at once per frame, and at 10 Hz with `combat.tickMs` at 100. Issue #31 chose this over changing the engine; the owner can confirm it or reword the architecture.
+- [ ] **Rounding health and mana on screen.** The engine's values are fractional, and the design does not say how to show them. Issue #31 rounds up in `src/ui/store.ts`, so a living character never reads 0. The owner can confirm it.
 
 ## 3. Design and content still to produce
 

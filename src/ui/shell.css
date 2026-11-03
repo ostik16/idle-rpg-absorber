@@ -8,6 +8,11 @@
 .app h1 { margin: 0; }
 .app__text { margin: 0; }
 .app__text + .app__text { margin-top: var(--space-1); }
+.app__stack { display: grid; gap: var(--space-3); }
+.app__notice { margin-bottom: var(--space-3); }
+.app__form { display: flex; gap: var(--space-2); }
+.app__input { flex: 1; min-width: 0; box-sizing: border-box; min-height: var(--size-tap); padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); font: inherit; }
+.app__input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* bp-desktop (900px, tokens.json): the tab bar becomes a left rail. Media queries cannot read custom properties. */
 @media (min-width: 900px) {
