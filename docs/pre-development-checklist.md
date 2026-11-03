@@ -2,18 +2,20 @@
 
 Written when the repo was set up (2026-11-02), from a read of the design docs and the UI sketches. It lists what is still missing before feature work can start, in the order it is likely to bite.
 
-Items are phrased as decisions or tasks. Tick them off here, or turn them into GitHub issues.
+Items are phrased as decisions or tasks. This list is now tracked in GitHub issues: development work is in the milestone "First playable".
 
 ## 1. Decisions the design does not make
 
 ### Architecture and tech
 
-- [ ] **UI approach.** The sketches are plain HTML and CSS classes. Pick a rendering approach (vanilla, Preact, Svelte, Solid, React) before building screens. The repo currently has none.
-- [ ] **Simulation model.** Browsers throttle background tabs, so a `setInterval` game loop will stall. Decide now: a fixed-step simulation advanced from timestamps (catch up on return) is the usual answer, and it is the same mechanism offline progress (3.4) needs. Decide whether online play and offline progress share one code path.
-- [ ] **Offline estimate.** 3.4 says to estimate kills per hour from stats and area, then roll in bulk. That estimator needs a definition: expected time to kill, travel and search time (3.3), potion use, return triggers (3.2). It is the hardest single piece of logic in the game.
-- [ ] **Random numbers.** Use a seedable RNG so fights, drops and the balance simulators (5.3) are reproducible and testable.
-- [ ] **Save storage.** `localStorage` holds about 5 MB. A roster, warehouse tabs and bags may outgrow it, so decide between `localStorage` and IndexedDB before writing the save code. Include the save version number and migrations from 5.5 from the start.
-- [ ] **Clock manipulation.** Offline progress trusts the system clock. Local-only saves make cheating harmless, but decide that explicitly, and decide what happens if the clock goes backwards.
+All decided in `docs/adr/`, approved by the owner on 2026-11-03. The offline estimator itself is still to build.
+
+- [x] **UI approach.** The sketches are plain HTML and CSS classes. Pick a rendering approach (vanilla, Preact, Svelte, Solid, React) before building screens. The repo currently has none.
+- [x] **Simulation model.** Browsers throttle background tabs, so a `setInterval` game loop will stall. Decide now: a fixed-step simulation advanced from timestamps (catch up on return) is the usual answer, and it is the same mechanism offline progress (3.4) needs. Decide whether online play and offline progress share one code path.
+- [x] **Offline estimate.** 3.4 says to estimate kills per hour from stats and area, then roll in bulk. That estimator needs a definition: expected time to kill, travel and search time (3.3), potion use, return triggers (3.2). It is the hardest single piece of logic in the game.
+- [x] **Random numbers.** Use a seedable RNG so fights, drops and the balance simulators (5.3) are reproducible and testable.
+- [x] **Save storage.** `localStorage` holds about 5 MB. A roster, warehouse tabs and bags may outgrow it, so decide between `localStorage` and IndexedDB before writing the save code. Include the save version number and migrations from 5.5 from the start.
+- [x] **Clock manipulation.** Offline progress trusts the system clock. Local-only saves make cheating harmless, but decide that explicitly, and decide what happens if the clock goes backwards.
 
 ### Numbers nobody has written yet
 
@@ -49,7 +51,7 @@ All 15 are answered by the owner in [decisions.md](decisions.md) (Q1 to Q15). Q4
 | 14 | 06 | Is a Warding Seal used up when an upgrade succeeds, or only when it fails? |
 | 15 | 06 | Can low-level characters buy potions they cannot use yet, to pass on through the warehouse? |
 
-`src/game/formulas.ts` has one marked placeholder for question 12. The owner approved modifier 1 for an enemy above the character, so the placeholder can become a rule.
+Question 12 is now a rule: `src/game/formulas.ts` reads `constants.absorption.enemyAboveCharacterModifier` (1).
 
 ## 2. Inconsistencies and gaps in the docs
 
@@ -66,28 +68,28 @@ Small things that will cause arguments during implementation. All eight are sett
 
 ## 3. Design and content still to produce
 
-- [ ] **First vertical slice.** (Slice data written and reworked for the owner's answers, issue #8: see decisions S1 to S8 and T1 to T9. Area 1 has 11 normal enemies, a mini-boss and a boss. The loop is still to build.) Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
-- [ ] **Screens not sketched.** Character creation (name only, 4.1), backpack, loot filter rule editor (2.3), save export and import (5.5), settings, a travelling or in-transit state, death state detail, the content editor and debug tools (5.2, 5.4).
+- [x] **First vertical slice content.** (Issue #8: see decisions S1 to S8 and T1 to T9. Area 1 has 11 normal enemies, a mini-boss and a boss. The loop itself is issue #9.) Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
+- [x] **Screens not sketched.** Character creation, backpack, loot filter rule editor, save export and import, settings, travelling state and death state detail are sketched. The content editor and debug tools (5.2, 5.4) are not, and wait for their issues.
 - [ ] **Item art.** None exists. Slots show category icons until it does, and the design system is set up for that.
-- [ ] **Dev tools plan.** 5.2 to 5.4 are large. Suggest order: data validation (done, basic), then the combat simulator and drop calculator as CLI scripts over `data/`, then a proper editor later.
+- [x] **Dev tools plan.** Data validation, the combat simulator, drop calculator and progression curve are built. A proper editor (5.2) comes later.
 
 ## 4. Repo housekeeping
 
-- [ ] **Licence.** None chosen. Add one before the repo goes public, or keep it private.
-- [ ] **Visibility.** Decide private or public when creating the GitHub repo.
-- [ ] **Hosting.** A static build suits GitHub Pages (the Vite `base` is already relative). Add a deploy workflow when there is something to show.
-- [ ] **Fonts.** `bundle.css` imports Cinzel, Barlow and Barlow Semi Condensed from Google Fonts. That is a network dependency and a privacy question. Self-host the font files if the game should work offline or without third-party requests.
-- [ ] **Icons.** The design specifies Lucide at 1.75 stroke. The sketches inline the SVG paths. Add `lucide-static` or `lucide` as a dependency when building the UI.
-- [ ] **Issue tracking.** Turn sections 1 to 3 into GitHub issues, grouped into milestones: "Decide", "Vertical slice", "Dev tools".
-- [ ] **Browser and device targets.** Phone first at 390px. State the minimum browsers.
-- [ ] **Keep the artifacts in sync.** The artifacts on claude.ai and the snapshots in `design/ui/` can drift. Decide which is canonical for changes (suggested: the artifact, then re-snapshot).
+- [x] **Licence.** MIT (decisions H1).
+- [ ] **Visibility.** Public (decisions H1). The repo is still private until the owner confirms the switch.
+- [x] **Hosting.** GitHub Pages on every push to `main` once the repo is public (decisions H2). The one-time setup is noted in `.github/workflows/deploy.yml`.
+- [x] **Fonts.** Self-hosted through `@fontsource`. A Vite plugin strips the Google Fonts import from `bundle.css`, and CI checks the build has none.
+- [x] **Icons.** `lucide-static`, per-icon imports in `src/ui/icons.ts`.
+- [x] **Issue tracking.** All in GitHub issues and milestones.
+- [x] **Browser and device targets.** Phone first at 390px. Chrome and Edge 111, Firefox 114, Safari and iOS Safari 16.4 (decisions H3).
+- [x] **Keep the artifacts in sync.** The artifact is canonical: change it, then re-snapshot into `design/ui/`.
 
 ## 5. Follow-ups from the owner review
 
 - [x] **Answer I1.** Endurance dropped (I1).
 - [x] **Confirm assumptions.** Answered or approved by the owner: respawn 4 s per level, 10 starting minor health potions, 5,000 gold shop refresh, cursed objects dropping rare items, weapon penalty on weapon damage only, slot ticket applied automatically, targeting multiplier on movement time. Still the lead's defaults, to tune: health regeneration of 0.5% per second (T10) and backpack numbers.
-- [ ] **Update the UI sketches** listed in design/06 ("Sketches to update"): 4 slots with 1 unlocked, 10 starter potions, respawn timer level x 4 s, health regeneration and 10% respawn health on the character screen, backpack max stack, no endurance. They are edited in the claude.ai artifact, then re-snapshotted.
-- [ ] **Items table.** One table for equipment, consumables, materials and rare items (T2). Items are stackable or not, with no per-item stack limit (T1). Add the placeholder rare items: Rotation token, Attribute slot stone, Attribute reroll stone.
+- [x] **Update the UI sketches.** Done in the claude.ai artifact and re-snapshotted (issue #17).
+- [x] **Items table.** One table for equipment, consumables, materials and rare items (T2), including the Rotation token and both attribute stones.
 - [x] **Pacing.** The owner approved the XP table as it is. Gold per hour can still be checked with the balance tools (5.3).
-- [ ] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). Every material needs a low-level source (enemy level 10 or below, T12).
-- [ ] **Check the drop tables** against the balance principle (decisions, "Balance notes"): bosses and cursed objects roll rare items from a pool plus ordinary items; mini-bosses roll materials from a pool plus normal rolls (S8).
+- [x] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). The validator enforces a low-level source for every material (T12).
+- [x] **Check the drop tables** against the balance principle (S8). The validator enforces the pools and rolls for bosses, cursed objects and mini-bosses.

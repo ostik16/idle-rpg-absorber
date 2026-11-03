@@ -1,6 +1,6 @@
 # ADR 0001: UI approach
 
-Status: proposed default, awaiting owner review.
+Status: accepted, approved by the owner on 2026-11-03.
 
 ## Context
 
@@ -24,7 +24,7 @@ Use **Preact with @preact/signals**, with all game state in a plain TypeScript e
 - Icons: `lucide-static` SVG sprites or per-icon imports, inlined at build time. Do not ship the whole icon set.
 - Tests: engine tests are pure Vitest (node environment). UI tests, if any, use `@testing-library/preact` with `happy-dom`, kept few.
 
-Expected cost: about 4 kB gzip for Preact plus about 2 kB for signals.
+Expected cost: about 4 kB gzip for Preact plus about 2 kB for signals. Measured on the first shell (Preact 11): about 4.6 kB and 3.7 kB.
 
 ## Consequences
 

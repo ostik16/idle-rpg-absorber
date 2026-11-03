@@ -1,6 +1,6 @@
 # ADR 0003: Save storage
 
-Status: proposed default, awaiting owner review.
+Status: accepted, approved by the owner on 2026-11-03.
 
 ## Context
 

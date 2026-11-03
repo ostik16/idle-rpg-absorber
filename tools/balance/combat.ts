@@ -75,10 +75,9 @@ export function defaultBuild(level = 1): PlayerBuild {
 /**
  * The reference character docs/decisions.md N6 tuned the enemy baseline against: attribute points split 45/20/25/10
  * (strength, dexterity, vitality, intelligence), weapon damage 3 + 1.8 x (L - 1), armour 1 + 0.9 x (L - 1).
- * These gear numbers are from the decision log, not from data/constants.json: proposed home is a `balance.referenceBuild` constant.
+ * The numbers are in constants.balance.referenceBuild.
  */
-export const REFERENCE_SPLIT = { strength: 0.45, dexterity: 0.2, vitality: 0.25, intelligence: 0.1 } as const;
-export const REFERENCE_GEAR = { weaponBase: 3, weaponPerLevel: 1.8, armourBase: 1, armourPerLevel: 0.9 } as const;
+const REFERENCE = constants.balance.referenceBuild;
 
 export function referenceBuild(level: number): PlayerBuild {
   const base = constants.creation.baseAttributes;
@@ -88,14 +87,14 @@ export function referenceBuild(level: number): PlayerBuild {
   return {
     ...defaultBuild(level),
     attributes: {
-      strength: total * REFERENCE_SPLIT.strength,
-      dexterity: total * REFERENCE_SPLIT.dexterity,
-      vitality: total * REFERENCE_SPLIT.vitality,
-      intelligence: total * REFERENCE_SPLIT.intelligence,
+      strength: total * REFERENCE.attributeSplit.strength,
+      dexterity: total * REFERENCE.attributeSplit.dexterity,
+      vitality: total * REFERENCE.attributeSplit.vitality,
+      intelligence: total * REFERENCE.attributeSplit.intelligence,
     },
-    weaponDamage: REFERENCE_GEAR.weaponBase + REFERENCE_GEAR.weaponPerLevel * (level - 1),
+    weaponDamage: REFERENCE.weaponBase + REFERENCE.weaponPerLevel * (level - 1),
     weaponType: 'one-handed',
-    armourDefence: REFERENCE_GEAR.armourBase + REFERENCE_GEAR.armourPerLevel * (level - 1),
+    armourDefence: REFERENCE.armourBase + REFERENCE.armourPerLevel * (level - 1),
   };
 }
 

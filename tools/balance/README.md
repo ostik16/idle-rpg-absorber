@@ -2,7 +2,7 @@
 
 Scripts over `data/` for checking a balance change before players find it (design [5.3](../../design/05-dev-tools.md)). They reuse the formulas in `src/game`, so they cannot drift from the game. Run them with `npm run`; flags go after `--`. Every script takes `--help`.
 
-Run `npm install` once first. The scripts run under `vite-node`, which comes with vitest.
+Run `npm install` once first. The scripts run under `vite-node`.
 
 | Script | Answers |
 |---|---|
@@ -22,7 +22,7 @@ Flags: `--level`, `--str`, `--dex`, `--vit`, `--int`, `--weapon` (weapon damage)
 - Without gear flags the build is the creation character: 5 in each attribute, unarmed (`constants.stats.unarmedDamage` as weapon damage), no armour. Giving `--weapon` makes the weapon type one-handed unless `--weapon-type` says otherwise.
 - `--prof-weapon` is the points of the weapon style skill (unarmed, one-handed or two-handed): +0.3% damage and +0.1% attack speed per point. `--prof-combat` adds +0.1% attack speed per point. The speed skill trains by moving and only affects the drop and progression scripts (`--prof-speed` there).
 - `--weapon-requires` applies the weapon penalty (2.2): each attribute point below a required value costs 1% of the weapon's damage, added up over all attributes, at most 50%. Unarmed damage has no penalty.
-- `--reference` starts from the character `docs/decisions.md` N6 tuned the enemy baseline against (attribute points split 45/20/25/10 over strength, dexterity, vitality, intelligence, 20 points at level 1 plus 3 per level; weapon damage 3 + 1.8 x (L - 1); armour 1 + 0.9 x (L - 1)). Any other flag overrides its part.
+- `--reference` starts from the character `docs/decisions.md` N6 tuned the enemy baseline against (`constants.balance.referenceBuild`: attribute points split 45/20/25/10 over strength, dexterity, vitality, intelligence, 20 points at level 1 plus 3 per level; weapon damage 3 + 1.8 x (L - 1); armour 1 + 0.9 x (L - 1)). Any other flag overrides its part.
 - With neither `--enemy` nor `--enemy-level`, the enemy is the baseline enemy of `--level`.
 - Output: win rate, time to kill (mean, median, 95th percentile), damage taken per fight, health lost per fight as a share of max health, how many fights a full health bar lasts, and default health regeneration (`constants.stats.healthRegen`, 0.5% of max health per second): health regained in an average gap between fights as a percent of max health, and the net HP lost per fight cycle (damage taken minus regeneration over fight time plus gap; negative means a net gain).
 
