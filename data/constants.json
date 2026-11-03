@@ -246,6 +246,16 @@
     "baseMaxStack": 20
   },
   "balance": {
-    "upgradeMaterialLowLevelSourceMaxEnemyLevel": 10
+    "upgradeMaterialLowLevelSourceMaxEnemyLevel": 10,
+    "referenceBuild": {
+      "attributeSplit": { "strength": 0.45, "dexterity": 0.2, "vitality": 0.25, "intelligence": 0.1 },
+      "weaponBase": 3,
+      "weaponPerLevel": 1.8,
+      "armourBase": 1,
+      "armourPerLevel": 0.9
+    }
+  },
+  "engine": {
+    "maxStepsPerFrame": 600
   }
 }
