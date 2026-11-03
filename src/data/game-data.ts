@@ -158,6 +158,13 @@ export function constantSection<K extends keyof typeof constantsJson>(
   return requireConstant(data, section) as unknown as (typeof constantsJson)[K];
 }
 
+/** The row with this id. Throws, naming the table and the id, when there is none. */
+export function requireRow(data: GameData, table: TableName, id: string): TableRow {
+  const row = data[table].find((entry) => entry.id === id);
+  if (row === undefined) throw new Error(`no row "${id}" in the ${table} table`);
+  return row;
+}
+
 /** Like `requireConstant`, and the value must also be a finite number. */
 export function requireNumberConstant(data: GameData, path: string): number {
   const value = requireConstant(data, path);

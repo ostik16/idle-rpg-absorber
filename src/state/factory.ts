@@ -34,6 +34,8 @@ export function createCharacterState(id: string, name: string, data: GameData): 
     bag: creation.startingItems.map((item) => newStack(item.itemId, item.quantity)),
     health: 0,
     mana: 0,
+    potions: { queue: [], ticksDone: 0, msIntoTick: 0 },
+    fight: null,
     areaId: null,
     targetEnemyId: null,
     phase: 'idle',

@@ -1,14 +1,14 @@
 /**
  * Combat simulation for the balance tools (design 3.6, 5.3). Pure: builds fighters from the formulas in
- * src/game and resolves fights tick by tick with a seeded RNG. Nothing here reads files.
+ * src/game and resolves fights with a seeded RNG, one `fightTick` at a time, the same rule the game runs.
+ * Nothing here reads files.
  *
- * Model: both sides attack on the engine tick (constants.combat.tickMs). The first attack of each side lands one
- * full interval after the fight starts. On a tick where both attack, the player acts first, so an enemy killed on
- * that tick does not strike back. Only the player can crit (enemy crit is not in the design). Each fight starts at
- * full health; potions, spells and traits are not modelled. The weapon attribute penalty (2.2) applies to the weapon's
- * damage when the build lists the weapon's required attributes. A build without a weapon fights unarmed (4.2).
+ * Model: `fightTick` in src/game/combat.ts. Each fight starts at full health; regeneration, potions, spells and traits
+ * are not modelled. The weapon attribute penalty (2.2) applies to the weapon's damage when the build lists the
+ * weapon's required attributes. A build without a weapon fights unarmed (4.2).
  */
 import constants from '../../data/constants.json';
+import { enemyCombatant, fightTick, type Combatant } from '../../src/game/combat';
 import { enemyAttackSpeed, enemyDamage, enemyDefence, enemyHealth } from '../../src/game/enemies';
 import { attackSpeedBonus, proficiencyEffect } from '../../src/game/proficiency';
 import { createStream, type Rng } from '../../src/game/rng';
@@ -18,7 +18,6 @@ import {
   critChance,
   defence,
   healthRegenPerSecond,
-  hitDamage,
   maxHealth,
   physicalDamage,
   regenOverSeconds,
@@ -28,16 +27,7 @@ import {
 } from '../../src/game/stats';
 import { BalanceError, type EnemyEntry } from './load-data';
 
-export interface Combatant {
-  maxHp: number;
-  /** Damage per hit before the target's defence. */
-  damage: number;
-  defence: number;
-  /** Crit chance 0..1. */
-  critChance: number;
-  /** Time between attacks, a whole number of ticks. */
-  intervalMs: number;
-}
+export type { Combatant };
 
 export type WeaponType = 'unarmed' | 'one-handed' | 'two-handed';
 
@@ -133,7 +123,7 @@ export function enemyFromData(enemy: EnemyEntry, tickMs: number = constants.comb
   if (health === undefined || damage === undefined || speed === undefined || def === undefined) {
     throw new BalanceError(`Enemy "${enemy.id}" needs health, damage, attackSpeed and defence in data/enemies.json.`);
   }
-  return { maxHp: health, damage, defence: def, critChance: 0, intervalMs: attackIntervalMs(speed, tickMs) };
+  return enemyCombatant({ health, damage, attackSpeed: speed, defence: def }, tickMs);
 }
 
 /** An enemy from data when it has all its stats, else the baseline enemy of its level (3.5). */
@@ -169,8 +159,6 @@ export interface FightOptions {
 export function resolveFight(player: Combatant, enemy: Combatant, rng: Rng, options: FightOptions = {}): FightResult {
   const tickMs = options.tickMs ?? constants.combat.tickMs;
   const maxTicks = Math.ceil(((options.maxSeconds ?? 600) * 1000) / tickMs);
-  const playerEvery = Math.max(1, Math.round(player.intervalMs / tickMs));
-  const enemyEvery = Math.max(1, Math.round(enemy.intervalMs / tickMs));
   let playerHp = player.maxHp;
   let enemyHp = enemy.maxHp;
   let playerHits = 0;
@@ -178,22 +166,13 @@ export function resolveFight(player: Combatant, enemy: Combatant, rng: Rng, opti
   let enemyHits = 0;
 
   for (let tick = 1; tick <= maxTicks; tick++) {
-    if (tick % playerEvery === 0) {
-      const crit = rng.chance(player.critChance);
-      enemyHp -= hitDamage(player.damage, enemy.defence, crit);
-      playerHits++;
-      if (crit) playerCrits++;
-      if (enemyHp <= 0) {
-        return { outcome: 'win', timeMs: tick * tickMs, damageTaken: player.maxHp - playerHp, playerHits, playerCrits, enemyHits };
-      }
-    }
-    if (tick % enemyEvery === 0) {
-      const crit = rng.chance(enemy.critChance);
-      playerHp -= hitDamage(enemy.damage, player.defence, crit);
-      enemyHits++;
-      if (playerHp <= 0) {
-        return { outcome: 'loss', timeMs: tick * tickMs, damageTaken: player.maxHp - playerHp, playerHits, playerCrits, enemyHits };
-      }
+    const result = fightTick({ tick, playerHp, enemyHp, player, enemy, rng, tickMs, playerAttacks: true });
+    ({ playerHp, enemyHp } = result);
+    if (result.playerHit) playerHits++;
+    if (result.playerCrit) playerCrits++;
+    if (result.enemyHit) enemyHits++;
+    if (result.outcome !== null) {
+      return { outcome: result.outcome, timeMs: tick * tickMs, damageTaken: player.maxHp - playerHp, playerHits, playerCrits, enemyHits };
     }
   }
   return { outcome: 'timeout', timeMs: maxTicks * tickMs, damageTaken: player.maxHp - playerHp, playerHits, playerCrits, enemyHits };

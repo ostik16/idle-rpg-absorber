@@ -2,20 +2,12 @@
  * One character's state machine (ADR 0002 "Multiple characters"). A character is independent: it shares
  * nothing with the others except through the events it emits, which the engine applies at the end of the step.
  */
-import type { GameData } from '../data/game-data';
 import type { CharacterState, Phase } from '../state/types';
-import type { EngineEvent } from './events';
-import type { CharacterStreams } from './streams';
+import { stepFighting, stepFleeing } from './fight';
+import { autoUsePotion, stepHealing } from './healing';
+import type { StepContext } from './step-context';
 
-export interface StepContext {
-  readonly data: GameData;
-  /** Length of one step in ms (combat.tickMs). */
-  readonly tickMs: number;
-  /** This character's own random streams. */
-  readonly streams: CharacterStreams;
-  /** Queues an event for the end of the step. Events are applied in the order they were emitted. */
-  emit(event: EngineEvent): void;
-}
+export { enterPhase, type StepContext } from './step-context';
 
 /** Stable order for characters: plain string comparison, not locale-aware, so every machine agrees. */
 export function compareCharacterIds(a: { readonly id: string }, b: { readonly id: string }): number {
@@ -23,27 +15,20 @@ export function compareCharacterIds(a: { readonly id: string }, b: { readonly id
   return a.id > b.id ? 1 : 0;
 }
 
-/** Moves a character to another phase: time in phase starts again and `phaseChanged` is emitted. */
-export function enterPhase(character: CharacterState, phase: Phase, ctx: StepContext): void {
-  const from = character.phase;
-  character.phase = phase;
-  character.timeInPhaseMs = 0;
-  ctx.emit({ type: 'phaseChanged', characterId: character.id, from, to: phase });
-}
-
 type PhaseStep = (character: CharacterState, ctx: StepContext) => void;
 
 const stayInPhase: PhaseStep = () => {};
 
 /**
- * What each phase does in one step. Every phase only stays put for now: the transitions
- * (travelling to searching to fighting to looting to returning to restocking, and dead) and
- * their formulas come with the issues that build each phase. They will call `enterPhase`.
+ * What each phase does in one step. The other transitions (travelling to searching to fighting, looting to
+ * searching, returning to restocking, and leaving `dead`) and their formulas come with the issues that build
+ * each phase. They will call `enterPhase`.
  */
 const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   travelling: stayInPhase,
   searching: stayInPhase,
-  fighting: stayInPhase,
+  fighting: stepFighting,
+  fleeing: stepFleeing,
   looting: stayInPhase,
   returning: stayInPhase,
   restocking: stayInPhase,
@@ -51,8 +36,14 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   idle: stayInPhase,
 };
 
-/** Advances one character by exactly one step. */
+/**
+ * Advances one character by exactly one step: the phase first, so a killing blow lands before any healing on
+ * the same tick, then regeneration and potions, then the choice to drink in a fight.
+ */
 export function stepCharacter(character: CharacterState, ctx: StepContext): void {
   character.timeInPhaseMs += ctx.tickMs;
   PHASE_STEPS[character.phase](character, ctx);
+  if (character.phase === 'dead') return;
+  stepHealing(character, ctx);
+  if (character.phase === 'fighting' || character.phase === 'fleeing') autoUsePotion(character, ctx);
 }
