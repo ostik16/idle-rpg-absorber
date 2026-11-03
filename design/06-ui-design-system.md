@@ -16,18 +16,21 @@ Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the 
 - The equipment slot for rare items is called special-item-slot. The gear screen also has a backpack slot (2.2).
 - A new character starts with no gear and no gold, and 10 minor health potions (4.1).
 - The roster has at most 4 character slots, 1 unlocked at the start and 3 locked, each unlocked by a ticket earned at level 20 (4.1).
+- Each character has its own gold (2.9). The app bar shows the selected character's gold, and the roster lists gold per row. There is no roster total. The sketches still show one total.
+- Deleting a character confirms first, and says it loses all its items, equipment and gold, so anything wanted must go to the warehouse first (4.1).
+- The `ring` category icon is Lucide `circle-dot`, because Lucide has no ring. `flask` means `flask-round`.
 
 **Proposed.**
 - Dark theme only. Grounds `ground`, `surface-1/2/3`.
 - `gold` means value and action, with one primary button per screen. `essence` (teal) is used only for absorption. `arcane` (violet) marks rare items, cursed objects and upgrade marks from +7 to +9.
 - Type: Cinzel for names and titles (17px and up), Barlow for reading text, Barlow Semi Condensed with tabular figures for numbers, labels and chips.
 - Phone first, at 390px wide. Phone screens have an app bar and a bottom tab bar with Roster, World, City and Bestiary. From 900px wide the tab bar becomes a left rail. Roster, character detail and loot then sit side by side, and so do the warehouse and a character's bag.
-- Touch targets and item cells are 44px. Grids have 7 columns. Weapons take 3 cells in a column; body armour, leggings and shields take 2.
+- Touch targets and item cells are 44px. Grids have 7 columns. Weapons draw as 3 cells in a column; body armour, leggings and shields as 2. This is display only: the game counts cells, not positions (2.3), so the screens draw items tallest first.
 - Every status shows an icon and a word, never colour alone. Drop chips show the rate after the level-gap modifier (3.8) for a chosen character. The World screen draws each area's level range against that character's level.
 - The XP bar has ticks at 25%, 50% and 75%, where character points are awarded (4.4).
 - Choices that can't be undone get a confirm step that states the consequence: spending character points (4.4) and unprotected upgrades (2.7).
 - Moving items between a bag and the warehouse (2.4) always shows both grids. On phones the bag is above and the warehouse below, with "To warehouse ↓" and "To bag ↑" between them. Items are multi-selected by tapping, stacks merge first, and a status line says what moved or why it didn't fit.
-- Shops (2.5) have Buy, Sell and Buyback tabs. Buy shows the total, bag space after and gold after before you confirm.
+- Shops (2.5) have Buy and Sell tabs, and a Buyback tab once buyback is built. Buy shows the total, bag space after and gold after before you confirm.
 - Spells (4.5): the character's spell screen shows skill points, an auto-cast priority list that can be reordered, and the shared spell book filtered by kind. Spells boosted by an absorbed trait show it in essence colour ("Fire affinity adds 2.8%").
 
 **Screens sketched.** Roster · Character: Farm, Stats, Gear, Spells · Welcome back (offline summary, 3.4) · World · Area sheet (target and travel) · City · Shop (Alchemist) · Upgrade smith · Warehouse · Bestiary · Desktop roster · Desktop warehouse transfer.

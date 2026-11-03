@@ -169,9 +169,16 @@ const attributeIds = ids('attributes');
 const baseMaxStack = C.inventory?.baseMaxStack;
 if (!isFinite(baseMaxStack) || baseMaxStack < 1) errors.push('constants.inventory.baseMaxStack must be a number of 1 or more');
 if (!(C.storage?.maxStack >= 1)) errors.push('constants.storage.maxStack must be a number of 1 or more');
+if (!(C.storage?.startingTabs >= 1)) errors.push('constants.storage.startingTabs must be a number of 1 or more');
+if (!(C.storage?.cellsPerTab >= 1)) errors.push('constants.storage.cellsPerTab must be a number of 1 or more');
+if (!Array.isArray(C.storage?.tabCosts) || C.storage.tabCosts.some((cost) => !(cost >= 0))) errors.push('constants.storage.tabCosts must be a list of gold costs');
+inRange01('constants.returnTriggers', 'healthThreshold', C.returnTriggers?.healthThreshold);
+inRange01('constants.cityHealing', 'balancedFraction', C.cityHealing?.balancedFraction);
+if (!['fast', 'balanced', 'slow'].includes(C.cityHealing?.defaultMode)) errors.push('constants.cityHealing.defaultMode must be fast, balanced or slow');
+if (!(C.combat?.fleeSeconds >= 0)) errors.push('constants.combat.fleeSeconds must be a number of 0 or more');
 const slotTypes = new Set((tables['equipment-slots'] ?? []).flatMap((s) => s.allowedTypes ?? []));
 const maxBonus = C.items?.maxBonusAttributes;
-const categories = ['equipment', 'consumable', 'material', 'rare'];
+const categories = ['equipment', 'consumable', 'material', 'rare', 'valuable'];
 const potionTiers = Object.fromEntries((C.potions?.tiers ?? []).map((t) => [t.id, t]));
 const isInt = (v, min) => Number.isInteger(v) && v >= min;
 const itemGroups = new Set();
@@ -234,6 +241,12 @@ for (const it of tables['items'] ?? []) {
     } else if (eff.type === 'buff') {
       if (typeof eff.stat !== 'string' || typeof eff.amount !== 'number' || !(eff.durationSeconds > 0)) errors.push(`${from}: buff needs stat, amount and durationSeconds above 0`);
     }
+  }
+
+  // A valuable moves gold between characters, so buying it must cost more than selling it pays (2.9).
+  if (it.category === 'valuable') {
+    if (it.stackable !== true) errors.push(`${from}: a valuable must be stackable`);
+    if (!(it.buyPrice > it.sellPrice)) errors.push(`${from}: a valuable must cost more to buy than it sells for`);
   }
 
   if (it.category === 'rare') {
@@ -338,6 +351,15 @@ for (const [slot, itemId] of Object.entries(creation.startingEquipment ?? {})) {
 for (const s of creation.startingItems ?? []) {
   itemRef('constants.creation', 'startingItems', s.itemId);
   if (!isInt(s.quantity ?? 1, 1)) errors.push(`constants.creation: startingItems quantity for "${s.itemId}" must be a whole number of 1 or more`);
+}
+
+// Default restock list: health and mana potions only, sold by a shop, in quantities above 0 (3.2).
+const shopItemIds = new Set((tables['shops'] ?? []).flatMap((s) => (s.itemList ?? []).map((row) => row.itemId)));
+for (const s of C.restock?.defaultList ?? []) {
+  itemRef('constants.restock', 'defaultList', s.itemId);
+  if (!isInt(s.quantity, 1)) errors.push(`constants.restock: defaultList quantity for "${s.itemId}" must be a whole number of 1 or more`);
+  if (itemById[s.itemId] && itemById[s.itemId].effect?.type !== 'heal-over-time') errors.push(`constants.restock: "${s.itemId}" is not a potion`);
+  if (!shopItemIds.has(s.itemId)) errors.push(`constants.restock: "${s.itemId}" is not sold by any shop`);
 }
 
 // Drop quantities stay within the base max stack.

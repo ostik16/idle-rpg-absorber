@@ -15,17 +15,15 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - All characters farm at the same time, online and offline.
 - There are at most 4 character slots for now (`constants.characters.maxSlots`). Only 1 is unlocked at the start (`startingUnlockedSlots`). The other 3 are locked, and each needs a slot ticket to unlock.
 - A character earns 1 ticket when it first reaches level 20, once per character (`slotTicketLevel`, `slotTicketsPerCharacter`). Assumed: the ticket is applied automatically, it is not a bag item. The slot count will grow as content is added.
-- All characters share the warehouse.
+- All characters share the warehouse. Each has its own gold (2.9).
+- A roster screen shows each character's level, current area, status (farming, travelling, in city, dead) and gold.
+- A deleted character loses all its items, equipment and gold. Nothing moves to the warehouse. The confirm step says so, and tells the player to move what they want first.
 - Character creation:
   - The player types a name (1 to 16 characters, unique in the roster, case-insensitive). There are no free points to spend.
   - Every attribute starts at the default of 5 (total 20). There is no class, no race and no weapon choice.
   - A new character is level 1 with 0 gold, no gear. Its only items are 10 minor health potions (`constants.creation.startingItems`). Everything else is farmed.
   - The first enemies must be killable bare-handed. Unarmed damage is `constants.stats.unarmedDamage` (2).
   - Example: all attributes 5 gives 6 damage unarmed (1 + 0.6 × 5 + 2), 0.9 attacks per second and 70 health.
-
-**Proposed.**
-- A roster screen showing each character's level, current area and status (farming, travelling, in city, dead).
-- When a character is deleted, its inventory and equipment go to the warehouse if there is space.
 
 **Data.** max slots, starting unlocked slots, slot ticket level and tickets per character (`constants.characters`), base attributes, free points (0), name length, starting gold, gear and items (10 minor health potions) (`constants.creation`).
 
@@ -170,6 +168,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - When the enemy is above the character, absorption works as usual: modifier 1, no penalty and no bonus.
 - Defenders spawned by a cursed object are normal enemies and can be absorbed. The cursed object itself cannot.
 - An absorbed trait can be forgotten with a rare item (2.8).
+- Absorption is tracked per character, per trait.
 
 **Formula.**
 - diff = character level − enemy level
@@ -184,9 +183,6 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 | 20 | 12% |
 
 Unlike drops, a high-level character can still absorb from low-level enemies, just slowly.
-
-**Proposed.**
-- Absorption is tracked per character, per trait.
 
 **Data.** trait id, name, effect, magical flag. Absorption factor (0.9) in the global constants.
 

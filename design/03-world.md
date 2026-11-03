@@ -34,13 +34,12 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Travel takes real time based on distance. The speed skill (4.6) shortens it.
 - Travel can be skipped with a rare item (2.8).
 - A teleporter in the city moves the character to far areas for a fee.
-- Returning to the city restocks used consumables for a fee. Restocking is not free.
+- A character returns to the city on its own when its health falls below a threshold, default 20% (`constants.returnTriggers.healthThreshold`, the player can change it per character), or when its bag is full (2.3). Running out of potions is not a trigger.
+- A character can leave a fight at any moment, through the health trigger or the player's return command, but fleeing takes 1 second (`constants.combat.fleeSeconds`), shortened by movement speed like travel (4.2). It stops attacking, the enemy keeps attacking, and potions and regeneration keep ticking. Dying while fleeing is a normal death (3.7). An abandoned fight gives no reward.
+- In the city the character does the automatic things in order: sell by the auto-sell rules (2.3), restock, heal. Assumed: this order, so sales can pay for the restock. It goes back to the same area only at full health, healing the way the player chose (2.6).
+- Restocking covers only health and mana potions. The player sets which potions and how many per character, default 10 minor health potions (`constants.restock.defaultList`). The character tops up to that quantity at the shop price. With too little gold it buys as many as it can, in list order, health first.
 
-**Proposed.**
-- Automatic return to the city when the inventory is full, potions run out, or health drops below a threshold. After restocking, the character goes back to the same area.
-- If there is not enough gold to restock, the character restocks what it can afford.
-
-**Data.** distance between city and each area, teleporter destinations and fees, return triggers and their defaults.
+**Data.** distance between city and each area, teleporter destinations and fees, return threshold default, flee time, default restock list.
 
 ---
 
@@ -68,8 +67,6 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - The offline cap is 12 hours (default, revisit after playtesting).
 - Offline time has a cap, so one character cannot collect too much gold. The cap is set through playtesting.
 - Proficiencies grow offline at a reduced rate: 50% of the active rate (default, revisit after playtesting).
-
-**Proposed.**
 - On return, the game calculates the time away instead of simulating every fight. It estimates kills per hour from the character's stats and the area, then rolls XP, drops and absorption in bulk.
 - A summary screen on return: XP, levels, loot, absorption gained, per character.
 
@@ -120,12 +117,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Combat resolves in ticks of 100 ms (default, revisit after playtesting).
 - Attack intervals are rounded to whole ticks, at least one (default, revisit after playtesting).
 - Every combat event feeds proficiency: hitting with a weapon trains that weapon type, attacking trains the combat skill, taking a hit trains toughness (4.6).
+- An absorbed trait works as its effect in `data/traits.json` says: life steal heals on each hit, regeneration ticks every 10 seconds, and affinities apply when spells arrive.
 
 **Proposed.**
-- A minimum damage of 1, so a hit always counts.
-- Critical hits multiply damage (crit rate exists through boosts, 2.6).
 - Spells auto-cast in a priority order set by the player, when mana allows.
-- Absorbed traits apply on hit, for example life steal heals.
 
 **Data.** global formula constants (minimum damage, crit multiplier, tick length).
 
@@ -144,9 +139,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Example, a level needing 100 XP: at 74 XP the floor is 50, so at most 24 can be lost (the 25% cap allows 25). At 76 XP the floor is 75, so at most 1 can be lost. Below 25 XP there is no floor, and XP can fall to 0 (at 20 XP, at most 20 can be lost).
 - A character can never lose a level.
 - An XP protection item prevents the loss (2.8).
-
-**Proposed.**
-- The auto-retreat threshold (3.2) lets players avoid death.
+- The return threshold (3.2) lets players avoid death, but not always: fleeing takes time, and the enemy keeps attacking until it ends.
 
 **Data.** XP loss range (0-25%), floor at point marks, respawn seconds per level, respawn health fraction, must heal to full before farming.
 
@@ -165,7 +158,9 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Bosses and cursed objects drop rare items from a guaranteed pool (2.8), plus normal rolls of ordinary items from their drop table.
 - An enemy with a guaranteed drop has a guaranteed pool, not one fixed item. Every kill yields exactly one item chosen by weight from the pool, with a quantity range per entry. The guaranteed roll is separate from the normal rolls, which still happen.
 - Balance rule: every upgrade material has at least one low-level source, an enemy of level 10 or below that can drop it (`constants.balance.upgradeMaterialLowLevelSourceMaxEnemyLevel` = 10, enemy level). A character 10 or more levels above an enemy has a level modifier of 0, so it cannot farm that source itself. Players are meant to run several characters, with low-level ones farming the materials that high-level characters need or could need.
-- Drop rates are shown to the player (revealed through the bestiary, 4.8).
+- Drop rates are shown to the player (revealed through the bestiary, 4.8). The rate shown already includes their level modifier, so they can see when a character has outgrown an enemy.
+- Each enemy has a drop table: a list of entries with item, base chance and quantity range.
+- Money is a separate roll.
 
 **Formula.**
 - final chance = base chance × level modifier
@@ -175,10 +170,5 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - diff ≤ −20: level modifier = 0
 
 Absorption uses a different, gentler curve (4.7).
-
-**Proposed.**
-- Each enemy has a drop table: a list of entries with item, base chance and quantity range.
-- Money is a separate roll.
-- The drop rate shown to the player already includes their level modifier, so they can see when a character has outgrown an enemy.
 
 **Data.** drop table id, entries (item id, base chance, min/max quantity), guaranteed pool (item id, weight, min/max quantity).

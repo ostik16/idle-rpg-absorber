@@ -20,7 +20,7 @@ export type EngineEvent =
 /**
  * End of a step: publishes the events the characters emitted, in the order they were emitted
  * (characters run in id order, so the order never depends on roster order), then empties `stepEvents`.
- * Changes to shared state (gold, warehouse deposits, bestiary reveals) are applied here, one case per
+ * Changes to shared state (warehouse deposits, bestiary reveals) are applied here, one case per
  * event type, by the issues that add them. None exist yet, so this only publishes.
  */
 export function publishStepEvents(stepEvents: EngineEvent[], outbox: EngineEvent[]): void {

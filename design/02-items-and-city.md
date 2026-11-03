@@ -11,7 +11,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 **Purpose.** One shared definition for everything that can drop, be bought, be equipped or be stored. Every other system in this document reads from it.
 
 **Rules.**
-- Categories: equipment, consumable, material (upgrade materials) and rare. Money is not an item.
+- Categories: equipment, consumable, material (upgrade materials), rare and valuable (2.9). Money is not an item.
 - Every item lives in one items table (5.1), with a category and fields for its effect. Consumables (2.6) and rare items (2.8) are design sections only; they are stored in that table.
 - No rarity tiers. "Rare items" is a category, not a tier (2.8).
 - Each piece of equipment has a required level to equip. Most follow steps of 1, 5, 10, 15, … but an item can have any level. Potions and other consumables have no required level (2.6).
@@ -22,7 +22,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - An item can roll up to 3 bonus attributes for now. Each pool entry rolls on its own chance.
 - More bonus attributes will be added later, together with two rare items: one adds attribute slots to an item and one rerolls all its bonus attributes at once (2.8).
 
-**Data.** id, name, category (equipment, consumable, material, rare), size (slots), stackable (yes/no), required level, base stats, bonus attribute pool (attribute, min, max, chance), buy price, sell price, icon. Effect fields by category: the slot types an equipment item fits, the effect of a consumable or rare item (amount, duration, use), backpack cells and backpack max stack.
+**Data.** id, name, category (equipment, consumable, material, rare, valuable), size (slots), stackable (yes/no), required level, base stats, bonus attribute pool (attribute, min, max, chance), buy price, sell price, icon. Effect fields by category: the slot types an equipment item fits, the effect of a consumable or rare item (amount, duration, use), backpack cells and backpack max stack.
 
 ---
 
@@ -39,9 +39,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - The special-item-slot accepts only items that can be placed there, usually rare items (2.8).
 - The backpack slot holds a backpack. A backpack adds bag cells and sets the bag's max stack, so a better backpack allows larger stacks of potions and materials (2.3).
 - A two-handed weapon blocks the off hand (default, revisit after playtesting).
-
-**Proposed.**
-- The equipped weapon decides which proficiency is trained: one-handed, two-handed, or unarmed when no weapon is equipped.
+- The equipped weapon decides which proficiency is trained: one-handed, two-handed, or unarmed when no weapon is equipped. More types can follow, such as staffs that only cast spells.
 
 **Data.** slot list, which equipment types each slot accepts, weapon scaling (attribute, required value), penalty per missing point and cap (`constants.combat.weaponPenalty`).
 
@@ -55,16 +53,13 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Each character has their own inventory.
 - The base bag is 36 cells (`constants.inventory.baseCells`). A backpack in the backpack slot (2.2) adds cells and sets the max stack of that character's bag.
 - The bag has a max stack, and all stackable items stack to that amount. Without a backpack the base max stack is 20 (`constants.inventory.baseMaxStack`). A backpack sets a higher max stack for that character's bag only. A stack moved from the warehouse is split to fit the bag's max stack.
-- Loot filter: the player chooses what to pick up.
-- Auto-sell is a later upgrade.
+- Loot filter: the player chooses what to pick up, with rules by category, required level and bonus attributes, stored per character. A new character picks up everything.
+- Auto-sell: the player can set rules, in the same shape as the loot filter, for what a character sells on its own in the city (3.2). It is available from the start and off by default, so it sells nothing until the player sets rules. Items sell at their sell price, and the gold goes to that character.
 - The loot filter is the idle trade-off: keep space for rare equipment, or farm only for XP and money.
+- Same size rules as the warehouse: large items take 2-3 cells, and a stack takes 1. Only the number of cells counts. Position does not matter, and players never rearrange.
+- A full bag triggers a return to the city (3.2). If the bag is still full after the city routine, the character goes back and earns only XP and gold, and a full bag does not send it home again until the bag has space.
 
-**Proposed.**
-- Same slot and size rules as the warehouse: large items take 2-3 slots, materials stack.
-- A full inventory triggers a return to the city (see 3.2 Travel).
-- Filter rules by category, required level and bonus attributes.
-
-**Data.** base inventory size (`constants.inventory`), base max stack (`constants.inventory.baseMaxStack`), backpack cells and backpack max stack (on the backpack item), auto-sell unlock condition.
+**Data.** base inventory size (`constants.inventory`), base max stack (`constants.inventory.baseMaxStack`), backpack cells and backpack max stack (on the backpack item).
 
 ---
 
@@ -77,12 +72,11 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Limited slots.
 - Large items take more space. A weapon takes 2-3 slots.
 - Stackable items (materials, potions and other consumables) take 1 slot per stack. The warehouse stacks all of them to 100 (`constants.storage.maxStack`).
-
-**Proposed.**
-- More tabs bought with gold. Acts as a long-term gold sink.
 - Accessible only in the city, so moving items means a trip back.
+- It starts with 1 tab of 56 cells (`constants.storage.startingTabs`, `cellsPerTab`).
+- More tabs are bought with gold, as a long-term gold sink. Tab 2 costs 25,000 (`constants.storage.tabCosts`). Buying tabs comes after First playable.
 
-**Data.** grid size per tab, starting tabs, tab costs.
+**Data.** grid size per tab, starting tabs, tab costs (`constants.storage`).
 
 ---
 
@@ -95,6 +89,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Every shop except the rare goods shop has fixed stock.
 - Potions have no level requirement. Any character can buy and use any potion. Amounts are fixed, so a strong potion is wasteful and expensive for a low-level character.
 - Items are sold to shops for gold.
+- Buyback for recently sold items, to undo mistakes. It comes after First playable, so the first shop screen has no Buyback tab.
 
 **Rare goods shop.**
 - Rotating stock. It rotates every hour.
@@ -103,9 +98,6 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Items are rare and expensive.
 - Stock can include rare items normally dropped by bosses and cursed objects, equipment upgraded to a high level, and equipment with good bonus attributes.
 - Gives late-game gold a use, and gives players without luck a slow route to rare items.
-
-**Proposed.**
-- Buyback for recently sold items, to undo mistakes.
 
 **Data.** shop id, purpose, item list, prices. Rare goods shop: rotation interval, forced-rotation gold cost, item pool with weights, price range, number of items per rotation.
 
@@ -125,12 +117,11 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - Boost items are consumables like potions, but they grant a timed buff instead of health: move speed, attack speed, critical rate, defence, XP, drop rate and similar. They are rare items (2.8).
 - Boost equipment is a different thing: equipment that gives boost-type bonuses while worn (2.8).
 - A drop-rate boost is applied after the level-gap modifier (3.8): final chance = base chance × level modifier × boost. A boost cannot rescue a character that is too far above the enemy, because a modifier of 0 stays 0.
-
-**Proposed.**
 - Mana potions work the same way as health potions.
-- Auto-use thresholds set by the player, for example drink a health potion below 40% health.
+- Auto-use in a fight: a character drinks when its missing health is greater than what the potion heals, so nothing is wasted, and also at or below a threshold the player sets, default 40% (`autoUseDefaultThreshold` on the item), so potions still get used when they would overheal. Assumed: health that running and queued potions will restore counts as healed. Assumed: it picks the largest potion that fits the missing health, or the smallest it holds when none fits.
+- Healing in the city is a per-character choice: fast (potions while available), balanced (potions up to 65%, then regeneration, `constants.cityHealing.balancedFraction`) or slow (regeneration only). The default is balanced (`constants.cityHealing.defaultMode`). Assumed: healing after death (3.7) uses the same choice.
 
-**Data.** effect type (heal, buff), amount, duration, tick rate, auto-use default threshold.
+**Data.** effect type (heal, buff), amount, duration, tick rate, auto-use default threshold, city healing default and balanced fraction.
 
 ---
 
@@ -211,12 +202,14 @@ Without protection, an item has about a 0.9% chance to go from +0 to +9 without 
 
 **Rules.**
 - One currency: gold.
+- Each character has its own gold, and earns and spends only its own. Assumed: anything bought for the whole roster, like a warehouse tab or a forced shop rotation, is paid by the character doing it.
+- Gold moves between characters only through valuables: buy one, move it through the warehouse, sell it. The general store sells a silver bar (buy 110, sell 100) and a gold bar (buy 1,100, sell 1,000). The difference is the transfer tax.
 - Items are only sold for gold. There is no salvage.
 - Low-level items are worth collecting and selling for low-level characters, and worthless for high-level ones.
 
 **Sources.** Enemy money drops, selling items.
 
-**Sinks.** Consumables, basic equipment, upgrades, restocking on return to the city (3.2), teleporter fees (3.2), spell respec (4.5), warehouse tabs, rare goods shop and its forced rotation (2.5).
+**Sinks.** Consumables, basic equipment, upgrades, restocking on return to the city (3.2), teleporter fees (3.2), spell respec (4.5), warehouse tabs, rare goods shop and its forced rotation (2.5), the tax on valuables.
 
 **Proposed.**
 - Track gold in and out per hour in the dev tools (5.3) to tune.
