@@ -1,28 +1,35 @@
 /**
  * Drop, XP and gold rates for one area at one character level (design 3.8, 4.7, 5.3). Pure.
- * Model: the character kills one enemy every `secondsPerKill` seconds; which enemy follows the area's spawn weights
- * (3.1), or always the targeted enemy at `targetingExtraTimeMultiplier` times the seconds per kill (3.3).
- * Not modelled: drop boosts (2.6), bosses and other special spawns, inventory limits, offline efficiency.
+ * Model: the character kills one enemy every (fight seconds + movement seconds); which enemy follows the area's spawn
+ * weights (3.1). Targeting one enemy farms only that enemy, and multiplies the movement seconds (not the fight) by
+ * that enemy's own `targetingMultiplier` (3.3). Guaranteed pools (3.8) give exactly one entry per kill, chosen by
+ * weight, with no level modifier. Not modelled: drop boosts (2.6), bosses and other special spawns, inventory limits, offline efficiency.
  */
-import constants from '../../data/constants.json';
 import { enemyMoneyRange } from '../../src/game/enemies';
+import { movementSeconds } from '../../src/game/proficiency';
 import { absorbOnKill, absorptionLevelModifier, dropChance, dropLevelModifier } from '../../src/game/formulas';
 import { xpReward } from '../../src/game/progression';
 import {
   BalanceError,
+  baseMovementSeconds,
   findArea,
   findEnemy,
   type AreaEntry,
   type DropTableEntry,
   type EnemyEntry,
+  type GuaranteedPool,
   type ItemEntry,
+  targetingMultiplier,
 } from './load-data';
 
 export interface DropRow {
   itemId: string;
   itemName: string;
+  /** Id of the guaranteed pool this row comes from, or null for a normal entry. */
+  poolId: string | null;
+  /** Normal entry: the base chance. Pool entry: weight / total weight of the pool. */
   baseChance: number;
-  /** base chance x level modifier (3.8). */
+  /** Normal entry: base chance x level modifier (3.8). Pool entry: the same as baseChance (no modifier). */
   finalChance: number;
   avgQuantity: number;
   dropsPerKill: number;
@@ -49,6 +56,8 @@ export interface EnemyReport {
   /** Share of this area's kills, 0..1. */
   share: number;
   killsPerHour: number;
+  /** Seconds this enemy takes to kill. */
+  fightSeconds: number;
   dropModifier: number;
   absorbable: boolean;
   absorptionModifier: number;
@@ -71,10 +80,16 @@ export interface AreaReport {
   areaId: string;
   areaName: string;
   characterLevel: number;
-  /** Seconds per kill after the targeting multiplier. */
+  /** Seconds from one kill to the next: fight + movement (after speed and the targeting multiplier). */
   secondsPerKill: number;
+  /** Fight part of secondsPerKill, averaged over the kills. */
+  fightSeconds: number;
+  /** Movement part of secondsPerKill. */
+  movementSeconds: number;
   killsPerHour: number;
   targetEnemyId: string | null;
+  /** The targeted enemy's targetingMultiplier, or null when not targeting. */
+  targetingMultiplier: number | null;
   enemies: EnemyReport[];
   items: ItemTotal[];
   xpPerHour: number;
@@ -114,6 +129,38 @@ export function areaAverageXp(area: AreaEntry, enemies: readonly EnemyEntry[]): 
   return area.enemies.reduce((sum, ref, i) => sum + (shares[i] ?? 0) * enemyXp(findEnemy(enemies, ref.enemyId)), 0);
 }
 
+function avgQuantity(min: number | undefined, max: number | undefined): number {
+  return ((min ?? 1) + (max ?? min ?? 1)) / 2;
+}
+
+function poolRows(
+  enemy: EnemyEntry,
+  pool: GuaranteedPool,
+  killsPerHour: number,
+  items: ReadonlyMap<string, ItemEntry>,
+): DropRow[] {
+  const total = pool.entries.reduce((s, e) => s + e.weight, 0);
+  if (!(total > 0)) throw new BalanceError(`Guaranteed pool "${pool.id}" of enemy "${enemy.id}" has no weight.`);
+  return pool.entries.map((entry) => {
+    const item = items.get(entry.itemId);
+    const quantity = avgQuantity(entry.minQuantity, entry.maxQuantity);
+    const chance = entry.weight / total;
+    const dropsPerKill = chance * quantity;
+    const dropsPerHour = dropsPerKill * killsPerHour;
+    return {
+      itemId: entry.itemId,
+      itemName: item?.name ?? entry.itemId,
+      poolId: pool.id,
+      baseChance: chance,
+      finalChance: chance,
+      avgQuantity: quantity,
+      dropsPerKill,
+      dropsPerHour,
+      sellValuePerHour: typeof item?.sellPrice === 'number' ? dropsPerHour * item.sellPrice : null,
+    };
+  });
+}
+
 function dropRows(
   enemy: EnemyEntry,
   characterLevel: number,
@@ -124,27 +171,58 @@ function dropRows(
   if (enemy.dropTableId === undefined) return [];
   const dropTable = tables.get(enemy.dropTableId);
   if (!dropTable) throw new BalanceError(`Enemy "${enemy.id}" uses drop table "${enemy.dropTableId}", which is not in data/drop-tables.json.`);
-  return dropTable.entries.map((entry) => {
+  const rows = dropTable.entries.map((entry): DropRow => {
     const item = items.get(entry.itemId);
-    const avgQuantity = ((entry.minQuantity ?? 1) + (entry.maxQuantity ?? entry.minQuantity ?? 1)) / 2;
+    const quantity = avgQuantity(entry.minQuantity, entry.maxQuantity);
     const finalChance = dropChance(entry.baseChance, characterLevel, enemy.level);
-    const dropsPerKill = finalChance * avgQuantity;
+    const dropsPerKill = finalChance * quantity;
     const dropsPerHour = dropsPerKill * killsPerHour;
     return {
       itemId: entry.itemId,
       itemName: item?.name ?? entry.itemId,
+      poolId: null,
       baseChance: entry.baseChance,
       finalChance,
-      avgQuantity,
+      avgQuantity: quantity,
       dropsPerKill,
       dropsPerHour,
       sellValuePerHour: typeof item?.sellPrice === 'number' ? dropsPerHour * item.sellPrice : null,
     };
   });
+  for (const pool of dropTable.guaranteedPools ?? []) rows.push(...poolRows(enemy, pool, killsPerHour, items));
+  return rows;
+}
+
+/** How long a kill takes (3.3): the fight, and the movement to the next enemy. */
+export interface Pace {
+  /** Seconds of fighting per kill: one number for every enemy, or a function of the enemy. */
+  fightSeconds: number | ((enemy: EnemyEntry) => number);
+  /** Overrides the area's movement seconds between enemies (before speed and targeting). */
+  movementSeconds?: number;
+  /** Speed skill points: movement takes baseSeconds / (1 + points x effectPerPoint.speed) (4.6). */
+  speedPoints?: number;
+}
+
+function fightOf(pace: Pace, enemy: EnemyEntry): number {
+  const f = typeof pace.fightSeconds === 'number' ? pace.fightSeconds : pace.fightSeconds(enemy);
+  if (!(f >= 0)) throw new BalanceError(`Fight seconds for "${enemy.id}" must be 0 or more, got ${f}.`);
+  return f;
+}
+
+/** Movement seconds between enemies in the area after the speed skill, before any targeting multiplier. */
+export function areaMovementSeconds(area: AreaEntry, pace: Pace): number {
+  return movementSeconds(pace.movementSeconds ?? baseMovementSeconds(area), pace.speedPoints ?? 0);
+}
+
+/** Average seconds per kill over an area's spawn mix, no targeting: mean fight seconds + movement seconds. */
+export function areaSecondsPerKill(area: AreaEntry, enemies: readonly EnemyEntry[], pace: Pace): number {
+  const shares = spawnShares(area);
+  const fight = area.enemies.reduce((sum, ref, i) => sum + (shares[i] ?? 0) * fightOf(pace, findEnemy(enemies, ref.enemyId)), 0);
+  return fight + areaMovementSeconds(area, pace);
 }
 
 export interface AreaReportOptions {
-  /** Farm only this enemy (3.3). Multiplies seconds per kill by constants.farming.targetingExtraTimeMultiplier. */
+  /** Farm only this enemy (3.3). Multiplies the movement seconds by the enemy's own targetingMultiplier. */
   targetEnemyId?: string;
 }
 
@@ -152,17 +230,26 @@ export function areaReport(
   data: AreaReportData,
   areaId: string,
   characterLevel: number,
-  secondsPerKill: number,
+  pace: Pace,
   options: AreaReportOptions = {},
 ): AreaReport {
-  if (!(secondsPerKill > 0)) throw new BalanceError(`Seconds per kill must be above 0, got ${secondsPerKill}.`);
   const area = findArea(data.areas, areaId);
   if (area.enemies.length === 0) throw new BalanceError(`Area "${area.id}" lists no enemies.`);
   const target = options.targetEnemyId ?? null;
   if (target !== null && !area.enemies.some((e) => e.enemyId === target)) {
     throw new BalanceError(`Enemy "${target}" does not spawn in area "${area.id}".`);
   }
-  const effectiveSeconds = target === null ? secondsPerKill : secondsPerKill * constants.farming.targetingExtraTimeMultiplier;
+  const baseMove = areaMovementSeconds(area, pace);
+  const targetEnemy = target === null ? null : findEnemy(data.enemies, target);
+  const multiplier = targetEnemy === null ? null : targetingMultiplier(targetEnemy);
+  const moveSeconds = baseMove * (multiplier ?? 1);
+  const fightOfRef = (enemyId: string): number => fightOf(pace, findEnemy(data.enemies, enemyId));
+  const fightSeconds =
+    target === null
+      ? area.enemies.reduce((sum, ref, i) => sum + (spawnShares(area)[i] ?? 0) * fightOfRef(ref.enemyId), 0)
+      : fightOfRef(target);
+  const effectiveSeconds = fightSeconds + moveSeconds;
+  if (!(effectiveSeconds > 0)) throw new BalanceError(`Seconds per kill must be above 0, got ${effectiveSeconds}.`);
   const killsPerHour = 3600 / effectiveSeconds;
   const shares = target === null ? spawnShares(area) : area.enemies.map((e) => (e.enemyId === target ? 1 : 0));
   const tables = new Map(data.dropTables.map((t) => [t.id, t]));
@@ -193,6 +280,7 @@ export function areaReport(
       type: enemy.type ?? 'normal',
       share,
       killsPerHour: enemyKills,
+      fightSeconds: fightOf(pace, enemy),
       dropModifier: dropLevelModifier(characterLevel, enemy.level),
       absorbable,
       absorptionModifier: absorptionLevelModifier(characterLevel, enemy.level),
@@ -221,8 +309,11 @@ export function areaReport(
     areaName: area.name ?? area.id,
     characterLevel,
     secondsPerKill: effectiveSeconds,
+    fightSeconds,
+    movementSeconds: moveSeconds,
     killsPerHour,
     targetEnemyId: target,
+    targetingMultiplier: multiplier,
     enemies,
     items: itemList,
     xpPerHour: sum(enemies.map((e) => e.xpPerHour)),

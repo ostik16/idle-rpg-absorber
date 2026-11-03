@@ -1,6 +1,0 @@
-[
-  { "id": "warding-seal", "name": "Warding Seal", "use": "upgrade", "effect": { "type": "upgrade-protection", "failureLowersLevelBy": 1, "consumedOnEveryAttempt": true }, "dropSources": ["old-mossfang"], "size": 1, "stackLimit": 10, "requiredLevel": 1, "buyPrice": null, "sellPrice": 150, "icon": "gem" },
-  { "id": "sigil-of-embers", "name": "Sigil of Embers", "use": "equip", "slot": "rare-item", "effect": { "type": "spell-damage-bonus", "element": "fire", "amount": 0.05 }, "dropSources": ["old-mossfang"], "size": 1, "stackLimit": 1, "requiredLevel": 3, "buyPrice": null, "sellPrice": 400, "icon": "gem" },
-  { "id": "arcane-shard", "name": "Arcane Shard", "use": "upgrade", "effect": { "type": "spell-rank-material", "ranksRaised": 1 }, "dropSources": ["old-mossfang"], "size": 1, "stackLimit": 100, "requiredLevel": 1, "buyPrice": null, "sellPrice": 200, "icon": "gem" },
-  { "id": "tome-of-insight", "name": "Tome of Insight", "use": "consume", "effect": { "type": "xp-boost", "multiplier": 1.5, "durationSeconds": 1800 }, "dropSources": ["old-mossfang"], "size": 1, "stackLimit": 10, "requiredLevel": 1, "buyPrice": null, "sellPrice": 250, "icon": "gem" }
-]

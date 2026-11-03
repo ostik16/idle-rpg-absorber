@@ -15,20 +15,28 @@ export type Attributes = Record<AttributeId, number>;
 const ATTRIBUTE_IDS: readonly AttributeId[] = ['strength', 'dexterity', 'vitality', 'intelligence'];
 
 /**
+ * Unarmed damage (design 4.2): the weapon damage used when no weapon is equipped, constants.stats.unarmedDamage.
+ * Characters start with no gear, so they fight unarmed at first.
+ */
+export function weaponDamageOrUnarmed(weaponDamage: number | null, c: StatsConstants = constants.stats): number {
+  return weaponDamage === null ? c.unarmedDamage : weaponDamage;
+}
+
+/**
  * Physical damage per hit, before the weapon penalty and proficiency bonus.
- * base + perStrength x Strength + the weapon's damage.
+ * base + perStrength x Strength + the weapon's damage. `weaponDamage` null means no weapon: unarmed damage is used.
  */
 export function physicalDamage(
   strength: number,
-  weaponDamage = 0,
+  weaponDamage: number | null = null,
   c: StatsConstants = constants.stats,
 ): number {
-  return c.physicalDamage.base + c.physicalDamage.perStrength * strength + weaponDamage;
+  return c.physicalDamage.base + c.physicalDamage.perStrength * strength + weaponDamageOrUnarmed(weaponDamage, c);
 }
 
 /**
  * Attacks per second: (base + perDexterity x Dexterity) x (1 + bonus).
- * `bonus` is a fraction, for example 0.1 for +10% from the speed proficiency and gear.
+ * `bonus` is a fraction, for example 0.1 for +10%: use proficiency.attackSpeedBonus (weapon style and combat skills) plus gear.
  */
 export function attackSpeed(dexterity: number, bonus = 0, c: StatsConstants = constants.stats): number {
   return (c.attackSpeed.base + c.attackSpeed.perDexterity * dexterity) * (1 + bonus);
@@ -82,16 +90,8 @@ export function spellDamageMultiplier(intelligence: number, c: StatsConstants = 
 }
 
 /**
- * Movement speed multiplier from the endurance stat (design 4.2, decision I1):
- * 1 + perEndurance x endurance. Travel time is distance / (base speed x this).
- */
-export function moveSpeedMultiplier(endurance: number, c: StatsConstants = constants.stats): number {
-  return 1 + c.moveSpeed.perEndurance * endurance;
-}
-
-/**
  * Damage of one hit (design 3.6): attacker damage minus defender defence, flat,
- * never below constants.combat.minDamage. A critical hit multiplies the result by critMultiplier.
+ * never below constants.combat.minDamage. A critical hit multiplies the result by critMultiplier (2), after defence and the minimum.
  */
 export function hitDamage(
   attackerDamage: number,
@@ -105,13 +105,15 @@ export function hitDamage(
 
 export interface WeaponScaling {
   attribute: AttributeId;
-  recommended: number;
+  /** Attribute value the weapon requires. */
+  requiredValue: number;
 }
 
 /**
- * Weapon attribute penalty (design 2.2). Returns a damage multiplier in [floor, 1].
- * Each scaling attribute below its recommended value contributes value / recommended,
- * the contributions multiply, and the result never falls below constants.combat.weaponPenaltyFloor.
+ * Weapon attribute penalty (design 2.2). Returns a multiplier on the weapon's stats in [1 - cap, 1].
+ * Each attribute point below a required value costs perMissingPoint (1%), added up over all the weapon's
+ * scaling attributes, and the total penalty is capped (50%):
+ * 1 - min(cap, perMissingPoint x sum(max(0, required - attribute))).
  * A weapon with no scaling, and no weapon at all, has no penalty.
  */
 export function weaponPenaltyMultiplier(
@@ -119,17 +121,20 @@ export function weaponPenaltyMultiplier(
   scaling: readonly WeaponScaling[],
   c: CombatConstants = constants.combat,
 ): number {
-  let multiplier = 1;
-  for (const { attribute, recommended } of scaling) {
-    if (recommended <= 0) continue;
-    multiplier *= Math.min(1, Math.max(0, attributes[attribute]) / recommended);
-  }
-  return Math.max(c.weaponPenaltyFloor, multiplier);
+  let missing = 0;
+  for (const { attribute, requiredValue } of scaling) missing += Math.max(0, requiredValue - attributes[attribute]);
+  return 1 - Math.min(c.weaponPenalty.cap, c.weaponPenalty.perMissingPoint * missing);
 }
 
-/** Starting attributes for a new character: the base values plus the player's allocation of free points. */
+const NO_ALLOCATION: Attributes = { strength: 0, dexterity: 0, vitality: 0, intelligence: 0 };
+
+/**
+ * Starting attributes for a new character: the base values plus the player's allocation of free points.
+ * constants.creation.freePoints is 0, so by default the allocation is empty and the result is the base values.
+ * Starting equipment and items are empty too (constants.creation.startingEquipment, startingItems).
+ */
 export function startingAttributes(
-  allocation: Attributes,
+  allocation: Attributes = NO_ALLOCATION,
   c: CreationConstants = constants.creation,
 ): Attributes {
   let spent = 0;
@@ -196,4 +201,31 @@ export function potionHealPerTick(
 /** Heal rate in health per second. Better potions have a higher rate (design 2.6). */
 export function potionHealPerSecond(potion: Pick<PotionTier, 'amount' | 'durationSeconds'>): number {
   return potion.amount / potion.durationSeconds;
+}
+
+export interface QueuedPotions {
+  /** Health restored on each tick, from the moment the first potion starts. */
+  healPerTick: number[];
+  /** Number of ticks until the last potion ends. */
+  totalTicks: number;
+  /** Total health restored. */
+  totalHeal: number;
+}
+
+/**
+ * Potions queue instead of stacking (constants.potions.stacking = "queue", design 2.6): a potion drunk while
+ * another is healing starts healing when the previous one ends. `potions` are in drinking order, all drunk
+ * while the first is still healing (so there is never a gap). Returns the heal on each tick.
+ */
+export function queuePotions(
+  potions: readonly Pick<PotionTier, 'amount' | 'durationSeconds'>[],
+  tickMs: number = constants.potions.tickMs,
+): QueuedPotions {
+  const healPerTick: number[] = [];
+  for (const potion of potions) {
+    const ticks = potionTickCount(potion.durationSeconds, tickMs);
+    const perTick = potionHealPerTick(potion, { tickMs });
+    for (let i = 0; i < ticks; i++) healPerTick.push(perTick);
+  }
+  return { healPerTick, totalTicks: healPerTick.length, totalHeal: healPerTick.reduce((s, h) => s + h, 0) };
 }

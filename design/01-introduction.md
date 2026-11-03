@@ -9,7 +9,7 @@ You create a character at level 1 and send it into an area. It fights on its own
 ### Core pillars
 
 **1. Growth through doing.**
-Characters improve by acting, as in Kenshi. Fighting raises weapon proficiency, taking hits raises toughness, moving raises endurance. Hidden skills (unarmed, one-handed, two-handed, toughness, endurance, speed) feed back into damage, attack speed, movement speed and health.
+Characters improve by acting, as in Kenshi. Fighting raises weapon proficiency and the combat skill, taking hits raises toughness, moving raises speed. Hidden skills (unarmed, one-handed, two-handed, toughness, speed, combat) feed back into damage, attack speed, movement speed and health.
 
 **2. Growth through choice.**
 Each level gives 1 skill point for spells. It also gives 3 character points, awarded at 25%, 50% and 75% of the level. A character can be a balanced all-rounder or a specialist who stacks one attribute for massive damage.
@@ -18,7 +18,7 @@ Each level gives 1 skill point for spells. It also gives 3 character points, awa
 Characters can absorb the magical strengths of normal enemies, such as life steal or magic affinities. Each kill grants 1% of the enemy's value, up to that value.
 
 **4. Areas, enemies and loot.**
-Areas up to level 30, each with a range of enemy levels. Areas can spawn bosses, mini-bosses or cursed objects. Enemies drop money, equipment and upgrade materials. Bosses, mini-bosses and cursed objects drop rare items.
+Areas up to level 30, each with a range of enemy levels. Areas can spawn bosses, mini-bosses or cursed objects. Enemies drop money, equipment and upgrade materials. Mini-bosses drop upgrade materials, and bosses and cursed objects drop rare items. An enemy with a guaranteed drop draws it from a pool, so a kill never repeats one fixed item.
 
 **5. Gear that cannot be fully maxed.**
 Upgrades go to +9. Early levels cost only money, later levels need rare materials, and a failed upgrade destroys the item. One playthrough or one character cannot max every item.

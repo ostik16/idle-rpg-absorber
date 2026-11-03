@@ -5,19 +5,24 @@
     "theme": "Damp forest clearing under old oaks, thick with moss and nesting vermin",
     "levelRange": { "min": 1, "max": 5 },
     "enemies": [
-      { "enemyId": "glade-rat", "spawnWeight": 22 },
-      { "enemyId": "moss-grub", "spawnWeight": 22 },
-      { "enemyId": "rime-beetle", "spawnWeight": 20 },
-      { "enemyId": "mossfang-wolf", "spawnWeight": 16 },
-      { "enemyId": "ember-wisp", "spawnWeight": 12 },
-      { "enemyId": "thornhide-boar", "spawnWeight": 8 }
+      { "enemyId": "glade-rat", "spawnWeight": 20 },
+      { "enemyId": "moss-grub", "spawnWeight": 20 },
+      { "enemyId": "bramble-vole", "spawnWeight": 18 },
+      { "enemyId": "rime-beetle", "spawnWeight": 14 },
+      { "enemyId": "mire-toad", "spawnWeight": 14 },
+      { "enemyId": "mossfang-wolf", "spawnWeight": 10 },
+      { "enemyId": "gloom-bat", "spawnWeight": 10 },
+      { "enemyId": "ember-wisp", "spawnWeight": 8 },
+      { "enemyId": "gnarl-sapling", "spawnWeight": 8 },
+      { "enemyId": "thornhide-boar", "spawnWeight": 6 },
+      { "enemyId": "glade-stag", "spawnWeight": 6 }
     ],
     "miniBossId": "old-mossfang",
     "miniBossSpawnChance": 0.02,
-    "bossId": null,
-    "bossSpawnChance": 0,
+    "bossId": "mossfang-matriarch",
+    "bossSpawnChance": 0.005,
     "cursedObjectId": null,
     "cursedObjectSpawnChance": 0,
-    "distanceFromCity": 120
+    "distanceFromCity": 10
   }
 ]

@@ -5,6 +5,9 @@ import {
   buildPlayer,
   defaultBuild,
   enemyFromData,
+  enemyOrBaseline,
+  meanFightSeconds,
+  referenceFightSeconds,
   percentile,
   referenceBuild,
   resolveFight,
@@ -14,7 +17,8 @@ import {
   type FightResult,
 } from '../tools/balance/combat';
 import { levelCurve } from '../tools/balance/curve';
-import { areaAverageXp, areaReport, type AreaReportData } from '../tools/balance/drops';
+import { areaAverageXp, areaReport, areaSecondsPerKill, type AreaReportData, type Pace } from '../tools/balance/drops';
+import { BalanceError, baseMovementSeconds, targetingMultiplier } from '../tools/balance/load-data';
 import { duration } from '../tools/balance/format';
 import { createRng } from '../src/game/rng';
 
@@ -34,14 +38,31 @@ describe('building fighters (4.2, 4.6)', () => {
     expect(p.intervalMs).toBe(1000); // 0.8 + 0.02 x 10 = 1 attack per second
   });
 
+  it('the default build is unarmed with 5 in each attribute', () => {
+    const p = buildPlayer(defaultBuild());
+    expect(p.damage).toBeCloseTo(6); // 1 + 0.6 x 5 + unarmed 2
+    expect(p.maxHp).toBeCloseTo(70);
+    expect(p.defence).toBeCloseTo(1.25);
+    expect(p.intervalMs).toBe(1100); // 0.9 attacks per second
+  });
+
+  it('applies the weapon penalty to the weapon damage only', () => {
+    const attributes = { strength: 10, dexterity: 10, vitality: 10, intelligence: 10 };
+    const armed = { ...defaultBuild(5), attributes, weaponDamage: 4, weaponScaling: [{ attribute: 'strength' as const, requiredValue: 14 }] };
+    expect(buildPlayer(armed).damage).toBeCloseTo(10.84); // 1 + 6 + 4 x (1 - 4 x 0.01)
+    const unarmed = { ...armed, weaponDamage: null };
+    expect(buildPlayer(unarmed).damage).toBeCloseTo(9); // 1 + 6 + 2, no penalty
+  });
+
   it('applies proficiency bonuses', () => {
     const build = {
       ...defaultBuild(5),
       attributes: { strength: 10, dexterity: 10, vitality: 10, intelligence: 10 },
       weaponDamage: 4,
-      weaponProficiency: 50, // +15% damage
+      weaponType: 'one-handed' as const,
+      weaponProficiency: 50, // +15% damage, +5% attack speed
       toughnessProficiency: 100, // +30% health
-      speedProficiency: 50, // +10% attack speed: 1.1 per second -> 909 ms -> 9 ticks
+      combatProficiency: 50, // +5% attack speed: 1 x 1.1 per second -> 909 ms -> 9 ticks
     };
     const p = buildPlayer(build);
     expect(p.damage).toBeCloseTo(12.65); // 11 x 1.15
@@ -58,17 +79,23 @@ describe('building fighters (4.2, 4.6)', () => {
   });
 
   it('reference build follows the decision log numbers (N6)', () => {
-    const l1 = referenceBuild(1); // 25 attribute points at 45/20/25/10, weapon 3, armour 1
-    expect(l1.attributes.strength).toBeCloseTo(11.25);
-    expect(l1.attributes.dexterity).toBeCloseTo(5);
-    expect(l1.attributes.vitality).toBeCloseTo(6.25);
-    expect(l1.attributes.intelligence).toBeCloseTo(2.5);
+    const l1 = referenceBuild(1); // 20 attribute points at 45/20/25/10, weapon 3, armour 1
+    expect(l1.attributes.strength).toBeCloseTo(9);
+    expect(l1.attributes.dexterity).toBeCloseTo(4);
+    expect(l1.attributes.vitality).toBeCloseTo(5);
+    expect(l1.attributes.intelligence).toBeCloseTo(2);
     expect(l1.weaponDamage).toBeCloseTo(3);
     expect(l1.armourDefence).toBeCloseTo(1);
-    const l11 = referenceBuild(11); // 25 + 3 x 10 = 55 points; weapon 3 + 18; armour 1 + 9
-    expect(l11.attributes.strength).toBeCloseTo(24.75);
+    const l11 = referenceBuild(11); // 20 + 3 x 10 = 50 points; weapon 3 + 18; armour 1 + 9
+    expect(l11.attributes.strength).toBeCloseTo(22.5);
     expect(l11.weaponDamage).toBeCloseTo(21);
     expect(l11.armourDefence).toBeCloseTo(10);
+  });
+
+  it('uses baseline stats for an enemy entry without stats', () => {
+    const full = { id: 'x', level: 3, health: 50, damage: 8, attackSpeed: 2, defence: 4 };
+    expect(enemyOrBaseline(full)).toEqual(enemyFromData(full));
+    expect(enemyOrBaseline({ id: 'y', level: 1 })).toEqual(baselineEnemy(1));
   });
 
   it('builds an enemy from data and rejects incomplete entries', () => {
@@ -89,12 +116,12 @@ describe('fight resolution (3.6)', () => {
     expect(r.damageTaken).toBeCloseTo(10);
   });
 
-  it('a crit multiplies the damage after defence by 1.5 and the player acts first on a shared tick', () => {
+  it('a crit multiplies the damage after defence by 2 and the player acts first on a shared tick', () => {
     const r = resolveFight({ ...player, critChance: 1 }, enemy, createRng(1));
     expect(r.outcome).toBe('win');
-    expect(r.timeMs).toBe(3000); // 10.5 x 3 = 31.5 >= 25
-    expect(r.playerCrits).toBe(3);
-    expect(r.enemyHits).toBe(1); // 1500 ms only: the enemy is dead before it acts at 3000 ms
+    expect(r.timeMs).toBe(2000); // 14 x 2 = 28 >= 25
+    expect(r.playerCrits).toBe(2);
+    expect(r.enemyHits).toBe(1); // 1500 ms only: the enemy is dead before it acts at 2000 ms
     expect(r.damageTaken).toBeCloseTo(5);
   });
 
@@ -118,6 +145,27 @@ describe('fight resolution (3.6)', () => {
     expect(r.outcome).toBe('timeout');
     expect(r.timeMs).toBe(10000);
     expect(r.playerHits).toBe(10);
+  });
+});
+
+describe('fight seconds for the tools', () => {
+  it('mean fight seconds is the time to kill', () => {
+    expect(meanFightSeconds(player, enemy, 5, createRng(1))).toBeCloseTo(4);
+  });
+
+  it('is null when the player never wins', () => {
+    expect(meanFightSeconds({ ...player, maxHp: 1 }, enemy, 5, createRng(1))).toBeNull();
+  });
+
+  it('the reference build beats the baseline enemy of its own level in a few seconds', () => {
+    const seconds = referenceFightSeconds(5, baselineEnemy(5), 'test');
+    expect(seconds).toBeGreaterThan(0);
+    expect(seconds).toBeLessThan(30);
+  });
+
+  it('throws a BalanceError when the reference build cannot win', () => {
+    const wall: Combatant = { maxHp: 1e9, damage: 1e9, defence: 1e9, critChance: 0, intervalMs: 100 };
+    expect(() => referenceFightSeconds(1, wall, 'a wall')).toThrow(BalanceError);
   });
 });
 
@@ -162,42 +210,59 @@ describe('fight summary', () => {
   });
 
   it('crit rate shows up in the mean time to kill', () => {
-    // 50% crit: hits of 7 or 10.5. Not every fight is the same length, so some fights end at 3000 ms and some at 4000 ms.
+    // 50% crit: hits of 7 or 14 against 25 health. 2 s if both hits crit (1/4), 4 s if none of the first 3 do (1/8),
+    // else 3 s (5/8): mean 0.5 + 1.875 + 0.5 = 2.875 s.
     const s = runFights({ ...player, critChance: 0.5 }, enemy, 4000, createRng(5));
-    expect(s.timeToKill?.min).toBeCloseTo(3);
+    expect(s.timeToKill?.min).toBeCloseTo(2);
     expect(s.timeToKill?.max).toBeCloseTo(4);
-    expect(s.timeToKill?.mean).toBeGreaterThan(3.2);
-    expect(s.timeToKill?.mean).toBeLessThan(3.8);
+    expect(s.timeToKill?.mean).toBeGreaterThan(2.775);
+    expect(s.timeToKill?.mean).toBeLessThan(2.975);
   });
 });
 
-// Area: e1 (level 3, weight 3) and e2 (level 8, weight 1). Character level 5, 12 s per kill = 300 kills per hour.
+// Area: e1 (level 3, weight 3, fights 6 s) and e2 (level 8, weight 1, fights 10 s), 5 s of movement between enemies.
+// Mean fight 0.75 x 6 + 0.25 x 10 = 7 s, so 12 s per kill = 300 kills per hour at character level 5.
 const data: AreaReportData = {
-  areas: [{ id: 'a1', name: 'Test area', enemies: [{ enemyId: 'e1', spawnWeight: 3 }, { enemyId: 'e2', spawnWeight: 1 }] }],
+  areas: [
+    { id: 'a1', name: 'Test area', movementSecondsBetweenEnemies: 5, enemies: [{ enemyId: 'e1', spawnWeight: 3 }, { enemyId: 'e2', spawnWeight: 1 }] },
+    { id: 'a2', name: 'Default movement', enemies: [{ enemyId: 'e1', spawnWeight: 1 }] },
+  ],
   enemies: [
     {
       id: 'e1', level: 3, type: 'normal', xpReward: 20, moneyRange: { min: 10, max: 20 }, dropTableId: 't1',
       traits: [{ id: 'life-steal', value: 10, magical: true }, { id: 'thorns', value: 5, magical: false }],
     },
-    { id: 'e2', level: 8, type: 'normal', dropTableId: 't2' },
+    { id: 'e2', level: 8, type: 'normal', dropTableId: 't2', targetingMultiplier: 8 },
   ],
   dropTables: [
     { id: 't1', entries: [{ itemId: 'gem', baseChance: 0.1, minQuantity: 1, maxQuantity: 3 }] },
-    { id: 't2', entries: [{ itemId: 'gem', baseChance: 0.5 }, { itemId: 'bone', baseChance: 0.2 }] },
+    {
+      id: 't2',
+      entries: [{ itemId: 'gem', baseChance: 0.5 }, { itemId: 'bone', baseChance: 0.2 }],
+      guaranteedPools: [
+        { id: 'bonus', entries: [{ itemId: 'ore', weight: 3, minQuantity: 3, maxQuantity: 5 }, { itemId: 'gem', weight: 1, minQuantity: 1, maxQuantity: 1 }] },
+      ],
+    },
   ],
-  items: [{ id: 'gem', name: 'Gem', sellPrice: 10 }, { id: 'bone' }],
+  items: [{ id: 'gem', name: 'Gem', sellPrice: 10 }, { id: 'bone' }, { id: 'ore' }],
 };
+const pace: Pace = { fightSeconds: (e) => (e.id === 'e1' ? 6 : 10) };
 
 describe('area report (3.8, 4.7)', () => {
-  const report = areaReport(data, 'a1', 5, 12);
+  const report = areaReport(data, 'a1', 5, pace);
   const e1 = report.enemies[0]!;
   const e2 = report.enemies[1]!;
 
-  it('splits kills by spawn weight', () => {
+  it('splits kills by spawn weight, with fight and movement making up the time per kill', () => {
+    expect(report.fightSeconds).toBeCloseTo(7);
+    expect(report.movementSeconds).toBeCloseTo(5);
+    expect(report.secondsPerKill).toBeCloseTo(12);
+    expect(areaSecondsPerKill(data.areas[0]!, data.enemies, pace)).toBeCloseTo(12);
     expect(report.killsPerHour).toBeCloseTo(300);
     expect(e1.share).toBeCloseTo(0.75);
     expect(e1.killsPerHour).toBeCloseTo(225);
     expect(e2.killsPerHour).toBeCloseTo(75);
+    expect(e1.fightSeconds).toBe(6);
   });
 
   it('applies the drop level modifier to the base chance', () => {
@@ -207,17 +272,43 @@ describe('area report (3.8, 4.7)', () => {
     expect(gem1.avgQuantity).toBeCloseTo(2);
     expect(gem1.dropsPerKill).toBeCloseTo(0.16);
     expect(gem1.dropsPerHour).toBeCloseTo(36); // 225 x 0.16
+    expect(gem1.poolId).toBeNull();
     expect(e2.dropModifier).toBeCloseTo(1); // enemy above the character
     expect(e2.drops[0]!.dropsPerHour).toBeCloseTo(37.5); // 75 x 0.5
     expect(e2.drops[1]!.dropsPerHour).toBeCloseTo(15); // 75 x 0.2
   });
 
-  it('totals an item over all enemies and prices it when it can be sold', () => {
+  it('guaranteed pools give one entry per kill by weight, with a quantity between min and max', () => {
+    const ore = e2.drops[2]!;
+    expect(ore.itemId).toBe('ore');
+    expect(ore.poolId).toBe('bonus');
+    expect(ore.finalChance).toBeCloseTo(0.75); // 3 / 4
+    expect(ore.avgQuantity).toBeCloseTo(4);
+    expect(ore.dropsPerKill).toBeCloseTo(3);
+    expect(ore.dropsPerHour).toBeCloseTo(225); // 75 kills x 0.75 x 4
+    const poolGem = e2.drops[3]!;
+    expect(poolGem.dropsPerHour).toBeCloseTo(18.75); // 75 x 0.25 x 1
+    // Per kill the pool yields exactly one entry: weights sum to 1.
+    expect(ore.finalChance + poolGem.finalChance).toBeCloseTo(1);
+  });
+
+  it('does not apply the level modifier to guaranteed pools', () => {
+    for (const level of [15, 25]) {
+      const high = areaReport(data, 'a1', level, pace);
+      expect(high.enemies[1]!.drops[2]!.dropsPerHour).toBeCloseTo(225);
+      expect(high.enemies[1]!.drops[3]!.dropsPerHour).toBeCloseTo(18.75);
+    }
+    const far = areaReport(data, 'a1', 25, pace); // 17 levels above e2: modifier 0
+    expect(far.enemies[1]!.drops[0]!.dropsPerHour).toBe(0);
+  });
+
+  it('totals an item over all enemies and pools and prices it when it can be sold', () => {
     const gem = report.items.find((i) => i.itemId === 'gem')!;
-    expect(gem.dropsPerHour).toBeCloseTo(73.5);
-    expect(gem.sellValuePerHour).toBeCloseTo(735);
+    expect(gem.dropsPerHour).toBeCloseTo(92.25); // 36 + 37.5 + 18.75
+    expect(gem.sellValuePerHour).toBeCloseTo(922.5);
     expect(report.items.find((i) => i.itemId === 'bone')!.sellValuePerHour).toBeNull();
-    expect(report.dropValuePerHour).toBeCloseTo(735);
+    expect(report.items.find((i) => i.itemId === 'ore')!.dropsPerHour).toBeCloseTo(225);
+    expect(report.dropValuePerHour).toBeCloseTo(922.5);
   });
 
   it('XP and gold ignore the level gap and fall back to the formulas', () => {
@@ -240,24 +331,60 @@ describe('area report (3.8, 4.7)', () => {
     expect(t.hoursToCap).toBeCloseTo(124 / 225);
   });
 
-  it('a character far above the enemy gets no drops but still absorbs', () => {
-    const high = areaReport(data, 'a1', 15, 12);
+  it('a character far above the enemy gets no normal drops but still absorbs', () => {
+    const high = areaReport(data, 'a1', 15, pace);
     expect(high.enemies[0]!.dropModifier).toBe(0); // 12 levels above: max(0, 1 - 1.2)
     expect(high.enemies[0]!.drops[0]!.dropsPerHour).toBe(0);
     expect(high.enemies[0]!.absorptionModifier).toBeGreaterThan(0);
   });
 
-  it('targeting one enemy doubles the time per kill (3.3)', () => {
-    const t = areaReport(data, 'a1', 5, 12, { targetEnemyId: 'e1' });
-    expect(t.enemies).toHaveLength(1);
-    expect(t.killsPerHour).toBeCloseTo(150);
-    expect(t.enemies[0]!.drops[0]!.dropsPerHour).toBeCloseTo(24); // 150 x 0.16
-    expect(() => areaReport(data, 'a1', 5, 12, { targetEnemyId: 'nope' })).toThrow();
+  it('targeting multiplies the movement by the targeted enemy\'s own multiplier (3.3)', () => {
+    // e1 has no multiplier in data, so the common one (2): 6 + 5 x 2 = 16 s, 225 kills per hour.
+    const t1 = areaReport(data, 'a1', 5, pace, { targetEnemyId: 'e1' });
+    expect(t1.enemies).toHaveLength(1);
+    expect(t1.targetingMultiplier).toBe(2);
+    expect(t1.fightSeconds).toBe(6);
+    expect(t1.movementSeconds).toBeCloseTo(10);
+    expect(t1.secondsPerKill).toBeCloseTo(16);
+    expect(t1.killsPerHour).toBeCloseTo(225);
+    expect(t1.enemies[0]!.drops[0]!.dropsPerHour).toBeCloseTo(36); // 225 x 0.16
+    // e2 has multiplier 8: 10 + 5 x 8 = 50 s, 72 kills per hour.
+    const t2 = areaReport(data, 'a1', 5, pace, { targetEnemyId: 'e2' });
+    expect(t2.targetingMultiplier).toBe(8);
+    expect(t2.secondsPerKill).toBeCloseTo(50);
+    expect(t2.killsPerHour).toBeCloseTo(72);
+    expect(t2.enemies[0]!.drops[0]!.dropsPerHour).toBeCloseTo(36); // 72 x 0.5
+    expect(t2.enemies[0]!.drops[2]!.dropsPerHour).toBeCloseTo(216); // 72 x 3 (pool ore)
+    expect(() => areaReport(data, 'a1', 5, pace, { targetEnemyId: 'nope' })).toThrow();
   });
 
-  it('rejects unknown areas and bad pace', () => {
-    expect(() => areaReport(data, 'nope', 5, 12)).toThrow();
-    expect(() => areaReport(data, 'a1', 5, 0)).toThrow();
+  it('movement comes from the area, then the constants, and can be overridden or shortened by speed', () => {
+    expect(baseMovementSeconds(data.areas[0]!)).toBe(5);
+    expect(baseMovementSeconds(data.areas[1]!)).toBe(6); // constants.farming.movementSecondsBetweenEnemies
+    expect(areaReport(data, 'a2', 5, { fightSeconds: 4 }).secondsPerKill).toBeCloseTo(10);
+    expect(areaReport(data, 'a1', 5, { ...pace, movementSeconds: 10 }).secondsPerKill).toBeCloseTo(17);
+    // 100 speed points: 5 / 1.5 = 3.333 s of movement. Targeting e1: 6 + 3.333 x 2 = 12.667 s.
+    const fast = areaReport(data, 'a1', 5, { ...pace, speedPoints: 100 }, { targetEnemyId: 'e1' });
+    expect(fast.movementSeconds).toBeCloseTo(6.6667, 3);
+    expect(fast.secondsPerKill).toBeCloseTo(12.6667, 3);
+  });
+
+  it('checks the targeting multiplier against the maximum of 10', () => {
+    expect(targetingMultiplier({ id: 'a', level: 1 })).toBe(2);
+    expect(targetingMultiplier({ id: 'a', level: 1, targetingMultiplier: 10 })).toBe(10);
+    expect(() => targetingMultiplier({ id: 'a', level: 1, targetingMultiplier: 11 })).toThrow(BalanceError);
+    expect(() => targetingMultiplier({ id: 'a', level: 1, targetingMultiplier: 0.5 })).toThrow(BalanceError);
+  });
+
+  it('rejects unknown areas, empty pools and a zero pace', () => {
+    expect(() => areaReport(data, 'nope', 5, pace)).toThrow();
+    expect(() => areaReport(data, 'a1', 5, { fightSeconds: 0, movementSeconds: 0 })).toThrow();
+    expect(() => areaReport(data, 'a1', 5, { fightSeconds: -1 })).toThrow();
+    const empty: AreaReportData = {
+      ...data,
+      dropTables: [{ id: 't1', entries: [], guaranteedPools: [{ id: 'p', entries: [{ itemId: 'gem', weight: 0 }] }] }, ...data.dropTables.slice(1)],
+    };
+    expect(() => areaReport(empty, 'a2', 5, pace)).toThrow(BalanceError);
   });
 
   it('averages XP over the spawn mix', () => {
@@ -281,6 +408,15 @@ describe('progression curve (4.3)', () => {
     expect(steps[1]!.cumulativeSeconds).toBe(140);
     expect(steps[2]!.kills).toBe(34); // 1000 / 30 = 33.3
     expect(steps[2]!.cumulativeSeconds).toBe(480);
+  });
+
+  it('seconds per kill can follow the character level', () => {
+    const steps = levelCurve({ fromLevel: 1, toLevel: 3, xpPerKill: () => 30, secondsPerKill: (l) => 10 * l, table });
+    expect(steps[0]!.secondsPerKill).toBe(10);
+    expect(steps[0]!.seconds).toBe(40); // 4 kills
+    expect(steps[1]!.secondsPerKill).toBe(20);
+    expect(steps[1]!.seconds).toBe(200); // 10 kills
+    expect(() => levelCurve({ fromLevel: 1, toLevel: 2, xpPerKill: () => 30, secondsPerKill: 0, table })).toThrow();
   });
 
   it('XP per kill can follow the character level', () => {

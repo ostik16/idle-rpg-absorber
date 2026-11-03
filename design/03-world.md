@@ -16,10 +16,13 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - No final boss.
 - Each area has a small chance to spawn mini-bosses, bosses or cursed objects.
 - No unlock conditions. A character can enter any area, but will probably die if it is too weak.
-- Nine areas cover levels 1 to 30, from level 1-5 up to level 25-30 (default, revisit after playtesting).
+- Nine areas cover levels 1 to 30, from level 1-5 up to level 25-30. More areas will be added later.
+- Every area has at least 2 enemies for each level in its range. An enemy can appear in more than one area.
+- Area 1 is 10 seconds from the city.
+- The first area has a boss.
 - Magical traits belong to enemies, not areas. Areas can still have their own visual or thematic identity.
 
-**Data.** id, name, theme, level range, enemy list with spawn weights, mini-boss/boss/cursed object spawn chances, distance from city.
+**Data.** id, name, theme, level range, enemy list with spawn weights, mini-boss/boss/cursed object spawn chances, distance from city, movement time between enemies (optional, overrides the default in 3.3).
 
 ---
 
@@ -28,7 +31,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Purpose.** Moving between the city and areas.
 
 **Rules.**
-- Travel takes real time based on distance. The endurance stat sets travel speed (4.2).
+- Travel takes real time based on distance. The speed skill (4.6) shortens it.
 - Travel can be skipped with a rare item (2.8).
 - A teleporter in the city moves the character to far areas for a fee.
 - Returning to the city restocks used consumables for a fee. Restocking is not free.
@@ -48,10 +51,10 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Loop.** Travel to area → move to enemy → fight → loot → repeat → return when a trigger fires → restock → travel back.
 
 **Rules.**
-- Between fights the character moves to the next enemy. This takes time and trains endurance.
-- The player can target one enemy type. This means fewer fights per hour, because the character has to search for that enemy. Targeting doubles the time between fights (default, revisit after playtesting).
+- Between fights the character moves to the next enemy. This takes 6 seconds by default (`constants.farming.movementSecondsBetweenEnemies`), and an area can set its own value. It trains the speed skill (4.6), which shortens it.
+- The player can target one enemy type. This means fewer fights per hour, because the character has to search for that enemy. The search time depends on the enemy's rarity: movement time × the enemy's targeting multiplier. Common enemies take double the time to find (×2), special enemies up to ×10. The multiplier is set per enemy (`constants.farming.targeting`). Assumed to apply to the movement time only, not the fight.
 
-**Data.** movement time between enemies, extra time when targeting.
+**Data.** movement time between enemies (default and per-area override), targeting multiplier per enemy.
 
 ---
 
@@ -84,7 +87,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - A cursed object must be destroyed and spawns enemies that defend it.
 - Each enemy can have traits. Each trait is magical (absorbable) or physical.
 
-- Baseline stats by level (default, revisit after playtesting). Enemies keep fixed stats in the data table; these formulas give the starting point an author tunes from and the line the balance tools compare against (`constants.enemyScaling`):
+- Baseline stats by level. Enemies keep fixed stats in the data table; these formulas give the starting point an author tunes from and the line the balance tools compare against (`constants.enemyScaling`):
 
 | Stat | Formula | Level 1 | Level 5 | Level 10 | Level 20 | Level 30 |
 |---|---|---|---|---|---|---|
@@ -96,12 +99,12 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 | Gold per kill (average) | 5 × 1.1^(L−1), range ±50% | 5 | 7 | 12 | 31 | 79 |
 
 - Money is not reduced by level gap (3.8).
-- Check: a level 1 character with STR 8, DEX 6, VIT 6 and a 3-damage starter sword hits a level 1 enemy for 8.8 and kills it in 3 hits, about 3 seconds, and loses about 8% of its health (counting 1 defence from the starter tunic). A level 5 enemy takes 6 hits.
+- Check: a new character (all attributes 5, no gear) fights bare-handed with unarmed damage 2 (`constants.stats.unarmedDamage`). It hits for 1 + 0.6 × 5 + 2 = 6 and kills a 24-health level 1 enemy with no defence in 4 hits, about 4 seconds at 0.9 attacks per second. The enemy hits for about 3.75 after the character's 1.25 defence and takes roughly 10 to 15 health of its 70 in that time. The first enemies must always be killable bare-handed.
 
 **Proposed.**
 - Cursed objects have health but no attack. They spawn waves of defenders until destroyed and drop bonus loot when destroyed.
 
-**Data.** id, name, level, type, health, damage, attack speed, defence, traits (id, value, magical yes/no), XP reward, money range, drop table id, areas. Baseline scaling coefficients are in `constants.enemyScaling` and `constants.progression`.
+**Data.** id, name, level, type, health, damage, attack speed, defence, traits (id, value, magical yes/no), XP reward, money range, drop table id, areas, targeting multiplier. Baseline scaling coefficients are in `constants.enemyScaling` and `constants.progression`.
 
 ---
 
@@ -113,16 +116,16 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Real-time. Attack speed decides how often each side attacks.
 - Damage = attacker's damage − defender's defence, as flat numbers. May change later.
 - A hit always counts for at least 1 damage (default, revisit after playtesting).
-- Critical hits deal 1.5 times damage (default, revisit after playtesting).
+- Critical hits deal 2 times damage (`constants.combat.critMultiplier`). The multiplier applies to the damage dealt, after defence and the minimum.
 - Combat resolves in ticks of 100 ms (default, revisit after playtesting).
-- A critical hit multiplies the damage dealt, after defence and the minimum, by 1.5. Attack intervals are rounded to whole ticks, at least one (default, revisit after playtesting).
+- Attack intervals are rounded to whole ticks, at least one (default, revisit after playtesting).
+- Every combat event feeds proficiency: hitting with a weapon trains that weapon type, attacking trains the combat skill, taking a hit trains toughness (4.6).
 
 **Proposed.**
 - A minimum damage of 1, so a hit always counts.
 - Critical hits multiply damage (crit rate exists through boosts, 2.6).
 - Spells auto-cast in a priority order set by the player, when mana allows.
 - Absorbed traits apply on hit, for example life steal heals.
-- Every combat event feeds proficiency: hitting with a weapon trains that weapon type, taking a hit trains toughness.
 
 **Data.** global formula constants (minimum damage, crit multiplier, tick length).
 
@@ -133,16 +136,18 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Purpose.** What happens at 0 health. The player is often away, so the outcome has to be safe.
 
 **Rules.**
-- The character returns to the city and is back on its feet after 2 minutes (default, revisit after playtesting).
-- It keeps its inventory and equipment. Nothing is lost except XP (default, revisit after playtesting).
-- A random XP loss between 0% and 25%, taken from the XP earned in the current level.
-- A character can never lose a level. At most, XP drops to the start of the current level.
+- The character returns to the city and is back on its feet after its level × 2 minutes (`constants.death.respawnMinutesPerLevel`). The unit is assumed to be minutes, to confirm.
+- It keeps its inventory and equipment. Nothing is lost except XP.
+- XP loss is random, up to 25% of the XP the current level requires.
+- XP can never fall below the highest point mark already passed in the current level (25%, 50% or 75% of the level's XP, 4.4). This stops a character from earning the same character point twice. Loss = random amount up to 25% of the level's XP requirement, limited so XP stays at or above that floor.
+- Example, a level needing 100 XP: at 74 XP the floor is 50, so at most 24 can be lost (the 25% cap allows 25). At 76 XP the floor is 75, so at most 1 can be lost. Below 25 XP there is no floor, and XP can fall to 0 (at 20 XP, at most 20 can be lost).
+- A character can never lose a level.
 - An XP protection item prevents the loss (2.8).
 
 **Proposed.**
 - The auto-retreat threshold (3.2) lets players avoid death.
 
-**Data.** XP loss range (0-25%).
+**Data.** XP loss range (0-25%), floor at point marks, respawn time per level.
 
 ---
 
@@ -155,7 +160,9 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Each level the character is above the enemy lowers the level modifier by 0.1, which is 10% of the base chance, not 10 points subtracted from it (a 5% drop at 1 level above is 4.5%, not 4.9%). At 10 or more levels above, the drop rate is 0%.
 - Enemy 1-19 levels above the character: base drop rate.
 - Enemy 20 or more levels above the character: 0%.
-- Bosses, mini-bosses and cursed objects drop rare items (2.8).
+- Mini-bosses drop upgrade materials. Basic enemies can drop upgrade materials too, with a very low chance. Upgrade items in general have a small drop chance.
+- Bosses and cursed objects drop rare items (2.8). Cursed objects dropping rare items is an assumption to confirm.
+- An enemy with a guaranteed drop has a guaranteed pool, not one fixed item. Every kill yields exactly one item chosen by weight from the pool, with a quantity range per entry. The guaranteed roll is separate from the normal rolls.
 - Drop rates are shown to the player (revealed through the bestiary, 4.8).
 
 **Formula.**
@@ -170,7 +177,6 @@ Absorption uses a different, gentler curve (4.7).
 **Proposed.**
 - Each enemy has a drop table: a list of entries with item, base chance and quantity range.
 - Money is a separate roll.
-- Bosses get one guaranteed drop plus normal rolls.
 - The drop rate shown to the player already includes their level modifier, so they can see when a character has outgrown an enemy.
 
-**Data.** drop table id, entries (item id, base chance, min/max quantity).
+**Data.** drop table id, entries (item id, base chance, min/max quantity), guaranteed pool (item id, weight, min/max quantity).

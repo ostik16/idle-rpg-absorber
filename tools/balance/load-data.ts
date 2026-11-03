@@ -2,6 +2,8 @@
  * Loads the game data for the balance tools (design 5.3). Reads data/*.json through static imports, so it works
  * under vite-node and in the typecheck. The entry types below list only the fields the tools read (design 5.1
  * "Tables"); fields that are missing fail with a clear message where they are needed, not here.
+ * Items (equipment, consumables, materials and rare items) all live in data/items.json; the old
+ * data/consumables.json and data/rare-items.json are not read.
  */
 import constants from '../../data/constants.json';
 import xpTableJson from '../../data/xp-table.json';
@@ -30,6 +32,8 @@ export interface EnemyEntry {
   xpReward?: number;
   moneyRange?: { min: number; max: number };
   dropTableId?: string;
+  /** Multiplier on the movement time to find this enemy when targeting it (3.3). Common 2, special enemies up to 10. */
+  targetingMultiplier?: number;
 }
 
 export interface AreaEnemyRef {
@@ -41,6 +45,8 @@ export interface AreaEntry {
   id: string;
   name?: string;
   levelRange?: unknown;
+  /** Seconds of movement between enemies in this area; constants.farming.movementSecondsBetweenEnemies if absent. */
+  movementSecondsBetweenEnemies?: number;
   enemies: AreaEnemyRef[];
 }
 
@@ -51,14 +57,30 @@ export interface DropEntry {
   maxQuantity?: number;
 }
 
+export interface GuaranteedPoolEntry {
+  itemId: string;
+  weight: number;
+  minQuantity?: number;
+  maxQuantity?: number;
+}
+
+/** Every kill yields exactly one entry of each pool, chosen by weight; the level modifier does not apply (3.8). */
+export interface GuaranteedPool {
+  id: string;
+  entries: GuaranteedPoolEntry[];
+}
+
 export interface DropTableEntry {
   id: string;
   entries: DropEntry[];
+  guaranteedPools?: GuaranteedPool[];
 }
 
 export interface ItemEntry {
   id: string;
   name?: string;
+  /** equipment, consumable, material or rare. */
+  category?: string;
   sellPrice?: number;
 }
 
@@ -88,13 +110,25 @@ export function loadBalanceData(): BalanceData {
   };
 }
 
-/** Used when `constants.farming.secondsPerKill` does not exist. The 12 seconds N1 to N6 in docs/decisions.md assume. */
-export const FALLBACK_SECONDS_PER_KILL = 12;
+/**
+ * Seconds of movement between enemies in an area, before targeting (3.3): the area's own
+ * `movementSecondsBetweenEnemies` if present, else constants.farming.movementSecondsBetweenEnemies.
+ */
+export function baseMovementSeconds(area: AreaEntry): number {
+  return area.movementSecondsBetweenEnemies ?? constants.farming.movementSecondsBetweenEnemies;
+}
 
-/** Seconds from one kill to the next (fight plus moving to the next enemy, 3.3): the constant if present, else 12. */
-export function defaultSecondsPerKill(): number {
-  const value = (constants.farming as Record<string, unknown>)['secondsPerKill'];
-  return typeof value === 'number' && value > 0 ? value : FALLBACK_SECONDS_PER_KILL;
+/**
+ * Multiplier on the movement time when targeting this enemy (3.3): its own `targetingMultiplier`,
+ * else constants.farming.targeting.commonMultiplier. Rejects values outside 1..maxMultiplier.
+ */
+export function targetingMultiplier(enemy: EnemyEntry): number {
+  const t = constants.farming.targeting;
+  const m = enemy.targetingMultiplier ?? t.commonMultiplier;
+  if (!(m >= 1 && m <= t.maxMultiplier)) {
+    throw new BalanceError(`Enemy "${enemy.id}" has targetingMultiplier ${m}; it must be between 1 and ${t.maxMultiplier}.`);
+  }
+  return m;
 }
 
 export function findEnemy(enemies: readonly EnemyEntry[], id: string): EnemyEntry {

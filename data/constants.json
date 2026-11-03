@@ -24,7 +24,7 @@
     "maxLevel": 9,
     "startChance": 0.9,
     "chanceFactor": 0.9,
-    "materialsStartAtLevel": 4,
+    "materialsStartAtLevel": 6,
     "protectionConsumedOnSuccess": true
   },
   "storage": {
@@ -33,23 +33,30 @@
   "death": {
     "xpLossMin": 0,
     "xpLossMax": 0.25,
-    "respawnSeconds": 120,
-    "keepsInventory": true
+    "keepsInventory": true,
+    "respawnMinutesPerLevel": 2,
+    "xpLossFloorsAtPointMarks": true
   },
   "spells": {
     "baseMaxRank": 10,
-    "maxRankWithRareItems": 15,
+    "maxRankWithRareItems": 20,
     "respecGoldPerLevel": 300
   },
   "combat": {
     "minDamage": 1,
-    "critMultiplier": 1.5,
+    "critMultiplier": 2,
     "tickMs": 100,
-    "weaponPenaltyFloor": 0.25
+    "weaponPenalty": {
+      "perMissingPoint": 0.01,
+      "cap": 0.5
+    }
   },
   "farming": {
-    "movementSecondsBetweenEnemies": 8,
-    "targetingExtraTimeMultiplier": 2
+    "movementSecondsBetweenEnemies": 6,
+    "targeting": {
+      "commonMultiplier": 2,
+      "maxMultiplier": 10
+    }
   },
   "offline": {
     "efficiency": 0.9,
@@ -58,13 +65,15 @@
     "stepSimMaxSeconds": 300
   },
   "characters": {
-    "startingSlots": 5,
-    "slotsUnlockedAtLevelCap": 1
+    "startingSlots": 4,
+    "slotTicketLevel": 20,
+    "slotTicketsPerCharacter": 1
   },
   "shops": {
-    "rareGoodsRotationHours": 24,
+    "rareGoodsRotationHours": 1,
     "rareGoodsStockDependsOnCharacterLevel": false,
-    "potionBuyRequiresLevel": false
+    "potionBuyRequiresLevel": false,
+    "rareGoodsRefreshGoldCost": 5000
   },
   "items": {
     "maxBonusAttributes": 3
@@ -93,8 +102,8 @@
       "one-handed": 0.003,
       "two-handed": 0.003,
       "toughness": 0.003,
-      "endurance": 0.001,
-      "speed": 0.0015
+      "speed": 0.001,
+      "combat": 0.0015
     },
     "diminishing": {
       "levelsPerPoint": 0.3,
@@ -106,8 +115,14 @@
       "one-handed": 0.003,
       "two-handed": 0.003,
       "toughness": 0.003,
-      "endurance": 0.005,
-      "speed": 0.002
+      "speed": 0.005,
+      "combat": 0
+    },
+    "attackSpeedPerPoint": {
+      "unarmed": 0.001,
+      "one-handed": 0.001,
+      "two-handed": 0.001,
+      "combat": 0.001
     }
   },
   "stats": {
@@ -138,9 +153,7 @@
     "spellDamage": {
       "perIntelligence": 0.02
     },
-    "moveSpeed": {
-      "perEndurance": 0.005
-    }
+    "unarmedDamage": 2
   },
   "progression": {
     "xpReward": {
@@ -199,7 +212,8 @@
         "amount": 1800,
         "durationSeconds": 6
       }
-    ]
+    ],
+    "stacking": "queue"
   },
   "creation": {
     "baseAttributes": {
@@ -208,20 +222,15 @@
       "vitality": 5,
       "intelligence": 5
     },
-    "freePoints": 5,
+    "freePoints": 0,
     "nameMinLength": 1,
     "nameMaxLength": 16,
     "startingLevel": 1,
     "startingGold": 0,
-    "startingEquipment": {
-      "mainHand": "starter-sword",
-      "body": "starter-tunic"
-    },
-    "startingItems": [
-      {
-        "itemId": "minor-health-potion",
-        "quantity": 5
-      }
-    ]
+    "startingEquipment": {},
+    "startingItems": []
+  },
+  "inventory": {
+    "baseCells": 36
   }
 }

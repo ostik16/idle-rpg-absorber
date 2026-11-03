@@ -4,5 +4,7 @@
   { "id": "frost-affinity", "name": "Frost affinity", "effect": "Raises frost spell damage by the value in percent", "unit": "percent", "magical": true },
   { "id": "regeneration", "name": "Regeneration", "effect": "Restores the value in percent of maximum health every 10 seconds", "unit": "percent", "magical": true },
   { "id": "thick-hide", "name": "Thick hide", "effect": "Raises defence by the value in percent (physical, cannot be absorbed)", "unit": "percent", "magical": false },
-  { "id": "keen-fangs", "name": "Keen fangs", "effect": "Raises critical chance by the value in percentage points (physical, cannot be absorbed)", "unit": "percent", "magical": false }
+  { "id": "keen-fangs", "name": "Keen fangs", "effect": "Raises critical chance by the value in percentage points (physical, cannot be absorbed)", "unit": "percent", "magical": false },
+  { "id": "wind-affinity", "name": "Wind affinity", "effect": "Raises wind spell damage by the value in percent", "unit": "percent", "magical": true },
+  { "id": "swift-paws", "name": "Swift paws", "effect": "Raises attack speed by the value in percent (physical, cannot be absorbed)", "unit": "percent", "magical": false }
 ]

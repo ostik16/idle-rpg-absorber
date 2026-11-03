@@ -5,12 +5,13 @@
  * Model: both sides attack on the engine tick (constants.combat.tickMs). The first attack of each side lands one
  * full interval after the fight starts. On a tick where both attack, the player acts first, so an enemy killed on
  * that tick does not strike back. Only the player can crit (enemy crit is not in the design). Each fight starts at
- * full health; potions, spells, traits and the weapon attribute penalty are not modelled.
+ * full health; potions, spells and traits are not modelled. The weapon attribute penalty (2.2) applies to the weapon's
+ * damage when the build lists the weapon's required attributes. A build without a weapon fights unarmed (4.2).
  */
 import constants from '../../data/constants.json';
 import { enemyAttackSpeed, enemyDamage, enemyDefence, enemyHealth } from '../../src/game/enemies';
-import { proficiencyEffect, type ProficiencyId } from '../../src/game/proficiency';
-import type { Rng } from '../../src/game/rng';
+import { attackSpeedBonus, proficiencyEffect } from '../../src/game/proficiency';
+import { createStream, type Rng } from '../../src/game/rng';
 import {
   attackIntervalMs,
   attackSpeed,
@@ -19,7 +20,9 @@ import {
   hitDamage,
   maxHealth,
   physicalDamage,
+  weaponPenaltyMultiplier,
   type Attributes,
+  type WeaponScaling,
 } from '../../src/game/stats';
 import { BalanceError, type EnemyEntry } from './load-data';
 
@@ -39,26 +42,31 @@ export type WeaponType = 'unarmed' | 'one-handed' | 'two-handed';
 export interface PlayerBuild {
   level: number;
   attributes: Attributes;
-  weaponDamage: number;
+  /** Weapon damage, or null when unarmed (constants.stats.unarmedDamage is used). */
+  weaponDamage: number | null;
+  /** Attributes the weapon requires (2.2). Missing points cost damage; empty means no penalty. */
+  weaponScaling: WeaponScaling[];
   armourDefence: number;
   weaponType: WeaponType;
   /** Proficiency points, 0 to constants.proficiency.maxPoints. */
   weaponProficiency: number;
   toughnessProficiency: number;
-  speedProficiency: number;
+  /** General combat skill: adds attack speed (4.6). The speed skill trains by moving and does not affect fights. */
+  combatProficiency: number;
 }
 
-/** Creation attributes, no gear, no proficiency. */
+/** Creation attributes (5/5/5/5), unarmed, no armour, no proficiency. */
 export function defaultBuild(level = 1): PlayerBuild {
   return {
     level,
     attributes: { ...constants.creation.baseAttributes },
-    weaponDamage: 0,
+    weaponDamage: null,
+    weaponScaling: [],
     armourDefence: 0,
-    weaponType: 'one-handed',
+    weaponType: 'unarmed',
     weaponProficiency: 0,
     toughnessProficiency: 0,
-    speedProficiency: 0,
+    combatProficiency: 0,
   };
 }
 
@@ -84,6 +92,7 @@ export function referenceBuild(level: number): PlayerBuild {
       intelligence: total * REFERENCE_SPLIT.intelligence,
     },
     weaponDamage: REFERENCE_GEAR.weaponBase + REFERENCE_GEAR.weaponPerLevel * (level - 1),
+    weaponType: 'one-handed',
     armourDefence: REFERENCE_GEAR.armourBase + REFERENCE_GEAR.armourPerLevel * (level - 1),
   };
 }
@@ -91,13 +100,15 @@ export function referenceBuild(level: number): PlayerBuild {
 /** Turns a build into a fighter with the stats.ts formulas (4.2) and the proficiency bonuses (4.6). */
 export function buildPlayer(build: PlayerBuild, tickMs: number = constants.combat.tickMs): Combatant {
   const { attributes: a } = build;
-  const weaponSkill: ProficiencyId = build.weaponType;
-  const damageBonus = proficiencyEffect(weaponSkill, build.weaponProficiency);
+  const damageBonus = proficiencyEffect(build.weaponType, build.weaponProficiency);
   const healthBonus = proficiencyEffect('toughness', build.toughnessProficiency);
-  const speedBonus = proficiencyEffect('speed', build.speedProficiency);
+  const speedBonus = attackSpeedBonus(build.weaponType, build.weaponProficiency, build.combatProficiency);
+  // The penalty applies to the weapon's stats only; unarmed damage has none.
+  const weaponDamage =
+    build.weaponDamage === null ? null : build.weaponDamage * weaponPenaltyMultiplier(a, build.weaponScaling);
   return {
     maxHp: maxHealth(a.vitality, healthBonus),
-    damage: physicalDamage(a.strength, build.weaponDamage) * (1 + damageBonus),
+    damage: physicalDamage(a.strength, weaponDamage) * (1 + damageBonus),
     defence: defence(a.vitality, build.armourDefence),
     critChance: critChance(a.dexterity),
     intervalMs: attackIntervalMs(attackSpeed(a.dexterity, speedBonus), tickMs),
@@ -122,6 +133,16 @@ export function enemyFromData(enemy: EnemyEntry, tickMs: number = constants.comb
     throw new BalanceError(`Enemy "${enemy.id}" needs health, damage, attackSpeed and defence in data/enemies.json.`);
   }
   return { maxHp: health, damage, defence: def, critChance: 0, intervalMs: attackIntervalMs(speed, tickMs) };
+}
+
+/** An enemy from data when it has all its stats, else the baseline enemy of its level (3.5). */
+export function enemyOrBaseline(enemy: EnemyEntry, tickMs: number = constants.combat.tickMs): Combatant {
+  try {
+    return enemyFromData(enemy, tickMs);
+  } catch (e) {
+    if (e instanceof BalanceError) return baselineEnemy(enemy.level, tickMs);
+    throw e;
+  }
 }
 
 export type Outcome = 'win' | 'loss' | 'timeout';
@@ -235,6 +256,26 @@ export function summarise(results: readonly FightResult[], playerMaxHp: number):
     fightsPerFullHealth: winDamage > 0 ? playerMaxHp / winDamage : Infinity,
     playerMaxHp,
   };
+}
+
+/**
+ * Mean seconds to kill `enemy` over `runs` fights (wins only), or null when the player never wins.
+ * The balance tools use it as the fight part of the time per kill.
+ */
+export function meanFightSeconds(player: Combatant, enemy: Combatant, runs: number, rng: Rng, options: FightOptions = {}): number | null {
+  return runFights(player, enemy, runs, rng, options).timeToKill?.mean ?? null;
+}
+
+/**
+ * Fight seconds per kill for the balance tools: mean time to kill `foe` with the reference build of `characterLevel`,
+ * over `runs` seeded fights. Throws BalanceError if that build never wins (the caller should pass a fixed fight time).
+ */
+export function referenceFightSeconds(characterLevel: number, foe: Combatant, label: string, runs = 200): number {
+  const seconds = meanFightSeconds(buildPlayer(referenceBuild(characterLevel)), foe, runs, createStream(1, 'balance', 'fight', characterLevel, label));
+  if (seconds === null) {
+    throw new BalanceError(`The reference build of level ${characterLevel} never beats ${label}; pass --fight-seconds.`);
+  }
+  return seconds;
 }
 
 /** Runs `runs` fights with one RNG and summarises them. */

@@ -1,5 +1,5 @@
 [
-  { "id": "main-hand", "name": "Main hand", "allowedTypes": ["one-handed-weapon", "two-handed-weapon"], "twoHandedBlocks": "off-hand", "weaponScaling": { "penaltyCurve": "product-of-ratios", "floorConstant": "combat.weaponPenaltyFloor", "note": "Scaling attributes and recommended values are listed on each weapon item in items.json" }, "trainsProficiency": { "one-handed-weapon": "one-handed", "two-handed-weapon": "two-handed", "empty": "unarmed" } },
+  { "id": "main-hand", "name": "Main hand", "allowedTypes": ["one-handed-weapon", "two-handed-weapon"], "twoHandedBlocks": "off-hand", "weaponScaling": { "penaltyCurve": "product-of-ratios", "floorConstant": "combat.weaponPenalty.cap", "note": "Scaling attributes and required values are listed on each weapon item in items.json" }, "trainsProficiency": { "one-handed-weapon": "one-handed", "two-handed-weapon": "two-handed", "empty": "unarmed" } },
   { "id": "off-hand", "name": "Off hand", "allowedTypes": ["shield"], "blockedByTwoHanded": true },
   { "id": "head", "name": "Head", "allowedTypes": ["helm"] },
   { "id": "body", "name": "Body", "allowedTypes": ["body-armour"] },
@@ -9,5 +9,6 @@
   { "id": "necklace", "name": "Necklace", "allowedTypes": ["necklace"] },
   { "id": "ring-1", "name": "Ring 1", "allowedTypes": ["ring"] },
   { "id": "ring-2", "name": "Ring 2", "allowedTypes": ["ring"] },
-  { "id": "rare-item", "name": "Rare item", "allowedTypes": ["rare-slot-item"], "note": "Only rare items with use equip fit here (2.8)" }
+  { "id": "special-item-slot", "name": "Special item", "allowedTypes": ["special-item"], "note": "Only rare items with use equip fit here (2.8)" },
+  { "id": "backpack", "name": "Backpack", "allowedTypes": ["backpack"], "note": "Adds bag cells and raises stack limits (2.1)" }
 ]

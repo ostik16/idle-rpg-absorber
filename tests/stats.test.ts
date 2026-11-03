@@ -9,24 +9,34 @@ import {
   hitDamage,
   maxHealth,
   maxMana,
-  moveSpeedMultiplier,
   physicalDamage,
   potionHealPerSecond,
   potionHealPerTick,
   potionTickCount,
+  queuePotions,
   spellDamageMultiplier,
   startingAttributes,
+  weaponDamageOrUnarmed,
   weaponPenaltyMultiplier,
 } from '../src/game/stats';
 
 // Hand-computed from the coefficients in design 4.2: damage 1 + 0.6 x STR, attack speed 0.8 + 0.02 x DEX,
 // crit 2% + 0.2% x DEX (cap 50%), health 30 + 8 x VIT, defence 0.25 x VIT, mana 20 + 4 x INT,
-// spell damage +2% per INT, move speed +0.5% per endurance.
+// spell damage +2% per INT. Unarmed damage is 2. Crits do 2x (after defence). Movement speed is a proficiency, not a stat.
 describe('derived stats (design 4.2)', () => {
   it('physical damage is 1 + 0.6 per Strength plus the weapon', () => {
-    expect(physicalDamage(5)).toBeCloseTo(4);
+    expect(physicalDamage(5, 0)).toBeCloseTo(4);
     expect(physicalDamage(8, 3)).toBeCloseTo(8.8);
     expect(physicalDamage(50, 20)).toBeCloseTo(51);
+  });
+
+  it('uses unarmed damage (2) as the weapon damage when no weapon is equipped', () => {
+    expect(weaponDamageOrUnarmed(null)).toBe(2);
+    expect(weaponDamageOrUnarmed(7)).toBe(7);
+    expect(weaponDamageOrUnarmed(0)).toBe(0);
+    expect(physicalDamage(5)).toBeCloseTo(6); // 1 + 3 + 2
+    expect(physicalDamage(5, null)).toBeCloseTo(6);
+    expect(physicalDamage(10)).toBeCloseTo(9); // 1 + 6 + 2
   });
 
   it('attack speed is 0.8 + 0.02 per Dexterity, times 1 + bonus', () => {
@@ -61,11 +71,6 @@ describe('derived stats (design 4.2)', () => {
     expect(spellDamageMultiplier(0)).toBe(1);
     expect(spellDamageMultiplier(10)).toBeCloseTo(1.2);
   });
-
-  it('movement speed is 1 + 0.5% per endurance', () => {
-    expect(moveSpeedMultiplier(0)).toBe(1);
-    expect(moveSpeedMultiplier(50)).toBeCloseTo(1.25);
-  });
 });
 
 describe('attack interval (design 3.6)', () => {
@@ -98,40 +103,52 @@ describe('hit damage (design 3.6)', () => {
     expect(hitDamage(5, 5)).toBe(1);
   });
 
-  it('multiplies a critical hit by 1.5', () => {
-    expect(hitDamage(10, 4, true)).toBeCloseTo(9);
-    expect(hitDamage(3, 10, true)).toBeCloseTo(1.5);
+  it('multiplies a critical hit by 2, after defence and the minimum', () => {
+    expect(constants.combat.critMultiplier).toBe(2);
+    expect(hitDamage(10, 4, true)).toBeCloseTo(12); // (10 - 4) x 2
+    expect(hitDamage(3, 10, true)).toBeCloseTo(2); // minimum 1, then x 2
   });
 });
 
 describe('weapon attribute penalty (design 2.2)', () => {
   const attrs = { strength: 10, dexterity: 15, vitality: 5, intelligence: 5 };
 
-  it('is 1 when every scaling attribute meets the recommended value', () => {
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', recommended: 10 }])).toBe(1);
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', recommended: 8 }])).toBe(1);
+  it('is 1 when every scaling attribute meets the required value', () => {
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 10 }])).toBe(1);
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 8 }])).toBe(1);
   });
 
   it('is 1 with no scaling (unarmed)', () => {
     expect(weaponPenaltyMultiplier(attrs, [])).toBe(1);
   });
 
-  it('falls in proportion to the shortfall', () => {
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', recommended: 20 }])).toBeCloseTo(0.5);
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', recommended: 12.5 }])).toBeCloseTo(0.8);
+  it('costs 1% per missing attribute point', () => {
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 20 }])).toBeCloseTo(0.9, 10); // 10 missing
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 11 }])).toBeCloseTo(0.99, 10);
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 12.5 }])).toBeCloseTo(0.975, 10);
   });
 
-  it('multiplies the shortfalls of several attributes', () => {
+  it('adds up the missing points of several attributes', () => {
     const scaling = [
-      { attribute: 'strength' as const, recommended: 20 }, // 0.5
-      { attribute: 'dexterity' as const, recommended: 20 }, // 0.75
+      { attribute: 'strength' as const, requiredValue: 20 }, // 10 missing
+      { attribute: 'dexterity' as const, requiredValue: 20 }, // 5 missing
     ];
-    expect(weaponPenaltyMultiplier(attrs, scaling)).toBeCloseTo(0.375);
+    expect(weaponPenaltyMultiplier(attrs, scaling)).toBeCloseTo(0.85, 10);
   });
 
-  it('never falls below the 25% floor', () => {
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', recommended: 100 }])).toBe(0.25);
-    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'intelligence', recommended: 500 }])).toBe(0.25);
+  it('does not let a surplus in one attribute offset a shortfall in another', () => {
+    const scaling = [
+      { attribute: 'strength' as const, requiredValue: 12 }, // 2 missing
+      { attribute: 'dexterity' as const, requiredValue: 10 }, // 5 spare
+    ];
+    expect(weaponPenaltyMultiplier(attrs, scaling)).toBeCloseTo(0.98, 10);
+  });
+
+  it('never costs more than 50%', () => {
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 55 }])).toBeCloseTo(0.55, 10); // 45 missing
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 60 }])).toBeCloseTo(0.5, 10); // 50 missing
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'strength', requiredValue: 100 }])).toBe(0.5);
+    expect(weaponPenaltyMultiplier(attrs, [{ attribute: 'intelligence', requiredValue: 500 }])).toBe(0.5);
   });
 });
 
@@ -166,23 +183,25 @@ describe('potion heal over time (design 2.6)', () => {
 });
 
 describe('character creation (design 4.1)', () => {
-  it('adds the allocated free points to the base attributes', () => {
-    expect(startingAttributes({ strength: 3, dexterity: 1, vitality: 1, intelligence: 0 })).toEqual({
-      strength: 8,
-      dexterity: 6,
-      vitality: 6,
-      intelligence: 5,
-    });
+  it('starts with no free points, no equipment and no items', () => {
+    expect(constants.creation.freePoints).toBe(0);
+    expect(constants.creation.startingEquipment).toEqual({});
+    expect(constants.creation.startingItems).toEqual([]);
   });
 
-  it('requires all 5 free points to be spent', () => {
-    expect(() => startingAttributes({ strength: 2, dexterity: 1, vitality: 1, intelligence: 0 })).toThrow(RangeError);
-    expect(() => startingAttributes({ strength: 4, dexterity: 1, vitality: 1, intelligence: 0 })).toThrow(RangeError);
+  it('starts at the base attributes, 5 in each', () => {
+    expect(startingAttributes()).toEqual({ strength: 5, dexterity: 5, vitality: 5, intelligence: 5 });
+    expect(startingAttributes({ strength: 0, dexterity: 0, vitality: 0, intelligence: 0 })).toEqual(startingAttributes());
+  });
+
+  it('rejects any allocation, because there are no free points to spend', () => {
+    expect(() => startingAttributes({ strength: 1, dexterity: 0, vitality: 0, intelligence: 0 })).toThrow(RangeError);
+    expect(() => startingAttributes({ strength: 3, dexterity: 1, vitality: 1, intelligence: 0 })).toThrow(RangeError);
   });
 
   it('rejects negative or fractional allocations', () => {
-    expect(() => startingAttributes({ strength: 6, dexterity: -1, vitality: 0, intelligence: 0 })).toThrow(RangeError);
-    expect(() => startingAttributes({ strength: 2.5, dexterity: 2.5, vitality: 0, intelligence: 0 })).toThrow(RangeError);
+    expect(() => startingAttributes({ strength: 1, dexterity: -1, vitality: 0, intelligence: 0 })).toThrow(RangeError);
+    expect(() => startingAttributes({ strength: 0.5, dexterity: 0, vitality: 0, intelligence: 0 })).toThrow(RangeError);
   });
 
   it('accepts a name of 1 to 16 characters and trims it', () => {
@@ -200,5 +219,46 @@ describe('character creation (design 4.1)', () => {
   it('rejects a name another character has, ignoring case', () => {
     expect(characterNameError('aria', ['Aria', 'Bo'])).not.toBeNull();
     expect(characterNameError('Cy', ['Aria', 'Bo'])).toBeNull();
+  });
+});
+
+describe('potion queue (design 2.6)', () => {
+  const minor = { amount: 40, durationSeconds: 10 }; // 20 ticks of 2
+  const standard = { amount: 320, durationSeconds: 8 }; // 16 ticks of 20
+
+  it('stacking is "queue"', () => {
+    expect(constants.potions.stacking).toBe('queue');
+  });
+
+  it('a single potion heals as it would alone', () => {
+    const q = queuePotions([minor]);
+    expect(q.totalTicks).toBe(20);
+    expect(q.healPerTick[0]).toBeCloseTo(2);
+    expect(q.totalHeal).toBeCloseTo(40);
+  });
+
+  it('starts the second potion when the first ends, without overlap', () => {
+    const q = queuePotions([minor, minor]);
+    expect(q.totalTicks).toBe(40);
+    expect(q.healPerTick.every((h) => Math.abs(h - 2) < 1e-9)).toBe(true); // never 4 per tick
+    expect(q.totalHeal).toBeCloseTo(80);
+  });
+
+  it('keeps the drinking order', () => {
+    const q = queuePotions([minor, standard]);
+    expect(q.totalTicks).toBe(36);
+    expect(q.healPerTick[19]).toBeCloseTo(2);
+    expect(q.healPerTick[20]).toBeCloseTo(20);
+    expect(q.totalHeal).toBeCloseTo(360);
+    expect(queuePotions([standard, minor]).healPerTick[0]).toBeCloseTo(20);
+  });
+
+  it('follows the tick length given', () => {
+    expect(queuePotions([minor], 1000).totalTicks).toBe(10);
+    expect(queuePotions([minor], 1000).healPerTick[0]).toBeCloseTo(4);
+  });
+
+  it('is empty for no potions', () => {
+    expect(queuePotions([])).toEqual({ healPerTick: [], totalTicks: 0, totalHeal: 0 });
   });
 });

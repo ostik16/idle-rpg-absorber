@@ -57,6 +57,69 @@ export function killsToClearLevel(characterLevel: number, enemyLevel: number): n
 }
 
 /**
+ * XP amounts, within a level, at which a character point is awarded (design 4.4): the fractions in
+ * constants.points.characterPointAwardAtLevelFraction (25%, 50%, 75%) of the level's `xpToNext`.
+ */
+export function pointMarks(xpToNext: number, c: PointsConstants = constants.points): number[] {
+  return c.characterPointAwardAtLevelFraction.map((f) => f * xpToNext);
+}
+
+/** Marks passed (reached or exceeded) at `xp` XP into a level. Also the number of points awarded, one per mark. */
+export function pointsAwardedAt(xp: number, xpToNext: number, c: PointsConstants = constants.points): number {
+  return pointMarks(xpToNext, c).filter((mark) => xp >= mark).length;
+}
+
+/**
+ * XP floor for death (design 3.7, 4.4): the highest point mark already passed in the current level,
+ * or 0 below the first mark. Dying can never take XP below it.
+ */
+export function xpFloor(xp: number, xpToNext: number, c: PointsConstants = constants.points): number {
+  let floor = 0;
+  for (const mark of pointMarks(xpToNext, c)) if (xp >= mark) floor = Math.max(floor, mark);
+  return floor;
+}
+
+/**
+ * XP into the level after dying (design 3.7). `lossFraction` is a random share of the level's requirement
+ * (`xpToNext`), drawn by the caller between constants.death.xpLossMin and xpLossMax (0 to 25%).
+ * Loss = min(lossFraction x xpToNext, xp - floor), so XP never drops below the highest point mark passed.
+ * Example, level of 100 XP, maximum roll 25%: 74 XP has floor 50, loses 24; 76 XP has floor 75, loses 1;
+ * 20 XP has floor 0, loses 20.
+ */
+export function xpAfterDeath(
+  xp: number,
+  xpToNext: number,
+  lossFraction: number,
+  c: PointsConstants = constants.points,
+): number {
+  if (!(lossFraction >= 0 && lossFraction <= 1)) throw new RangeError(`loss fraction must be 0 to 1, got ${lossFraction}`);
+  const loss = Math.min(lossFraction * xpToNext, xp - xpFloor(xp, xpToNext, c));
+  return xp - loss;
+}
+
+/** A fraction between xpLossMin and xpLossMax for `xpAfterDeath`, from a random number `r` in [0, 1). */
+export function xpLossFractionFromRoll(r: number, c: typeof constants.death = constants.death): number {
+  return c.xpLossMin + (c.xpLossMax - c.xpLossMin) * r;
+}
+
+/**
+ * Character points newly awarded when XP in the current level is `newXp` (design 4.4).
+ * `highestMarkReached` is the number of marks (0 to 3) this character has ever reached in this level, saved with
+ * the character and reset to 0 on a level up. Points depend on it, not on the XP before, so XP that falls
+ * (death, floored at a mark) and rises again never awards a mark twice. Returns the points and the new highest mark.
+ */
+export function newlyAwardedPoints(
+  newXp: number,
+  xpToNext: number,
+  highestMarkReached: number,
+  c: PointsConstants = constants.points,
+): { points: number; highestMarkReached: number } {
+  const perMark = c.characterPointsPerLevel / c.characterPointAwardAtLevelFraction.length;
+  const reached = Math.max(highestMarkReached, pointsAwardedAt(newXp, xpToNext, c));
+  return { points: (reached - highestMarkReached) * perMark, highestMarkReached: reached };
+}
+
+/**
  * Character points earned so far (design 4.4). The 3 points of a level are awarded as the character
  * progresses through it, at 25%, 50% and 75% of that level's XP, one point per mark.
  * `xpIntoLevel` is XP earned since reaching `level`. Points from finished levels count in full.
@@ -71,9 +134,28 @@ export function characterPointsEarned(
   const perMark = c.characterPointsPerLevel / c.characterPointAwardAtLevelFraction.length;
   const finished = (level - 1) * c.characterPointsPerLevel;
   if (level >= levelCap) return finished;
-  const need = xpToNextLevel(level);
-  const marks = c.characterPointAwardAtLevelFraction.filter((f) => xpIntoLevel >= f * need).length;
-  return finished + marks * perMark;
+  return finished + pointsAwardedAt(xpIntoLevel, xpToNextLevel(level), c) * perMark;
+}
+
+/**
+ * Seconds until a dead character is back (design 3.7): level x constants.death.respawnMinutesPerLevel minutes.
+ */
+export function respawnSeconds(level: number, c: typeof constants.death = constants.death): number {
+  if (!Number.isInteger(level) || level < 1) throw new RangeError(`level must be a whole number of 1 or more, got ${level}`);
+  return level * c.respawnMinutesPerLevel * 60;
+}
+
+/**
+ * Character slot tickets earned by a level change (design 4.1): a character that first reaches
+ * constants.characters.slotTicketLevel (20) receives slotTicketsPerCharacter (1) ticket, once.
+ * 0 or slotTicketsPerCharacter, never more in total, because only crossing the level from below counts.
+ */
+export function slotTicketsEarned(
+  previousLevel: number,
+  newLevel: number,
+  c: typeof constants.characters = constants.characters,
+): number {
+  return previousLevel < c.slotTicketLevel && newLevel >= c.slotTicketLevel ? c.slotTicketsPerCharacter : 0;
 }
 
 /** Skill points earned (design 4.5): skillPointsPerLevel for every level gained after level 1. */

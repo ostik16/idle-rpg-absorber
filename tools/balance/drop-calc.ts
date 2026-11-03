@@ -1,18 +1,25 @@
 /** Drop calculator (design 5.3): expected drops, XP and gold per hour in an area. Run: npm run balance:drops -- --help */
-import constants from '../../data/constants.json';
+import { enemyOrBaseline, referenceFightSeconds } from './combat';
 import { intFlag, parseFlags, usage, type FlagSpec } from './args';
 import { runCli } from './cli';
-import { areaReport } from './drops';
+import { areaReport, type Pace } from './drops';
 import { num, pct, table } from './format';
-import { BalanceError, defaultSecondsPerKill, findArea, levelRangeText, loadBalanceData } from './load-data';
+import { BalanceError, findArea, levelRangeText, loadBalanceData, type EnemyEntry } from './load-data';
 
 const SPEC: FlagSpec = {
   level: { kind: 'number', help: 'character level (default 1)' },
   area: { kind: 'string', help: 'area id from data/areas.json (omit to list the areas)' },
-  'seconds-per-kill': { kind: 'number', help: 'seconds from one kill to the next, fight and moving (default: constants.farming.secondsPerKill, else 12)' },
-  target: { kind: 'string', help: 'farm only this enemy id; multiplies seconds per kill by the targeting multiplier (3.3)' },
+  'fight-seconds': { kind: 'number', help: 'seconds of fighting per kill, for every enemy (default: simulated with the reference build for --level, mean time to kill)' },
+  'movement-seconds': { kind: 'number', help: 'seconds of movement between enemies (default: the area\'s movementSecondsBetweenEnemies, else constants.farming)' },
+  'prof-speed': { kind: 'number', help: 'speed skill points 0-100: shortens the movement time (default 0)' },
+  target: { kind: 'string', help: 'farm only this enemy id; multiplies the movement seconds by that enemy\'s targetingMultiplier (3.3)' },
   help: { kind: 'boolean', help: 'show this text' },
 };
+
+/** Mean time to kill each enemy for the reference build of `level`; enemies without full stats use the baseline enemy of their level. */
+function simulatedFightSeconds(level: number): (enemy: EnemyEntry) => number {
+  return (entry) => referenceFightSeconds(level, enemyOrBaseline(entry), `"${entry.id}"`);
+}
 
 function main(argv: string[]): string {
   const flags = parseFlags(argv, SPEC);
@@ -24,14 +31,24 @@ function main(argv: string[]): string {
     return ['Pass --area <id>. Areas:', ...data.areas.map((a) => `  ${a.id}  ${a.name ?? ''}  level ${levelRangeText(a.levelRange)}`)].join('\n');
   }
   const level = intFlag(flags, 'level', 1, 1);
-  const secondsPerKill = flags.number('seconds-per-kill') ?? defaultSecondsPerKill();
   const targetEnemyId = flags.string('target');
-  const report = areaReport(data, areaId, level, secondsPerKill, targetEnemyId === undefined ? {} : { targetEnemyId });
+  const fixedFight = flags.number('fight-seconds');
+  const movement = flags.number('movement-seconds');
+  const speed = flags.number('prof-speed');
+  const pace: Pace = {
+    fightSeconds: fixedFight ?? simulatedFightSeconds(level),
+    ...(movement === undefined ? {} : { movementSeconds: movement }),
+    ...(speed === undefined ? {} : { speedPoints: speed }),
+  };
+  const report = areaReport(data, areaId, level, pace, targetEnemyId === undefined ? {} : { targetEnemyId });
   const area = findArea(data.areas, areaId);
 
   const out: string[] = [
     `${report.areaName} (${report.areaId}), levels ${levelRangeText(area.levelRange) || 'n/a'} | character level ${level}`,
-    `${num(report.secondsPerKill, 1)} s per kill${report.targetEnemyId ? ` (targeting ${report.targetEnemyId}, x${constants.farming.targetingExtraTimeMultiplier})` : ''} = ${num(report.killsPerHour, 1)} kills per hour`,
+    `${num(report.secondsPerKill, 1)} s per kill = ${num(report.fightSeconds, 1)} s fight + ${num(report.movementSeconds, 1)} s movement` +
+      (report.targetEnemyId ? ` (targeting ${report.targetEnemyId}, movement x${report.targetingMultiplier})` : '') +
+      ` = ${num(report.killsPerHour, 1)} kills per hour`,
+    fixedFight === undefined ? `Fight time simulated with the reference build for level ${level} (pass --fight-seconds to fix it)` : `Fight time fixed at ${num(fixedFight, 1)} s`,
     '',
     table(
       ['Enemy', 'Lvl', 'Share', 'Kills/h', 'Drop mod', 'Absorb mod', 'XP/kill', 'XP/h', 'Gold/kill', 'Gold/h'],
@@ -48,7 +65,7 @@ function main(argv: string[]): string {
       out.push(
         ...table(
           ['  Item', 'Base', 'Final', 'Avg qty', 'Per kill', 'Per hour'],
-          e.drops.map((d) => [`  ${d.itemName}`, pct(d.baseChance), pct(d.finalChance, 2), num(d.avgQuantity), num(d.dropsPerKill, 3), num(d.dropsPerHour, 2)]),
+          e.drops.map((d) => [`  ${d.itemName}${d.poolId === null ? '' : ` [every kill, pool ${d.poolId}]`}`, pct(d.baseChance), pct(d.finalChance, 2), num(d.avgQuantity), num(d.dropsPerKill, 3), num(d.dropsPerHour, 2)]),
         ).split('\n'),
       );
     }

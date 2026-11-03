@@ -6,7 +6,15 @@ import constants from '../../data/constants.json';
 
 type ProficiencyConstants = typeof constants.proficiency;
 
+/**
+ * The hidden skills (design 4.6): unarmed, one-handed, two-handed, toughness, speed and combat.
+ * The endurance skill is removed; owner question I1 (what the visible endurance stat is) is pending,
+ * so no endurance stat is modelled anywhere in src/game.
+ */
 export type ProficiencyId = keyof ProficiencyConstants['gainPerAction'];
+
+/** The weapon-style skills: they add damage (effectPerPoint) and attack speed (attackSpeedPerPoint). */
+export type WeaponStyleId = keyof Omit<ProficiencyConstants['attackSpeedPerPoint'], 'combat'>;
 
 /**
  * The enemy level a skill at `points` is "at home" with: levelsPerPoint x points, never below minReferenceLevel.
@@ -19,6 +27,8 @@ export function proficiencyReferenceLevel(points: number, c: ProficiencyConstant
 /**
  * Points gained from one action (design 4.6): gainPerAction x min(1, actionLevel / referenceLevel)^exponent.
  * `actionLevel` is the level of the enemy fought or hit by (for moving, the level of the area).
+ * Units of one action: a hit for weapon-style skills and toughness, an attack for combat,
+ * a second moved for speed (travel and the time between enemies).
  * Training at or above the skill's reference level gives the full gain; training far below it gives very little.
  * Returns 0 once the skill is at maxPoints. Callers apply constants.offline.proficiencyRate offline.
  */
@@ -42,7 +52,11 @@ export function addProficiency(
   return Math.min(c.maxPoints, Math.max(0, currentPoints + gain));
 }
 
-/** Bonus the skill gives at `points`, as a fraction: effectPerPoint x points (0.3 = +30%). Endurance counts points as the stat. */
+/**
+ * Bonus the skill gives at `points`, as a fraction: effectPerPoint x points (0.3 = +30%).
+ * Weapon styles: damage. Toughness: health. Speed: movement speed. Combat has no direct effect (0);
+ * it only adds attack speed through `attackSpeedBonus`.
+ */
 export function proficiencyEffect(
   skill: ProficiencyId,
   points: number,
@@ -59,4 +73,31 @@ export function proficiencyTitle(points: number, c: ProficiencyConstants = const
     if (points >= threshold && name !== undefined) title = name;
   });
   return title;
+}
+
+/**
+ * Attack speed bonus as a fraction (design 4.6): weapon-style points x attackSpeedPerPoint[style]
+ * + combat points x attackSpeedPerPoint.combat. Final attack speed is the dexterity-based attacks
+ * per second x (1 + this); pass it as the `bonus` of stats.attackSpeed.
+ */
+export function attackSpeedBonus(
+  style: WeaponStyleId,
+  stylePoints: number,
+  combatPoints: number,
+  c: ProficiencyConstants = constants.proficiency,
+): number {
+  const clamp = (p: number): number => Math.min(c.maxPoints, Math.max(0, p));
+  return c.attackSpeedPerPoint[style] * clamp(stylePoints) + c.attackSpeedPerPoint.combat * clamp(combatPoints);
+}
+
+/**
+ * Time to cover a movement that takes `baseSeconds` at 0 speed points (design 3.3, 4.6):
+ * baseSeconds / (1 + speedPoints x effectPerPoint.speed). Applies to travel and to the time between enemies.
+ */
+export function movementSeconds(
+  baseSeconds: number,
+  speedPoints: number,
+  c: ProficiencyConstants = constants.proficiency,
+): number {
+  return baseSeconds / (1 + proficiencyEffect('speed', speedPoints, c));
 }

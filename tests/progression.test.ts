@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import constants from '../data/constants.json';
 import xpTable from '../data/xp-table.json';
 import {
   characterPointsEarned,
   killsToClearLevel,
   levelForTotalXp,
+  newlyAwardedPoints,
+  pointMarks,
+  pointsAwardedAt,
+  respawnSeconds,
+  slotTicketsEarned,
+  xpAfterDeath,
+  xpFloor,
+  xpLossFractionFromRoll,
   skillPointsEarned,
   totalXpForLevel,
   xpReward,
@@ -114,5 +123,122 @@ describe('character and skill points (design 4.4, 4.5)', () => {
     expect(skillPointsEarned(1)).toBe(0);
     expect(skillPointsEarned(2)).toBe(1);
     expect(skillPointsEarned(30)).toBe(29);
+  });
+});
+
+// A level that needs 100 XP has marks at 25, 50 and 75.
+describe('point marks and the death floor (design 3.7, 4.4)', () => {
+  it('puts marks at 25%, 50% and 75% of the level', () => {
+    expect(pointMarks(100)).toEqual([25, 50, 75]);
+    expect(pointMarks(311)[0]).toBeCloseTo(77.75, 10);
+    expect(pointMarks(311)[2]).toBeCloseTo(233.25, 10);
+  });
+
+  it('counts the marks passed', () => {
+    expect(pointsAwardedAt(0, 100)).toBe(0);
+    expect(pointsAwardedAt(24.9, 100)).toBe(0);
+    expect(pointsAwardedAt(25, 100)).toBe(1);
+    expect(pointsAwardedAt(74, 100)).toBe(2);
+    expect(pointsAwardedAt(75, 100)).toBe(3);
+    expect(pointsAwardedAt(99, 100)).toBe(3);
+  });
+
+  it('floors XP at the highest mark passed, 0 below the first', () => {
+    expect(xpFloor(0, 100)).toBe(0);
+    expect(xpFloor(24, 100)).toBe(0);
+    expect(xpFloor(25, 100)).toBe(25);
+    expect(xpFloor(74, 100)).toBe(50);
+    expect(xpFloor(76, 100)).toBe(75);
+  });
+
+  it('loses up to 25% of the level requirement but never passes the floor (maximum roll)', () => {
+    expect(xpAfterDeath(74, 100, 0.25)).toBe(50); // min(25, 74 - 50) = 24 lost
+    expect(xpAfterDeath(76, 100, 0.25)).toBe(75); // min(25, 76 - 75) = 1 lost
+    expect(xpAfterDeath(20, 100, 0.25)).toBe(0); // min(25, 20) = 20 lost
+    expect(xpAfterDeath(99, 100, 0.25)).toBe(75); // min(25, 24)
+  });
+
+  it('loses the rolled share when the floor is not reached', () => {
+    expect(xpAfterDeath(74, 100, 0.1)).toBe(64); // 10 lost
+    expect(xpAfterDeath(60, 100, 0)).toBe(60);
+    expect(xpAfterDeath(0, 100, 0.25)).toBe(0);
+    expect(xpAfterDeath(25, 100, 0.25)).toBe(25); // exactly on a mark
+  });
+
+  it('never ends below the floor or above the starting XP', () => {
+    for (let xp = 0; xp < 100; xp++) {
+      for (const f of [0, 0.05, 0.1, 0.25]) {
+        const after = xpAfterDeath(xp, 100, f);
+        expect(after >= xpFloor(xp, 100)).toBe(true);
+        expect(after <= xp).toBe(true);
+      }
+    }
+  });
+
+  it('rejects a loss fraction outside 0..1', () => {
+    expect(() => xpAfterDeath(50, 100, -0.1)).toThrow(RangeError);
+    expect(() => xpAfterDeath(50, 100, 1.5)).toThrow(RangeError);
+  });
+
+  it('turns a roll into a fraction between 0 and 25%', () => {
+    expect(xpLossFractionFromRoll(0)).toBe(0);
+    expect(xpLossFractionFromRoll(0.5)).toBeCloseTo(0.125, 10);
+    expect(xpLossFractionFromRoll(1)).toBeCloseTo(0.25, 10);
+  });
+});
+
+describe('awarding points once (design 4.4)', () => {
+  it('awards a point per new mark', () => {
+    expect(newlyAwardedPoints(10, 100, 0)).toEqual({ points: 0, highestMarkReached: 0 });
+    expect(newlyAwardedPoints(30, 100, 0)).toEqual({ points: 1, highestMarkReached: 1 });
+    expect(newlyAwardedPoints(80, 100, 0)).toEqual({ points: 3, highestMarkReached: 3 });
+    expect(newlyAwardedPoints(60, 100, 1)).toEqual({ points: 1, highestMarkReached: 2 });
+  });
+
+  it('does not award a mark again when XP falls and rises', () => {
+    // 74 XP: 2 marks reached. Death takes it to 55.5 (above the floor of 50), then it climbs back to 76.
+    expect(newlyAwardedPoints(74, 100, 0).highestMarkReached).toBe(2);
+    expect(newlyAwardedPoints(55.5, 100, 2)).toEqual({ points: 0, highestMarkReached: 2 });
+    expect(newlyAwardedPoints(70, 100, 2)).toEqual({ points: 0, highestMarkReached: 2 });
+    expect(newlyAwardedPoints(76, 100, 2)).toEqual({ points: 1, highestMarkReached: 3 });
+    expect(newlyAwardedPoints(76, 100, 3)).toEqual({ points: 0, highestMarkReached: 3 });
+  });
+
+  it('keeps the highest mark even if XP is below it', () => {
+    expect(newlyAwardedPoints(40, 100, 3)).toEqual({ points: 0, highestMarkReached: 3 });
+  });
+});
+
+describe('respawn time (design 3.7)', () => {
+  it('is 2 minutes per character level', () => {
+    expect(respawnSeconds(1)).toBe(120);
+    expect(respawnSeconds(14)).toBe(1680);
+    expect(respawnSeconds(30)).toBe(3600);
+  });
+
+  it('rejects an invalid level', () => {
+    expect(() => respawnSeconds(0)).toThrow(RangeError);
+    expect(() => respawnSeconds(2.5)).toThrow(RangeError);
+  });
+});
+
+describe('slot tickets (design 4.1)', () => {
+  it('gives 1 ticket on first reaching level 20', () => {
+    expect(slotTicketsEarned(19, 20)).toBe(1);
+    expect(slotTicketsEarned(1, 30)).toBe(1); // jumping past 20 still counts once
+  });
+
+  it('gives nothing before 20 or after it was reached', () => {
+    expect(slotTicketsEarned(5, 19)).toBe(0);
+    expect(slotTicketsEarned(20, 21)).toBe(0);
+    expect(slotTicketsEarned(20, 20)).toBe(0);
+    expect(slotTicketsEarned(25, 30)).toBe(0);
+  });
+
+  it('gives 1 ticket in total over a whole career', () => {
+    let total = 0;
+    for (let level = 2; level <= 30; level++) total += slotTicketsEarned(level - 1, level);
+    expect(total).toBe(1);
+    expect(constants.characters.startingSlots).toBe(4);
   });
 });

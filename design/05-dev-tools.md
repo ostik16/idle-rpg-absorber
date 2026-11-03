@@ -14,17 +14,16 @@
 - Tables are JSON files, loaded by the browser game.
 - Each content type is a table. Each entry has a unique id.
 - Tables refer to each other by id. For example, an enemy has a drop table id, and the drop table lists item ids.
+- Every item lives in one items table, with a category (equipment, consumable, material, rare) and fields for its effect. There is no separate consumables or rare items table, so nothing is defined twice.
 
 **Tables.**
 
 | Table | Defined in |
 |---|---|
-| Items | 2.1 |
+| Items (equipment, consumables 2.6, materials and rare items 2.8, backpacks) | 2.1 |
 | Equipment slots and weapon scaling | 2.2 |
 | Shops (incl. rare goods rotation pool) | 2.5 |
-| Consumables | 2.6 |
-| Upgrade tables | 2.7 |
-| Rare items | 2.8 |
+| Upgrade tables (per equipment type and level) | 2.7 |
 | Areas | 3.1 |
 | Teleporter destinations | 3.2 |
 | Enemies | 3.5 |
@@ -35,7 +34,7 @@
 | Proficiencies | 4.6 |
 | Traits | 4.7 |
 | Bestiary thresholds | 4.8 |
-| Global constants | all (10-point drop falloff, 0.9 absorption factor, 1% absorption per kill, upgrade chance 90% × 0.9, stack size 100, death XP loss 0-25%, offline efficiency, …) |
+| Global constants | all (10-point drop falloff, 0.9 absorption factor, 1% absorption per kill, upgrade chance 90% × 0.9, stack size 100, death XP loss 0-25%, base bag cells, weapon penalty, targeting multipliers, offline efficiency, …) |
 
 **Proposed.**
 - Keep the JSON files in a version-controlled repository, so every balance change is tracked.
@@ -80,7 +79,7 @@
 - Set level, attributes, proficiencies.
 - Give items, materials and gold.
 - Spawn an enemy, mini-boss, boss or cursed object.
-- Force a rare goods shop rotation.
+- Force a rare goods shop rotation (the in-game forced rotation costs a Rotation token or gold, 2.5).
 - Time skip, to test offline progress (3.4).
 - Game speed multiplier.
 
