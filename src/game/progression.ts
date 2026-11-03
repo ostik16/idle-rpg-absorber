@@ -5,7 +5,7 @@
 import constants from '../../data/constants.json';
 import xpTable from '../../data/xp-table.json';
 
-type XpTable = readonly { level: number; xpToNext: number }[];
+export type XpTable = readonly { level: number; xpToNext: number }[];
 type ProgressionConstants = typeof constants.progression;
 type PointsConstants = typeof constants.points;
 
@@ -49,6 +49,14 @@ export function xpReward(enemyLevel: number, c: ProgressionConstants = constants
     throw new RangeError(`enemy level must be a whole number of 1 or more, got ${enemyLevel}`);
   }
   return Math.round(c.xpReward.base * c.xpReward.growthPerLevel ** (enemyLevel - 1));
+}
+
+/** XP of one kill (design 3.5): the enemy's own `xpReward` if its row has one, else the formula. */
+export function killXp(
+  enemy: { readonly level: number; readonly xpReward?: number },
+  c: ProgressionConstants = constants.progression,
+): number {
+  return enemy.xpReward ?? xpReward(enemy.level, c);
 }
 
 /** Kills of enemies at `enemyLevel` needed to clear a whole character level. Used by the balance tools (5.3). */
@@ -117,6 +125,56 @@ export function newlyAwardedPoints(
   const perMark = c.characterPointsPerLevel / c.characterPointAwardAtLevelFraction.length;
   const reached = Math.max(highestMarkReached, pointsAwardedAt(newXp, xpToNext, c));
   return { points: (reached - highestMarkReached) * perMark, highestMarkReached: reached };
+}
+
+/** Where a character stands in its levels. `highestMarkReached` is explained at `newlyAwardedPoints`. */
+export interface XpProgress {
+  level: number;
+  xpInLevel: number;
+  highestMarkReached: number;
+}
+
+/** The progress after gaining XP, and the points and levels that came with it. */
+export interface XpGain extends XpProgress {
+  characterPoints: number;
+  skillPoints: number;
+  levelsGained: number;
+}
+
+/**
+ * Adds `amount` XP (design 4.3, 4.4). XP past a level's requirement carries into the next level, so one kill can
+ * pass several marks or levels. Reaching a level pays skillPointsPerLevel. At the level cap XP stays at 0.
+ */
+export function gainXp(
+  progress: XpProgress,
+  amount: number,
+  levelCap: number = constants.levelCap,
+  table: XpTable = xpTable,
+  c: PointsConstants = constants.points,
+): XpGain {
+  let { level, highestMarkReached } = progress;
+  let xpInLevel = progress.xpInLevel + amount;
+  let characterPoints = 0;
+  while (level < levelCap) {
+    const need = xpToNextLevel(level, table);
+    const award = newlyAwardedPoints(xpInLevel, need, highestMarkReached, c);
+    characterPoints += award.points;
+    highestMarkReached = award.highestMarkReached;
+    if (xpInLevel < need) break;
+    xpInLevel -= need;
+    level++;
+    highestMarkReached = 0;
+  }
+  if (level >= levelCap) xpInLevel = 0;
+  const levelsGained = level - progress.level;
+  return {
+    level,
+    xpInLevel,
+    highestMarkReached,
+    characterPoints,
+    skillPoints: levelsGained * c.skillPointsPerLevel,
+    levelsGained,
+  };
 }
 
 /**

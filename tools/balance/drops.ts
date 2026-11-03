@@ -8,7 +8,7 @@
 import { enemyMoneyRange } from '../../src/game/enemies';
 import { movementSeconds } from '../../src/game/proficiency';
 import { absorbOnKill, absorptionLevelModifier, dropChance, dropLevelModifier } from '../../src/game/formulas';
-import { xpReward } from '../../src/game/progression';
+import { killXp } from '../../src/game/progression';
 import {
   BalanceError,
   baseMovementSeconds,
@@ -107,7 +107,7 @@ export interface AreaReportData {
 
 /** XP of one kill: the enemy's own xpReward if set, else the progression formula (3.5). */
 export function enemyXp(enemy: EnemyEntry): number {
-  return typeof enemy.xpReward === 'number' ? enemy.xpReward : xpReward(enemy.level);
+  return killXp(enemy);
 }
 
 /** Average gold of one kill: the middle of the enemy's moneyRange if set, else of the baseline range (3.5). */

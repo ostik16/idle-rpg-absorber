@@ -3,6 +3,8 @@
  * nothing with the others except through the events it emits, which the engine applies at the end of the step.
  */
 import type { CharacterState, Phase } from '../state/types';
+import { stepCityHealing } from './city';
+import { stepDead } from './death';
 import { stepFighting, stepFleeing } from './fight';
 import { autoUsePotion, stepHealing } from './healing';
 import type { StepContext } from './step-context';
@@ -21,8 +23,8 @@ const stayInPhase: PhaseStep = () => {};
 
 /**
  * What each phase does in one step. The other transitions (travelling to searching to fighting, looting to
- * searching, returning to restocking, and leaving `dead`) and their formulas come with the issues that build
- * each phase. They will call `enterPhase`.
+ * searching, returning to restocking) and their formulas come with the issues that build each phase. They will
+ * call `enterPhase`.
  */
 const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   travelling: stayInPhase,
@@ -31,8 +33,8 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   fleeing: stepFleeing,
   looting: stayInPhase,
   returning: stayInPhase,
-  restocking: stayInPhase,
-  dead: stayInPhase,
+  restocking: stepCityHealing,
+  dead: stepDead,
   idle: stayInPhase,
 };
 

@@ -8,6 +8,8 @@ import { quantiseToSteps } from '../game/formulas';
 import { movementSeconds } from '../game/proficiency';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState, FightState } from '../state/types';
+import { loseXpOnDeath } from './death';
+import { grantKillXp } from './rewards';
 import { enterPhase, type StepContext } from './step-context';
 
 const MS_PER_SECOND = 1000;
@@ -71,10 +73,12 @@ function runTick(character: CharacterState, fight: FightState, playerAttacks: bo
   character.fight = null;
   if (tick.outcome === 'win') {
     ctx.emit({ type: 'enemyKilled', characterId: character.id, enemyId: fight.enemyId });
+    grantKillXp(character, fight.enemyId, ctx);
     enterPhase(character, 'looting', ctx);
   } else {
     character.potions = { queue: [], ticksDone: 0, msIntoTick: 0 };
     ctx.emit({ type: 'characterDied', characterId: character.id, enemyId: fight.enemyId });
+    loseXpOnDeath(character, ctx);
     enterPhase(character, 'dead', ctx);
   }
   return false;

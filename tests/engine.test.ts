@@ -187,7 +187,7 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
     expect(() => makeEngine(['a', 'b', 'a'])).toThrow(/duplicate character id "a"/);
   });
 
-  it('stepCharacter only adds time in phase, whatever the phase', () => {
+  it('stepCharacter only adds time in phase, in the phases that wait on their own', () => {
     const emitted: EngineEvent[] = [];
     const ctx: StepContext = {
       data: fixtureData(),
@@ -195,7 +195,8 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
       streams: createCharacterStreams(SEED, 'a'),
       emit: (event) => void emitted.push(event),
     };
-    for (const phase of PHASES) {
+    // At full health `restocking` leaves the city at once (tests/death.test.ts).
+    for (const phase of PHASES.filter((p) => p !== 'restocking')) {
       const character: CharacterState = { ...newCharacter('a', 'A'), phase };
       stepCharacter(character, ctx);
       stepCharacter(character, ctx);
