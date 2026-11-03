@@ -22,7 +22,7 @@ Status: accepted, approved by the owner on 2026-11-03. Constants named below as 
 
 ### Multiple characters
 
-Each character is an independent state machine (travel, search, fight, loot, return, restock, dead) with no shared mutable state except the warehouse. Each step iterates characters in stable id order and advances each one step. Shared effects (warehouse deposits, bestiary reveals) are applied through an ordered event list at the end of the step, so results do not depend on iteration order beyond id order. Characters never interact in combat, so a character can also be advanced alone for a time range (used by catch-up and tests).
+Each character is an independent state machine (travel, search, fight, flee, loot, return, restock, dead) with no shared mutable state except the warehouse. Each step iterates characters in stable id order and advances each one step. Shared effects (warehouse deposits, bestiary reveals) are applied through an ordered event list at the end of the step, so results do not depend on iteration order beyond id order. Characters never interact in combat, so a character can also be advanced alone for a time range (used by catch-up and tests).
 
 ### RNG
 
