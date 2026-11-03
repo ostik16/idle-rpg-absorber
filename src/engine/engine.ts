@@ -117,7 +117,7 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     if (pendingCommands.length === 0) return;
     const rosterSize = state.roster.length;
     for (const command of pendingCommands.splice(0)) {
-      const event = applyCommand(state, command);
+      const event = applyCommand(state, command, data);
       if (event) outbox.push(event);
     }
     if (state.roster.length !== rosterSize) {

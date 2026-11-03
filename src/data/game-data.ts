@@ -147,6 +147,17 @@ export function requireConstant(data: GameData, path: string): Exclude<ConstantV
   return current;
 }
 
+/**
+ * A whole top-level section of data/constants.json, typed as that file is. Throws like `requireConstant`
+ * when the section is null or missing. Its contents are checked by `npm run validate:data`, not here.
+ */
+export function constantSection<K extends keyof typeof constantsJson>(
+  data: GameData,
+  section: K,
+): (typeof constantsJson)[K] {
+  return requireConstant(data, section) as unknown as (typeof constantsJson)[K];
+}
+
 /** Like `requireConstant`, and the value must also be a finite number. */
 export function requireNumberConstant(data: GameData, path: string): number {
   const value = requireConstant(data, path);

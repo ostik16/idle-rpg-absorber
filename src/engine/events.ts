@@ -11,7 +11,7 @@ export type EngineEvent =
   | { type: 'clockRewind'; from: number; to: number }
   /** An offline summary was added to `state.pendingSummary`. */
   | { type: 'summaryReady' }
-  | { type: 'characterAdded'; characterId: string }
+  | { type: 'characterCreated'; characterId: string }
   /** A command could not be applied. Nothing changed. */
   | { type: 'commandRejected'; command: Command; reason: string }
   /** Emitted by a character step through `enterPhase`; nothing emits it until phase transitions exist. */
