@@ -93,3 +93,22 @@ Small things that will cause arguments during implementation. All eight are sett
 - [x] **Pacing.** The owner approved the XP table as it is. Gold per hour can still be checked with the balance tools (5.3).
 - [x] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). The validator enforces a low-level source for every material (T12).
 - [x] **Check the drop tables** against the balance principle (S8). The validator enforces the pools and rolls for bosses, cursed objects and mini-bosses.
+
+## 6. Choices made while building the save system (#30)
+
+ADR 0003 left these open. They are recorded here so the owner can overrule them. None changes the ADR's rules.
+
+- [x] **A newer save stops the recovery.** A record from a newer version ends the load at once: no older record is opened and nothing is written, not even the copies of records that failed before it. Writes stay refused for that session, so it can never rotate out. The ADR only says the record is not opened.
+- [x] **Failed records leave the rotation.** A failed record is copied to `corrupt-<time>-<position>` and then taken out of the rotation, or every boot would copy it and repeat the notice. With records gone and only `corrupt-` copies left, a boot shows the recovery screen, not a new game.
+- [x] **Backup timing.** Migrations are pure, so they run in memory first and `backup-v<N>` is written only for a record that passes. A record that cannot be migrated never replaces a good backup. The copy still lands before anything migrated can be written.
+- [x] **Returning to the city** means phase `idle`, with the fight dropped. An area or target that still exists is kept, because it is the player's choice. A dead character stays dead, so its respawn still runs.
+- [x] **Recovered items tab.** It is a normal warehouse tab, added last, with a `name` field that `isRecoveredTab` checks. Each stack counts as one cell, because an unknown item's size is gone with its row. The tab is created only when something is recovered.
+- [x] **Third storage fallback.** Where both IndexedDB and `localStorage` are blocked, the game runs on memory with a notice that progress is lost when the tab closes.
+
+Still open:
+
+- [ ] **Recovered tab field.** `RecoveredTab` lives in `src/save/reconcile.ts`, because #30 stayed inside `src/save/`. Move `name` to `WarehouseTab` in `src/state/types.ts` when the warehouse screen is built. Tab buying must not count this tab when it reads `constants.storage.tabCosts`.
+- [ ] **Reveals check at load.** ADR 0003 asks for reveals to be recomputed from kills at load, keeping the higher. Nothing defines a tier number yet, so this belongs with #25, which writes `bestiary.revealed`.
+- [ ] **Two tabs open.** Each runs its own engine and autosaves over the other. The last write wins, and nothing warns the player. Not decided.
+- [ ] **Coming back from the fallback.** Records written to `localStorage` while IndexedDB was down are not read once IndexedDB works again. They stay in `localStorage`, not lost but not used. Not decided.
+- [ ] **Other ids in settings.** Reconcile handles stacks, areas and enemies, as the ADR lists. A removed item in `restockList` or `potionThresholds` stays there, so the restock issue has to skip unknown ids. The engine already skips an unknown queued potion.

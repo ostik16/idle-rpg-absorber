@@ -1,0 +1,133 @@
+{
+  "format": "idle-rpg-absorber",
+  "version": 1,
+  "savedAt": 1780000001000,
+  "appBuild": "fixture",
+  "checksum": "44b03062",
+  "payload": {
+    "clock": {
+      "lastSimulatedAt": 1780000001000,
+      "savedAt": 1780000001000,
+      "masterSeed": 7,
+      "diagnostics": {
+        "clockRewind": 0
+      }
+    },
+    "account": {
+      "nextCharacterNumber": 2,
+      "unlockedSlots": 1,
+      "warehouse": {
+        "tabs": [
+          {
+            "cells": 56,
+            "items": []
+          }
+        ]
+      },
+      "settings": {}
+    },
+    "roster": [
+      {
+        "id": "c1",
+        "name": "Kaela",
+        "gold": 0,
+        "level": 1,
+        "xpInLevel": 0,
+        "points": {
+          "characterUnspent": 0,
+          "characterSpent": 0,
+          "skillUnspent": 0,
+          "skillSpent": 0
+        },
+        "attributes": {
+          "strength": 5,
+          "dexterity": 5,
+          "vitality": 5,
+          "intelligence": 5
+        },
+        "proficiency": {
+          "unarmed": 0,
+          "one-handed": 0,
+          "two-handed": 0,
+          "toughness": 0,
+          "speed": 0,
+          "combat": 0
+        },
+        "spells": {
+          "ranks": {},
+          "autoCastOrder": []
+        },
+        "equipment": {},
+        "bag": [
+          {
+            "itemId": "minor-health-potion",
+            "bonuses": [],
+            "upgradeLevel": 0,
+            "qty": 10
+          }
+        ],
+        "health": 70,
+        "mana": 40,
+        "potions": {
+          "queue": [],
+          "ticksDone": 0,
+          "msIntoTick": 0
+        },
+        "fight": null,
+        "areaId": null,
+        "targetEnemyId": null,
+        "phase": "idle",
+        "timeInPhaseMs": 1000,
+        "settings": {
+          "returnHealthThreshold": 0.2,
+          "restockList": [
+            {
+              "itemId": "minor-health-potion",
+              "quantity": 10
+            }
+          ],
+          "cityHealing": "balanced",
+          "potionThresholds": {},
+          "lootFilter": {
+            "enabled": false,
+            "rules": []
+          },
+          "autoSell": {
+            "enabled": false,
+            "rules": []
+          }
+        },
+        "absorption": {},
+        "rng": {
+          "combat": [
+            3309768200,
+            2785405052,
+            1860379594,
+            824939705
+          ],
+          "drops": [
+            1265521240,
+            3936402709,
+            811626200,
+            3455821573
+          ],
+          "search": [
+            1877675415,
+            154901343,
+            905527471,
+            2016026742
+          ]
+        }
+      }
+    ],
+    "bestiary": {
+      "kills": {},
+      "revealed": {}
+    },
+    "shops": {
+      "rareGoods": null,
+      "buyback": []
+    },
+    "pendingSummary": null
+  }
+}
