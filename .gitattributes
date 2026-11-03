@@ -1,0 +1,7 @@
+# Always LF in the repo and the working copy, whatever core.autocrlf says.
+* text=auto eol=lf
+*.woff binary
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.ico binary

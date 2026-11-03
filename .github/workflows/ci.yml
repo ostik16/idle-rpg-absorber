@@ -14,10 +14,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      # No lockfile yet. After the first local `npm install`, commit package-lock.json and switch this to `npm ci`.
-      - run: npm install
+      - run: npm ci
       - run: npm run typecheck
       - run: npm test
       - run: npm run validate:data
       - run: npm run tokens:check
       - run: npm run build
+      # Fonts are self-hosted: the build must make no request to Google Fonts.
+      - run: "! grep -rl fonts.googleapis.com dist"

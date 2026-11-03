@@ -37,7 +37,7 @@ ${lines.join('\n')}
 `;
 
 if (process.argv.includes('--check')) {
-  const current = existsSync(target) ? readFileSync(target, 'utf8') : '';
+  const current = existsSync(target) ? readFileSync(target, 'utf8').replace(/\r\n/g, '\n') : '';
   if (current !== css) {
     console.error('src/styles/tokens.css is out of date. Run: npm run tokens');
     process.exit(1);
