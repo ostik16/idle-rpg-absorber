@@ -28,11 +28,11 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
     <section aria-label="Roster summary" style="flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #161821; border: 1px solid #323748; border-radius: 10px;">
       <div style="padding: 10px 12px; border-right: 1px solid #323748;">
         <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Farming</div>
-        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 20px; line-height: 26px; font-weight: 700; font-variant-numeric: tabular-nums;">2 <span style="font-size: 15px; font-weight: 600; color: #aaa596;">of 5</span></div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 20px; line-height: 26px; font-weight: 700; font-variant-numeric: tabular-nums;">1 <span style="font-size: 15px; font-weight: 600; color: #aaa596;">of 1</span></div>
       </div>
       <div style="padding: 10px 12px; border-right: 1px solid #323748;">
         <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Gold / h</div>
-        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 20px; line-height: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: #e4b95b;">1,850</div>
+        <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 20px; line-height: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: #e4b95b;">1,240</div>
       </div>
       <div style="padding: 10px 12px;">
         <div style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Warehouse</div>
@@ -43,10 +43,10 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
     <div style="flex: none; display: flex; align-items: center; gap: 8px; margin-top: 4px;">
       <span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>
       <h2 style="margin: 0; flex: 1; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Characters</h2>
-      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; color: #aaa596;">5 of 5 slots</span>
+      <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; color: #aaa596;">1 of 4 slots</span>
     </div>
 
-    <sc-for list="{{chars}}" as="c" hint-placeholder-count="5">
+    <sc-for list="{{chars}}" as="c" hint-placeholder-count="1">
       <a href="Character-Farm.dc.html" style="flex: none; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 12px 14px 12px 12px; background: #161821; border: 1px solid #323748; border-radius: 10px; color: #eee8d9; text-decoration: none;">
         <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px solid #707896; border-radius: 6px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 20px; font-weight: 700;">{{c.initial}}</span>
         <span style="display: flex; flex-direction: column; min-width: 0;">
@@ -81,13 +81,15 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
       </a>
     </sc-for>
 
-    <div style="flex: none; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 1px dashed #323748; border-radius: 10px; color: #aaa596;">
-      <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px dashed #707896; border-radius: 6px; color: #707896;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg></span>
-      <span style="display: flex; flex-direction: column;">
-        <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em; color: #eee8d9;">Slot 6</span>
-        <span style="font-size: 13px; line-height: 18px;">Unlocks when a character reaches Lv 30</span>
-      </span>
-    </div>
+    <sc-for list="{{locked}}" as="s" hint-placeholder-count="3">
+      <div style="flex: none; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 1px dashed #323748; border-radius: 10px; color: #aaa596;">
+        <span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border: 1px dashed #707896; border-radius: 6px; color: #707896;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg></span>
+        <span style="display: flex; flex-direction: column;">
+          <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em; color: #eee8d9;">{{s.name}}</span>
+          <span style="font-size: 13px; line-height: 18px;">Locked. Needs a slot ticket, earned when a character first reaches Lv 20</span>
+        </span>
+      </div>
+    </sc-for>
   </main>
 
   <nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 64px; background: #161821; border-top: 1px solid #323748;">
@@ -113,12 +115,9 @@ class Component extends DCLogic {
       }, o);
     }
     return {
+      locked: [{ name: 'Slot 2' }, { name: 'Slot 3' }, { name: 'Slot 4' }],
       chars: [
-        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'farming', statusLabel: 'Farming', where: 'Emberroot Vale · Lv 10–16', hpNum: 82, xpNum: 64, gph: '1,240', bag: '31/42', pots: '14' }),
-        ch({ initial: 'Y', name: 'Ysolde', level: 22, status: 'travel', statusLabel: 'Travelling 3m 12s', where: 'To Frostmere Pass · Lv 18–24', hpNum: 100, xpNum: 31, gph: '—', bag: '9/56', pots: '30' }),
-        ch({ initial: 'B', name: 'Brann', level: 6, status: 'farming', statusLabel: 'Farming', where: 'Ashen Ford · targeting Mire Wisp', hpNum: 54, xpNum: 88, gph: '610', bag: '39/42', pots: '3', bagWarn: true, potWarn: true }),
-        ch({ initial: 'T', name: 'Tamsin', level: 3, status: 'city', statusLabel: 'In city', where: 'Restocking at the Alchemist', hpNum: 100, xpNum: 12, gph: '—', bag: '4/36', pots: '6' }),
-        ch({ initial: 'O', name: 'Oric', level: 9, status: 'dead', statusLabel: 'Fell', where: 'Hollow Barrows · lost 12% XP · back in 1m 40s', hpNum: 0, xpNum: 40, gph: '—', bag: '22/42', pots: '0', potWarn: true })
+        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'farming', statusLabel: 'Farming', where: 'Emberroot Vale · Lv 10–16', hpNum: 82, xpNum: 64, gph: '1,240', bag: '31/42', pots: '14' })
       ]
     };
   }

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;family=Cinzel:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0e13}
+a{color:#e4b95b}a:hover{color:#f0cd7f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid #e4b95b;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; overflow: hidden; background: #0d0e13; color: #eee8d9; font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 22px;">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 56px; padding: 0 16px 0 4px; box-sizing: border-box; background: #161821; border-bottom: 1px solid #323748;">
+    <a href="Main.dc.html" aria-label="Back to roster" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 6px; color: #eee8d9;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a>
+    <h1 style="flex: 1; margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: 0.02em;">Settings</h1>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+
+    <section aria-labelledby="save-h" style="flex: none; padding: 12px 16px 4px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+      <h2 id="save-h" style="margin: 0 0 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Save</h2>
+      <a href="Save-Data.dc.html" style="display: grid; grid-template-columns: minmax(0, 1fr) 20px; align-items: center; gap: 10px; min-height: 60px; color: #eee8d9; text-decoration: none;">
+        <span style="display: flex; flex-direction: column;">
+          <span style="font-weight: 600;">Save data</span>
+          <span style="font-size: 13px; line-height: 18px; color: #aaa596;">Export or import a save file. Saved 12s ago, in this browser only.</span>
+        </span>
+        <svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="color: #aaa596;"><path d="m9 18 6-6-6-6"></path></svg>
+      </a>
+    </section>
+
+    <section aria-labelledby="shop-h" style="flex: none; padding: 12px 16px 4px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+      <h2 id="shop-h" style="margin: 0 0 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Potions</h2>
+      <a href="City.dc.html" style="display: grid; grid-template-columns: minmax(0, 1fr) 20px; align-items: center; gap: 10px; min-height: 60px; border-bottom: 1px solid #323748; color: #eee8d9; text-decoration: none;">
+        <span style="display: flex; flex-direction: column;">
+          <span style="font-weight: 600;">Restock on return</span>
+          <span style="font-size: 13px; line-height: 18px; color: #aaa596;">Health potions to 20, mana potions to 10. Edited in the city.</span>
+        </span>
+        <svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="color: #aaa596;"><path d="m9 18 6-6-6-6"></path></svg>
+      </a>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 60px;">
+        <span style="display: flex; flex-direction: column;">
+          <span style="font-weight: 600; color: #aaa596;">Drink a health potion below [placeholder]</span>
+          <span style="font-size: 13px; line-height: 18px; color: #aaa596;">Auto-use is not decided yet. 40% is the default in the data.</span>
+        </span>
+        <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; color: #aaa596;">40%</span>
+      </div>
+    </section>
+
+    <p style="margin: 0 2px; font-size: 13px; line-height: 18px; color: #aaa596;">Return triggers are set per character on the Farm tab, and the loot filter on the Gear tab.</p>
+  </main>
+
+  <nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 64px; background: #161821; border-top: 1px solid #323748;">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18 14.3c2 .7 3.5 2.8 3.5 5.7"></path></svg>Roster</a>
+    <a href="World.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5z"></path><path d="M9 4v13.5M15 6.5V20"></path></svg>World</a>
+    <a href="City.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 21V9h3V6h2v3h2V4h2v5h2V6h2v3h3v12z"></path><path d="M10 21v-4a2 2 0 0 1 4 0v4"></path></svg>City</a>
+    <a href="Bestiary.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #aaa596; text-decoration: none; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em;"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2.5z"></path><path d="M4 19.5A2 2 0 0 0 6 21h14v-4"></path></svg>Bestiary</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

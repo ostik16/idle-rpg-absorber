@@ -29,8 +29,8 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
     <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 16px 24px; background: #161821; border-bottom: 1px solid #323748;">
       <h1 style="margin: 0; font-family: 'Cinzel', Georgia, serif; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: 0.02em;">Roster</h1>
       <dl style="flex: 1; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 24px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;">
-        <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Farming</dt><dd style="margin: 0; font-size: 17px; font-weight: 700;">2 of 5</dd></div>
-        <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Gold / h</dt><dd style="margin: 0; font-size: 17px; font-weight: 700; color: #e4b95b;">1,850</dd></div>
+        <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Farming</dt><dd style="margin: 0; font-size: 17px; font-weight: 700;">1 of 1</dd></div>
+        <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Gold / h</dt><dd style="margin: 0; font-size: 17px; font-weight: 700; color: #e4b95b;">1,240</dd></div>
         <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Warehouse</dt><dd style="margin: 0; font-size: 17px; font-weight: 700;">41/56</dd></div>
         <div style="display: flex; align-items: baseline; gap: 8px;"><dt style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Offline cap</dt><dd style="margin: 0; font-size: 17px; font-weight: 700;">12h</dd></div>
       </dl>
@@ -43,9 +43,9 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
           <span aria-hidden="true" style="width: 6px; height: 6px; background: #e4b95b; transform: rotate(45deg);"></span>
           <h2 id="chars-h" style="margin: 0; flex: 1; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Characters</h2>
-          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">5 of 5 slots</span>
+          <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">1 of 4 slots</span>
         </div>
-        <sc-for list="{{chars}}" as="c" hint-placeholder-count="5">
+        <sc-for list="{{chars}}" as="c" hint-placeholder-count="1">
           <a href="Desktop-Roster.dc.html" aria-current="{{c.current}}" style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 12px; background: {{c.bg}}; border: 1px solid {{c.edge}}; border-radius: 10px; color: #eee8d9; text-decoration: none;">
             <span aria-hidden="true" style="display: grid; place-items: center; width: 40px; height: 40px; box-sizing: border-box; border: 1px solid #707896; border-radius: 6px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 18px; font-weight: 700;">{{c.initial}}</span>
             <span style="display: flex; flex-direction: column; min-width: 0; gap: 6px;">
@@ -61,6 +61,15 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
               </span>
             </span>
           </a>
+        </sc-for>
+        <sc-for list="{{locked}}" as="s" hint-placeholder-count="3">
+          <div style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 1px dashed #323748; border-radius: 10px; color: #aaa596;">
+            <span aria-hidden="true" style="display: grid; place-items: center; width: 40px; height: 40px; box-sizing: border-box; border: 1px dashed #707896; border-radius: 6px; color: #707896;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path></svg></span>
+            <span style="display: flex; flex-direction: column;">
+              <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em; color: #eee8d9;">{{s.name}}</span>
+              <span style="font-size: 13px; line-height: 18px;">Locked. Needs a slot ticket, earned when a character first reaches Lv 20</span>
+            </span>
+          </div>
         </sc-for>
       </section>
 
@@ -87,7 +96,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
               <div role="progressbar" aria-label="Experience" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" style="position: relative; height: 8px; border-radius: 999px; background: #2a2e3b; overflow: hidden;"><div style="height: 100%; width: 64%; border-radius: 999px; background: #a3d977;"></div><span style="position: absolute; top: 0; bottom: 0; left: 25%; width: 2px; background: #161821;"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #161821;"></span><span style="position: absolute; top: 0; bottom: 0; left: 75%; width: 2px; background: #161821;"></span></div>
             </div>
             <div style="display: grid; gap: 4px;">
-              <div style="display: flex; justify-content: space-between; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span>Health</span><span style="letter-spacing: 0; color: #eee8d9;">459 / 560</span></div>
+              <div style="display: flex; justify-content: space-between; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;"><span>Health</span><span style="letter-spacing: 0; color: #eee8d9;">459 / 560 · +2.8 / s</span></div>
               <div role="progressbar" aria-label="Health" aria-valuenow="459" aria-valuemin="0" aria-valuemax="560" style="height: 8px; border-radius: 999px; background: #2a2e3b; overflow: hidden;"><div style="height: 100%; width: 82%; border-radius: 999px; background: #e5484d;"></div></div>
             </div>
             <div style="display: grid; gap: 4px;">
@@ -107,7 +116,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
           <section aria-labelledby="fight-h" style="padding: 14px 16px 16px; background: #161821; border: 1px solid #323748; border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <h3 id="fight-h" style="margin: 0; flex: 1; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Now fighting</h3>
-              <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #aaa596;">214 kills · 1.9 / min</span>
+              <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: #aaa596;">214 kills · 6.0 / min</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span style="font-family: 'Cinzel', Georgia, serif; font-size: 17px; line-height: 22px; font-weight: 700; letter-spacing: 0.02em;">Ash Hound</span>
@@ -134,6 +143,14 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
             <div style="display: flex; justify-content: space-between; align-items: center; min-height: 40px;"><span>Target</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600;">Any enemy</span></div>
           </section>
 
+          <section aria-labelledby="rec-h" style="padding: 12px 16px 6px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
+            <h3 id="rec-h" style="margin: 0 0 2px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Recovery</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; min-height: 40px; border-bottom: 1px solid #323748;"><span>Health regeneration</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums;">0.5% / s</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; min-height: 40px; border-bottom: 1px solid #323748;"><span>Respawn after a fall (Lv 14 × 4s)</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums;">56s</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; min-height: 40px;"><span>Respawn health</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums;">10%</span></div>
+            <p style="margin: 0; padding: 4px 0 10px; font-size: 13px; line-height: 18px; color: #aaa596;">After a fall Kaela heals to full before farming again, by potion or regeneration. Regeneration alone takes 3m from 10%.</p>
+          </section>
+
           <section aria-labelledby="prof-h" style="padding: 12px 16px 6px; background: #161821; border: 1px solid #323748; border-radius: 10px;">
             <h3 id="prof-h" style="margin: 0 0 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">Proficiency</h3>
             <sc-for list="{{profs}}" as="p" hint-placeholder-count="6">
@@ -153,8 +170,9 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
             <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #aaa596;">Main hand</span><span>Warden's Greatsword</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #e4b95b;">+4</span></div>
             <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #aaa596;">Body</span><span>Chain Hauberk</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #e4b95b;">+5</span></div>
             <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #aaa596;">Head</span><span>Iron Helm</span><span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-weight: 700; color: #aaa596;">+3</span></div>
-            <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #b79bff;">Rare slot</span><span>Sigil of Embers</span><span style="font-size: 13px; color: #aaa596;">fire +10%</span></div>
-            <div style="padding: 8px 0 10px; font-size: 13px; line-height: 18px; color: #f0a04b;">Greatsword needs Strength 32, Kaela has 30: damage −6%</div>
+            <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #b79bff;">Special slot</span><span>Sigil of Embers</span><span style="font-size: 13px; color: #aaa596;">fire +10%</span></div>
+            <div style="display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; border-bottom: 1px solid #323748;"><span style="font-size: 13px; color: #aaa596;">Backpack</span><span>Leather pack</span><span style="font-size: 13px; color: #aaa596;">max stack 60</span></div>
+            <div style="padding: 8px 0 10px; font-size: 13px; line-height: 18px; color: #f0a04b;">Greatsword requires Strength 32, Kaela has 30: damage −6%</div>
           </section>
         </div>
       </section>
@@ -162,7 +180,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
       <aside aria-labelledby="feed-h" style="flex: 1 1 280px; min-width: 0; padding: 12px 16px 4px; box-sizing: border-box; background: #161821; border: 1px solid #323748; border-radius: 10px;">
         <h2 id="feed-h" style="margin: 0 0 4px; font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa596;">All loot</h2>
         <ol style="margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 18px;">
-          <sc-for list="{{feed}}" as="f" hint-placeholder-count="12">
+          <sc-for list="{{feed}}" as="f" hint-placeholder-count="6">
             <li style="display: grid; grid-template-columns: 30px 20px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 34px; border-bottom: 1px solid {{f.rule}};">
               <span style="font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif; font-size: 12px; font-weight: 600; color: #aaa596;">{{f.t}}</span>
               <span aria-label="{{f.who}}" style="display: grid; place-items: center; width: 20px; height: 20px; box-sizing: border-box; border: 1px solid #707896; border-radius: 4px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 11px; font-weight: 700;">{{f.i}}</span>
@@ -190,28 +208,19 @@ class Component extends DCLogic {
       }, o);
     }
     var titles = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master'];
-    var profList = [['Two-handed', 3], ['One-handed', 1], ['Unarmed', 1], ['Toughness', 2], ['Endurance', 3], ['Speed', 2]];
+    var profList = [['Two-handed', 3], ['One-handed', 1], ['Unarmed', 1], ['Toughness', 2], ['Combat', 3], ['Speed', 2]];
     var feedList = [
       ['now', 'K', 'Kaela', 'Ash Hound slain', '+148 XP', XP],
+      ['now', 'K', 'Kaela', 'Gold', '+32', GOLD],
       ['now', 'K', 'Kaela', 'Fire affinity', '+0.06%', ESS],
-      ['12s', 'B', 'Brann', 'Wisp Dust', '×2', INK],
-      ['12s', 'B', 'Brann', 'Life steal', '+0.06%', ESS],
       ['31s', 'K', 'Kaela', 'Ash Ember', '×2', INK],
-      ['48s', 'B', 'Brann', 'Gold', '+7', GOLD],
       ['1m', 'K', 'Kaela', 'Ember Gauntlets · Lv 10', 'Item', INK],
-      ['2m', 'K', 'Kaela', 'Two-handed: Adept', 'Title', GOLD],
-      ['4m', 'O', 'Oric', 'Fell in Hollow Barrows', '−12% XP', DANGER],
-      ['6m', 'T', 'Tamsin', 'Restocked 6 potions', '−120', GOLD],
-      ['9m', 'Y', 'Ysolde', 'Warding Seal from Old Tusk', 'Rare', ARC],
-      ['9m', 'Y', 'Ysolde', 'Left for Frostmere Pass', '21m', INFO]
+      ['2m', 'K', 'Kaela', 'Two-handed: Adept', 'Title', GOLD]
     ];
     return {
+      locked: [{ name: 'Slot 2' }, { name: 'Slot 3' }, { name: 'Slot 4' }],
       chars: [
-        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'farming', statusLabel: 'Farming', where: 'Emberroot Vale · bag 31/42', hpNum: 82, xpNum: 64 }),
-        ch({ initial: 'Y', name: 'Ysolde', level: 22, status: 'travel', statusLabel: 'Travelling 3m 12s', where: 'To Frostmere Pass', hpNum: 100, xpNum: 31 }),
-        ch({ initial: 'B', name: 'Brann', level: 6, status: 'farming', statusLabel: 'Farming', where: 'Ashen Ford · bag 39/42 · 3 potions', hpNum: 54, xpNum: 88 }),
-        ch({ initial: 'T', name: 'Tamsin', level: 3, status: 'city', statusLabel: 'In city', where: 'Restocking at the Alchemist', hpNum: 100, xpNum: 12 }),
-        ch({ initial: 'O', name: 'Oric', level: 9, status: 'dead', statusLabel: 'Fell', where: 'Back in 1m 40s · lost 12% XP', hpNum: 0, xpNum: 40 })
+        ch({ initial: 'K', name: 'Kaela', level: 14, status: 'farming', statusLabel: 'Farming', where: 'Emberroot Vale · bag 31/42', hpNum: 82, xpNum: 64 })
       ],
       profs: profList.map(function (p, i) {
         return {

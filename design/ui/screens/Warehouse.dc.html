@@ -27,7 +27,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
     <div style="display: flex; align-items: center; gap: 8px;">
       <button aria-label="Choose character. Showing Tamsin's bag" style="display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px 0 0; border: 0; border-radius: 6px; background: transparent; color: #eee8d9; font: inherit; text-align: left; cursor: pointer;">
         <span aria-hidden="true" style="display: grid; place-items: center; width: 32px; height: 32px; box-sizing: border-box; border: 1px solid #b88a2e; border-radius: 6px; background: #292d3b; font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 700;">T</span>
-        <span style="display: flex; flex-direction: column; line-height: 18px;"><span id="bag-h" style="font-weight: 600;">Tamsin's bag</span><span style="font-size: 12px; color: #aaa596;">In city · Oric is back in 1m 40s</span></span>
+        <span style="display: flex; flex-direction: column; line-height: 18px;"><span id="bag-h" style="font-weight: 600;">Tamsin's bag</span><span style="font-size: 12px; color: #aaa596;">In city · Oric is back in 36s</span></span>
         <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="color: #aaa596;"><path d="m6 9 6 6 6-6"></path></svg>
       </button>
       <span style="flex: 1;"></span>
@@ -60,6 +60,7 @@ a{color:#e4b95b}a:hover{color:#f0cd7f}
         </sc-for>
       </div>
     </div>
+    <p style="margin: 0; text-align: center; font-size: 13px; line-height: 18px; color: #aaa596;">Bag max stack 20, no backpack. The warehouse stacks to 100.</p>
   </section>
 
   <div style="flex: none; display: flex; flex-direction: column; gap: 6px; padding: 10px 16px;">
@@ -157,40 +158,49 @@ class Component extends DCLogic {
     if (i >= 0) ids.splice(i, 1); else ids.push(id);
     this.setState({ side: side, ids: ids, msg: '' });
   }
-  move(fromKey, toKey, cols, rows, where) {
+  move(fromKey, toKey, cols, rows, where, cap) {
     var self = this, s = this.state;
     var clone = function (x) { return Object.assign({}, x); };
     var from = s[fromKey].map(clone), to = s[toKey].map(clone);
     var moved = [], failed = [], seq = s.seq;
-    from.forEach(function (m) {
-      if (s.ids.indexOf(m.id) < 0) return;
-      var orig = m.count, left = m.count;
-      if (m.count) {
-        to.forEach(function (t) {
-          if (left > 0 && t.name === m.name && t.count && t.count < 100) {
-            var add = Math.min(100 - t.count, left); t.count += add; left -= add;
-          }
-        });
-        if (left === 0) { m.gone = true; moved.push(self.title(m)); return; }
-      }
+    function findSpot(span) {
       var g = {};
       to.forEach(function (t) { for (var k = 0; k < t.span; k++) g[t.col + ',' + (t.row + k)] = 1; });
-      var spot = null;
-      for (var c = 1; c <= cols && !spot; c++) {
-        for (var r = 1; r + m.span - 1 <= rows && !spot; r++) {
+      for (var c = 1; c <= cols; c++) {
+        for (var r = 1; r + span - 1 <= rows; r++) {
           var ok = true;
-          for (var k = 0; k < m.span; k++) if (g[c + ',' + (r + k)]) ok = false;
-          if (ok) spot = { col: c, row: r };
+          for (var k = 0; k < span; k++) if (g[c + ',' + (r + k)]) ok = false;
+          if (ok) return { col: c, row: r };
         }
       }
+      return null;
+    }
+    from.forEach(function (m) {
+      if (s.ids.indexOf(m.id) < 0) return;
+      var orig = m.count, left = m.count, pieces = 0;
+      if (m.count) {
+        to.forEach(function (t) {
+          if (left > 0 && t.name === m.name && t.count && t.count < cap) {
+            var add = Math.min(cap - t.count, left); t.count += add; left -= add;
+          }
+        });
+        while (left > 0) {
+          var at = findSpot(m.span);
+          if (!at) break;
+          var n = Math.min(cap, left);
+          to.push(Object.assign({}, m, { id: 'm' + (seq++), col: at.col, row: at.row, count: n }));
+          left -= n; pieces++;
+        }
+        if (left === 0) { m.gone = true; moved.push(self.title(m) + (pieces > 1 ? ' in ' + pieces + ' stacks' : '')); return; }
+        if (left < orig) { moved.push(m.name + ' ×' + (orig - left)); m.count = left; }
+        failed.push(m);
+        return;
+      }
+      var spot = findSpot(m.span);
       if (spot) {
-        to.push(Object.assign({}, m, { id: 'm' + (seq++), col: spot.col, row: spot.row, count: m.count ? left : 0 }));
+        to.push(Object.assign({}, m, { id: 'm' + (seq++), col: spot.col, row: spot.row }));
         m.gone = true;
         moved.push(self.title(m));
-      } else if (m.count && left < orig) {
-        moved.push(m.name + ' ×' + (orig - left));
-        m.count = left;
-        failed.push(m);
       } else {
         failed.push(m);
       }
@@ -234,8 +244,8 @@ class Component extends DCLogic {
       whItems: s.wh.map(function (x) { return view(x, 'wh'); }),
       bagCells: cells(36), whCells: cells(56),
       bagUsed: String(used(s.bag)), whUsed: String(used(s.wh)),
-      toWh: function () { if (s.side === 'bag' && s.ids.length) self.move('bag', 'wh', 7, 8, 'the warehouse'); },
-      toBag: function () { if (s.side === 'wh' && s.ids.length) self.move('wh', 'bag', 6, 6, "Tamsin's bag"); },
+      toWh: function () { if (s.side === 'bag' && s.ids.length) self.move('bag', 'wh', 7, 8, 'the warehouse', 100); },
+      toBag: function () { if (s.side === 'wh' && s.ids.length) self.move('wh', 'bag', 6, 6, "Tamsin's bag", 20); },
       whDisabled: nBag === 0, bagDisabled: nWh === 0,
       hasWhCount: nBag > 0, hasBagCount: nWh > 0,
       whCount: String(nBag), bagCount: String(nWh),

@@ -4,7 +4,7 @@
 
 **Where it lives.**
 - Design system (tokens, brand book, component guidelines, CSS classes in `components/bundle.css`): https://claude.ai/artifact/3n12SGkJ1VWxMXAQ8HMZrb
-- Screen sketches (13 phone screens linked as a clickable prototype, 2 desktop layouts): https://claude.ai/artifact/MM1u7hrsEdZww1XtTKEiE1
+- Screen sketches (19 phone screens linked as a clickable prototype, 2 desktop layouts): https://claude.ai/artifact/MM1u7hrsEdZww1XtTKEiE1
 
 Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the sketches**, **Open questions**.
 
@@ -32,6 +32,8 @@ Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the 
 
 **Screens sketched.** Roster · Character: Farm, Stats, Gear, Spells · Welcome back (offline summary, 3.4) · World · Area sheet (target and travel) · City · Shop (Alchemist) · Upgrade smith · Warehouse · Bestiary · Desktop roster · Desktop warehouse transfer.
 
+**Added boards.** Character creation (4.1), Loot filter rules (2.3), Save data: export and import (5.5), Settings, Character travelling and Character fell (3.7) are in the fourth row of the `screens` page, below the desktop layouts, as `Character-Create`, `Loot-Filter`, `Save-Data`, `Settings`, `Character-Travelling` and `Character-Fell` in `design/ui/screens/`.
+
 **Assumed by the sketches** (placeholders, not yet in sections 2–4).
 - Proficiency titles: Novice, Apprentice, Adept, Expert, Master.
 - Item names: "Warding Seal" for upgrade protection, "Waystone" for travel skip, "Tome of Insight" for the XP boost, "Arcane Shard" for spell upgrade material, "Scroll of Unlearning" for spell respec, "Sigil of Embers" as an example special-slot item. Placeholders added since: "Rotation token", "Attribute slot stone", "Attribute reroll stone" (2.8).
@@ -42,21 +44,4 @@ Template: **Rules** (decided), **Proposed** (not yet decided), **Assumed by the 
 - Bag sizes of 36 and 42 cells (the base bag is 36, anything above comes from a backpack), and restock targets per potion type.
 
 **Open questions.**
-- The loot filter rule editor (2.3) is not sketched yet.
 - Items have no art yet. Slots show category icons until art exists.
-
-**Sketches to update** (the sketches in `design/ui/` are not edited here; this lists what no longer matches the rules).
-- Roster: shows 5 of 5 slots in use and an unlock-at-Lv-30 slot. It should show 4 slots with 1 unlocked and 3 locked, each locked slot with a hint that it needs a slot ticket, earned when a character first reaches level 20 (4.1).
-- Potions: the Alchemist and bag show a level requirement on potions. Potions have none (2.6).
-- Starter items: any screen that shows a new character with a starter sword or starter tunic. New characters have no gear and no gold. They must show 10 minor health potions in the bag (4.1).
-- Rare item slot: the gear screen calls it the rare item slot. It is the special-item-slot (2.2).
-- Backpack: no backpack slot on the gear screen and no backpack in the bag screen (2.2, 2.3). The bag screen should show the bag's max stack (20 without a backpack), and the warehouse stacks to 100 (2.4).
-- Character screen: show health regeneration (0.5% of max health per second) and, after a death, the 10% respawn health and the heal-to-full state (3.7, 4.2).
-- Death timer: "back in 1m 40s" is a fixed example. Respawn is level × 4 seconds (3.7), so level 30 waits 2 minutes. The dead state also shows that the character respawns with 10% health and must heal to full before farming.
-- Pacing: walking times and 12 s per kill assume the old pacing. Movement between enemies is 6 s by default and Area 1 is 10 s from the city (3.1, 3.3). The "2m walk" to Mossfang Glade no longer holds.
-- Upgrade smith: materials are needed from +6, not +4, and materials differ per equipment type and per level (2.7). Gold-only up to +5.
-- Character creation: no screen exists. It needs a name field only, no free points and no gear (4.1).
-- Weapon stats: the sketches say "recommended" for weapon attribute values. The word is now "required" (2.2).
-- Targeting: the area sheet should show the targeting multiplier of each enemy (3.3).
-- Rare goods shop: hourly rotation, with a Rotation token or gold to force one (2.5).
-- Proficiency list and stats: skills are unarmed, one-handed, two-handed, toughness, speed and combat. Endurance is dropped, so remove it from the visible stats (health and mana only, 4.2, 4.6).
