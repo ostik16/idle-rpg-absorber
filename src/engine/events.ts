@@ -17,7 +17,7 @@ export type EngineEvent =
   | { type: 'characterDied'; characterId: string; enemyId: string }
   /** A command could not be applied. Nothing changed. */
   | { type: 'commandRejected'; command: Command; reason: string }
-  /** Emitted by a character step through `enterPhase`; nothing emits it until phase transitions exist. */
+  /** Emitted through `enterPhase`, by a character step or a command. */
   | { type: 'phaseChanged'; characterId: string; from: Phase; to: Phase };
 
 /**
