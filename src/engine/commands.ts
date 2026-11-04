@@ -7,6 +7,7 @@ import { constantSection, type GameData } from '../data/game-data';
 import { spawnsInArea } from '../game/farming';
 import { characterNameError } from '../game/stats';
 import { createCharacterState } from '../state/factory';
+import { derivedStats } from '../state/selectors';
 import type { CharacterState, GameState } from '../state/types';
 import type { EngineEvent } from './events';
 import type { StepContext } from './step-context';
@@ -42,7 +43,7 @@ function sendToAreaError(character: CharacterState, areaId: string, data: GameDa
   if (findArea(areaId, data) === undefined) return `No area "${areaId}".`;
   switch (character.phase) {
     case 'idle':
-      return null;
+      break;
     case 'dead':
       return `${character.name} is dead.`;
     case 'restocking':
@@ -50,11 +51,15 @@ function sendToAreaError(character: CharacterState, areaId: string, data: GameDa
     default:
       return `${character.name} has to be in the city first.`;
   }
+  return character.health < derivedStats(character, data).maxHealth ? `${character.name} needs full health to set out.` : null;
 }
 
 function setTargetError(character: CharacterState, enemyId: string | null, data: GameData): string | null {
   if (character.areaId === null) return `${character.name} has no area to search.`;
   if (enemyId === null) return null;
+  if (character.stayInCity || character.phase === 'fleeing' || character.phase === 'returning') {
+    return `${character.name} is on the way back.`;
+  }
   const area = findArea(character.areaId, data);
   return area !== undefined && spawnsInArea(area, enemyId) ? null : `No "${enemyId}" in this area.`;
 }
@@ -74,8 +79,8 @@ function returnToCityError(character: CharacterState, data: GameData): string | 
     case 'returning':
       return `${character.name} is already on the way back.`;
     case 'dead':
-      return `${character.name} is dead.`;
     case 'restocking':
+      return character.areaId === null || character.stayInCity ? `${character.name} is already staying in the city.` : null;
     case 'idle':
       return `${character.name} is already in the city.`;
   }

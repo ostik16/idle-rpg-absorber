@@ -97,11 +97,11 @@ Small things that will cause arguments during implementation. All eight are sett
   - Looting takes no time of its own.
   - A spawn chance applies per finished search, and the boss and mini-boss share one roll, so listed enemies take the remaining 97.5% of spawns.
   - A target skips the spawn roll, so no boss or mini-boss turns up while targeting. The mini-boss and boss can be targeted, because their data sets a multiplier for it.
-  - A target needs an area, so it cannot be set in the city. It can be set in any phase with an area. On a search under way it applies at once and keeps the time already spent, so a fight can start straight away.
-  - A return clears the target. Setting one on the way back is accepted and then cleared on arrival.
-  - The player's return command ends farming, and the character stays in the city. This does not yet survive a death while fleeing (see the question below).
+  - A target needs an area, so it cannot be set in the city. It is refused while fleeing or on the way back, and kept if set while dead. On a search under way it applies at once and keeps the time already spent, so a fight can start straight away.
+  - A return clears the target.
+  - The player's return command ends farming, and the character stays in the city. `stayInCity` keeps this through a death while fleeing, and a return also works while dead or healing.
   - Turning back on the way out takes as long as it has walked.
   - A character changes area only from the city.
-  - A character can be sent out at any health. 3.2 asks for full health before going back, which may mean this should refuse (see the question below).
-- [ ] **Owner questions from the #22 review.** Should a return command survive a death while fleeing, through a saved "stay home" marker? Should `sendToArea` refuse a hurt character? Should a level 1 character meet a boss and a mini-boss it cannot beat?
+  - A character needs full health to be sent out, following 3.2.
+- [ ] **Owner question from the #22 review.** Should a level 1 character meet a boss and a mini-boss it cannot beat?
 - [ ] **Model bosses in `balance:drops`.** The owner decided that the kills-per-hour bar on #22 covers listed enemies only, and bosses are tracked here. The tool leaves out the boss and mini-boss. With deaths turned off, so that a character grinds through fights it would really lose, the engine kills 21% fewer enemies per hour than the tool says for a new character, and 11% fewer with the reference attributes. These are not real play numbers: on real data with no return trigger yet (#27), a new character dies after a median of 306 s, and neither build won a simulated fight against either special. The tool first needs a rule for a boss the build cannot beat, and `--target` needs to accept the boss and mini-boss, as the engine does.

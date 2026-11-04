@@ -149,8 +149,9 @@ describe('travelling (3.2)', () => {
 
   it('regenerates on the way', () => {
     const { engine, character, advance, id } = setup(fixture());
-    character.health = 1;
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    character.health = 1;
     advance(TICK);
     expect(character.health).toBeGreaterThan(1);
   });
@@ -324,24 +325,89 @@ describe('commands (3.2, 3.3, L5)', () => {
     expect(missing).toMatchObject({ type: 'commandRejected', reason: 'No character "c1".' });
   });
 
-  it('keeps the target when going back to the same area, and drops it for another', () => {
-    const data = createGameData({
-      constants,
-      items: itemsJson,
-      enemies: enemiesJson,
-      areas: [...areasJson, { ...AREA_ROW, id: 'other' } as (typeof areasJson)[number]],
-    });
-    const { engine, character, advance, id } = setup(data);
-    character.areaId = AREA;
-    character.targetEnemyId = RAT;
+  it('needs full health to set out (3.2), and goes once healed', () => {
+    const { engine, character, advance, id } = setup();
+    engine.drainEvents();
+    character.health = 69;
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(TICK);
+    expect(rejections(engine)).toEqual(['Ysolde needs full health to set out.']);
+    expect(character).toMatchObject({ phase: 'idle', areaId: null });
+
+    character.health = 70;
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    expect(character.phase).toBe('travelling');
+  });
+
+  it('refuses a target on the way back, because arriving would drop it, but can clear one', () => {
+    const { engine, character, advance, id } = setup();
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: RAT });
+    advance(1000);
+    engine.dispatch({ type: 'returnToCity', characterId: id });
+    advance(TICK);
+    expect(character.phase).toBe('returning');
+    engine.drainEvents();
+
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: WISP });
+    advance(TICK);
+    expect(rejections(engine)).toEqual(['Ysolde is on the way back.']);
     expect(character.targetEnemyId).toBe(RAT);
 
-    character.phase = 'idle';
-    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: 'other' });
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: null });
     advance(TICK);
-    expect(character).toMatchObject({ areaId: 'other', targetEnemyId: null });
+    expect(character.targetEnemyId).toBeNull();
+  });
+
+  it('refuses a target while fleeing, and keeps one set while dead', () => {
+    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }], ...NO_SPECIALS });
+    const { engine, character, advance, id } = setup(data);
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(16_000 + TICK);
+    engine.dispatch({ type: 'returnToCity', characterId: id });
+    advance(TICK);
+    expect(character.phase).toBe('fleeing');
+    engine.drainEvents();
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: BOSS });
+    advance(TICK);
+    expect(rejections(engine)).toEqual(['Ysolde is on the way back.']);
+
+    const dead = setup(data);
+    dead.character.areaId = AREA;
+    dead.character.phase = 'dead';
+    dead.engine.dispatch({ type: 'setTarget', characterId: dead.id, enemyId: BOSS });
+    dead.advance(TICK);
+    expect(dead.character.targetEnemyId).toBe(BOSS);
+  });
+
+  it('a return while dead or healing marks it to stay, and a second one is refused', () => {
+    for (const phase of ['dead', 'restocking'] as const) {
+      const { engine, character, advance, id } = setup();
+      character.areaId = AREA;
+      character.phase = phase;
+      engine.drainEvents();
+      engine.dispatch({ type: 'returnToCity', characterId: id });
+      advance(TICK);
+      expect(rejections(engine)).toEqual([]);
+      expect(character).toMatchObject({ phase, stayInCity: true });
+
+      engine.dispatch({ type: 'returnToCity', characterId: id });
+      advance(TICK);
+      expect(rejections(engine)).toEqual(['Ysolde is already staying in the city.']);
+    }
+  });
+
+  it('marks the return in a fight, so it holds if the character dies fleeing, and arriving clears it', () => {
+    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }], ...NO_SPECIALS });
+    const { engine, character, advance, id } = setup(data);
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(16_000 + TICK);
+    engine.dispatch({ type: 'returnToCity', characterId: id });
+    advance(TICK);
+    expect(character).toMatchObject({ phase: 'fleeing', stayInCity: true });
+    advance(11_000);
+    expect(character).toMatchObject({ phase: 'idle', stayInCity: false, areaId: null });
   });
 
   it('rejects a command for a character that does not exist', () => {
@@ -464,15 +530,6 @@ describe('commands (3.2, 3.3, L5)', () => {
     advance(TICK);
     expect(rejections(engine)).toEqual(['Ysolde is already on the way back.']);
     expect(character.phase === 'returning' || character.phase === 'idle').toBe(true);
-  });
-
-  it('rejects a return when dead', () => {
-    const { engine, character, advance, id } = setup();
-    character.phase = 'dead';
-    engine.drainEvents();
-    engine.dispatch({ type: 'returnToCity', characterId: id });
-    advance(TICK);
-    expect(rejections(engine)).toEqual(['Ysolde is dead.']);
   });
 
   it('can go out again after coming home, and the target stays behind', () => {
