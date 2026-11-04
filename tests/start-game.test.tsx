@@ -111,6 +111,16 @@ describe('startGame', () => {
       expect(startedWith()).toBeUndefined();
     });
 
+    it('when the store cannot read the state, after autosave has started, and autosave stops', async () => {
+      const state = newGame();
+      delete (state.account as Partial<GameState['account']>).warehouse;
+      const { seam, autosave, startedWith } = play(state);
+      await startGame(root, seam);
+      expectFailureScreen();
+      expect(startedWith()).toBeDefined();
+      expect(autosave.stop).toHaveBeenCalledTimes(1);
+    });
+
     it('when the engine refuses the state, and nothing is left writing it', async () => {
       const state = newGame();
       state.roster.push(createCharacterState('c1', 'A', data), createCharacterState('c1', 'B', data));
@@ -128,6 +138,19 @@ describe('startGame', () => {
       await startGame(root, seam);
       expect(startedWith()?.data.constants).toEqual(data.constants);
       expect(startedWith()?.getState()).toBe(state);
+    });
+
+    it('is running before the UI exists, so no command can get ahead of it', async () => {
+      const { seam } = play(newGame());
+      const start = seam.startAutosave;
+      let mountedAtStart: boolean | undefined;
+      seam.startAutosave = (options) => {
+        mountedAtStart = root.querySelector('.app') !== null;
+        return start(options);
+      };
+      await startGame(root, seam);
+      expect(mountedAtStart).toBe(false);
+      expect(root.querySelector('.app')).not.toBeNull();
     });
 
     it('stops when a frame fails, and the player is told', async () => {

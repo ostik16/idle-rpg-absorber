@@ -6,8 +6,8 @@ export function Notice() {
   if (lines.length === 0) return null;
   return (
     <div class="app__notices" role="status">
-      {lines.map((line) => (
-        <span key={line} class="ab-notice">
+      {lines.map((line, i) => (
+        <span key={i} class="ab-notice">
           {line}
         </span>
       ))}

@@ -224,6 +224,27 @@ describe('numbers on screen', () => {
   });
 });
 
+describe('the avatar initial', () => {
+  function avatarOf(name: string): string | null | undefined {
+    const state = gameWith(name);
+    connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
+    render(<LiveRoster />, host);
+    return host.querySelector('.ab-char__avatar')?.textContent;
+  }
+
+  it('is the first letter', () => {
+    expect(avatarOf('Ysolde')).toBe('Y');
+  });
+
+  it('keeps a character outside the basic plane whole', () => {
+    expect(avatarOf('\u{1D4D0}da')).toBe('\u{1D4D0}');
+  });
+
+  it('is empty, not "undefined", for an empty name', () => {
+    expect(avatarOf('')).toBe('');
+  });
+});
+
 describe('lasting notices', () => {
   it('survive connectEngine and the next command, while the engine notice does not', () => {
     showLastingNotices(['Loaded the previous save, 3m 12s old.']);

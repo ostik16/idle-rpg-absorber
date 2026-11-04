@@ -36,9 +36,11 @@ export interface SaveSeam {
 
 /**
  * Runs the game in `root`. Whatever goes wrong before the game is running shows on screen, so a failure is never a
- * blank page. Autosave and the frame loop start last, so a failure before them leaves nothing writing state.
+ * blank page, and stops the autosave, so nothing is left writing state. Autosave starts before the UI can send a
+ * command, and the frame loop last, so nothing moves until all of it is in place.
  */
 export async function startGame(root: Element, seam: SaveSeam): Promise<void> {
+  let stopAutosave = (): void => {};
   try {
     const data = loadGameData();
     const opening = await seam.open(data, Date.now());
@@ -49,10 +51,10 @@ export async function startGame(root: Element, seam: SaveSeam): Promise<void> {
     showLastingNotices(opening.notices);
     const engine = createEngine({ data, state: opening.state });
     engine.advanceTo(Date.now());
-    // Only a later `refresh` can call this, and only the frame loop refreshes, so `autosave` exists by then.
+    const autosave = seam.startAutosave({ data, getState: () => engine.state });
+    stopAutosave = () => autosave.stop();
     const refresh = connectEngine(engine, data, () => void autosave.saveNow());
     render(<App />, root);
-    const autosave = seam.startAutosave({ data, getState: () => engine.state });
     startFrameLoop(engine, refresh, (error) => {
       console.error(error);
       autosave.stop();
@@ -60,6 +62,7 @@ export async function startGame(root: Element, seam: SaveSeam): Promise<void> {
     });
   } catch (error) {
     console.error(error);
+    stopAutosave();
     render(<GameFailure lines={[STARTUP_FAILED]} />, root);
   }
 }

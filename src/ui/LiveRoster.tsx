@@ -7,7 +7,7 @@ import { roster, send, type CharacterView } from './store';
 function LiveCharacter({ view }: { view: CharacterView }) {
   return (
     <article class="ab-char">
-      <div class="ab-char__avatar">{view.name.charAt(0)}</div>
+      <div class="ab-char__avatar">{Array.from(view.name)[0]}</div>
       <div>
         <div class="ab-char__top">
           <span class="ab-char__name">{view.name}</span>

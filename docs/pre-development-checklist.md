@@ -71,6 +71,7 @@ Small things that will cause arguments during implementation. All eight are sett
 - [ ] **When the game hits an error.** The design does not cover it. `src/start-game.tsx` stops the simulation and the autosave, because state may be partly stepped, and leaves the screen up with a lasting notice. Progress since the last save is lost on reload. The owner can confirm it.
 - [ ] **How long save notices stay.** ADR 0003 says the player is told what a load found, not for how long. They stay on screen until the page reloads, with no dismiss button. The owner can confirm it or ask for a dismiss.
 - [ ] **Unreadable save.** ADR 0003 asks for a recovery screen. Until #36 adds import, `unrecoverable` shows its message only, and the player has no way to start fresh from it.
+- [ ] **Cost of copying lists to the UI.** `copyInto` in `src/ui/store.ts` runs `JSON.stringify` on every bag and warehouse tab at each refresh. #28 measures 4 characters on a phone and decides then whether it needs a dirty flag.
 
 ## 3. Design and content still to produce
 

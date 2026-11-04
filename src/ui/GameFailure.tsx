@@ -7,8 +7,8 @@ export function GameFailure({ lines }: { lines: readonly string[] }) {
           <div class="ab-card__head">
             <span class="ab-label">Game not started</span>
           </div>
-          {lines.map((line) => (
-            <p key={line} class="app__text">
+          {lines.map((line, i) => (
+            <p key={i} class="app__text">
               {line}
             </p>
           ))}
