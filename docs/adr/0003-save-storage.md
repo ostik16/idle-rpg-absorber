@@ -1,6 +1,6 @@
 # ADR 0003: Save storage
 
-Status: accepted, approved by the owner on 2026-11-03. Amended the same day: gold moved from `account` to each character (decisions L16).
+Status: accepted, approved by the owner on 2026-11-03. Amended the same day: gold moved from `account` to each character (decisions L16). Amended on 2026-11-04 after the review of PR 44: one writer at a time, and what a full `localStorage` may remove.
 
 ## Context
 
@@ -27,7 +27,7 @@ Status: accepted, approved by the owner on 2026-11-03. Amended the same day: gol
 
 - `clock`: `lastSimulatedAt`, `savedAt`, `masterSeed`, diagnostics (`clockRewind` count).
 - `account`: warehouse tabs (grid size, bought tabs, cell contents), unlocked character slots, the number for the next character id, settings.
-- `roster[]`: id, name, gold, level, XP in level, points spent and unspent (4.4), attributes, proficiency values (hidden numbers are stored, shown as titles), spells (ranks, auto-cast order, conditions), equipment, bag, current hp and mana, running and queued potions, activity state (area, target, phase, time in phase, the fight in progress), return trigger settings, restock list and city healing choice (3.2, 2.6), loot filter and auto-sell rules (2.3), absorption progress per trait (4.7), RNG stream states (ADR 0002).
+- `roster[]`: id, name, gold, level, XP in level, highest point mark reached in the level, points spent and unspent (4.4), attributes, proficiency values (hidden numbers are stored, shown as titles), spells (ranks, auto-cast order, conditions), equipment, bag, current hp and mana, running and queued potions, activity state (area, target, phase, time in phase, the fight in progress), return trigger settings, restock list and city healing choice (3.2, 2.6), loot filter and auto-sell rules (2.3), absorption progress per trait (4.7), RNG stream states (ADR 0002).
 - `bestiary`: kills per character per enemy id, and `revealed` per enemy id as the highest threshold tier reached by any character. Reveals are stored, not derived, so deleting a character cannot hide knowledge that was shared (4.8 Rules).
 - `shops`: rare goods rotation state and buyback lists (2.5).
 - `pendingSummary`: offline summary not yet shown, so closing the tab on the Welcome back screen loses nothing.
@@ -37,6 +37,10 @@ Items are stored as `{ itemId, rolled bonuses, upgradeLevel, qty }`, never copie
 ### Writing
 
 Autosave every 30 s of real time, on `visibilitychange` to hidden, on `pagehide`, and after irreversible actions (spending points, upgrades, selling, 4.4 and 2.7). Writes go to a rotating set: `current`, `previous`, `previous2`. A write is a new record, then the pointer moves, so a crash mid-write leaves the older record intact. Debounce so only one write is in flight.
+
+The page-hide save holds the state as it stands when the tab hides. A `saveAfter` command still queued at that moment has not applied, so it is not in that save.
+
+Only one tab writes. Load takes a Web Locks lease, held until the page goes, and a second tab does not start the game. Where Web Locks is missing, the pointer moves only by compare-and-swap and a tab that finds it moved stops writing, so a stale tab cannot rotate away newer records.
 
 ### Versioning and migrations
 
@@ -52,7 +56,7 @@ Data table changes that keep the shape (an item removed from `data/items.json`) 
 
 ### Corruption and backup handling
 
-On load, try `current`, then `previous`, then `previous2`, then `backup-v<N>`. The first record passing parse, checksum and schema wins; the player is told which was used and its age. If none loads, show a recovery screen: import a file, or start fresh. Nothing is deleted without confirm. Failed records are kept under `corrupt-<time>` for export.
+On load, try `current`, then `previous`, then `previous2`, then `backup-v<N>`. The first record passing parse, checksum and schema wins; the player is told which was used and its age. If none loads, show a recovery screen: import a file, or start fresh. Nothing is deleted without confirm. Failed records are kept under `corrupt-<time>` for export. The one exception is a full `localStorage`, where a write may remove the oldest `corrupt-*` record to make room, and then the oldest of the rotation, as long as one record that reads is left.
 
 ## Consequences
 

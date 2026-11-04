@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
 import enemiesJson from '../data/enemies.json';
 import itemsJson from '../data/items.json';
+import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, requireRow, type GameData } from '../src/data/game-data';
 import { stepCharacter, type StepContext } from '../src/engine/character';
 import { createEngine } from '../src/engine/engine';
@@ -23,7 +24,7 @@ const SEED = 7;
 const MINOR = 'minor-health-potion';
 const LESSER = 'lesser-health-potion';
 
-const DUMMY = { id: 'dummy', health: 24, damage: 5, attackSpeed: 1, defence: 0 };
+const DUMMY = { id: 'dummy', level: 1, health: 24, damage: 5, attackSpeed: 1, defence: 0 };
 const WALL = { id: 'wall', health: 1_000_000, damage: 5, attackSpeed: 1, defence: 0 };
 const HARMLESS = { id: 'harmless', health: 1_000_000, damage: 0, attackSpeed: 0.01, defence: 1_000_000 };
 
@@ -38,6 +39,7 @@ function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
     constants: { ...constants, stats },
     items: itemsJson,
     enemies: [DUMMY, WALL, HARMLESS, ...enemiesJson],
+    xpTable: xpTableJson,
   });
 }
 
@@ -197,7 +199,7 @@ describe('a fight on engine steps (3.5, 3.6)', () => {
 
     expect(character.phase).toBe('dead');
     expect(character.potions).toEqual({ queue: [], ticksDone: 0, msIntoTick: 0 });
-    run(100);
+    run(39); // level 1 respawns after 4 s
     expect(character.health).toBe(0);
   });
 
@@ -474,6 +476,7 @@ describe('determinism (ADR 0002)', () => {
   function fightingState(): GameState {
     const state = createGameState(SEED, T0, data);
     const { character, ctx } = harness(data);
+    character.areaId = 'mossfang-glade';
     startFight(character, 'glade-rat', ctx);
     character.health = 20;
     state.roster.push(character);
@@ -488,8 +491,9 @@ describe('determinism (ADR 0002)', () => {
     for (const t of [37, 100, 250, 999, 1100, 4321, 7777, 12_345, 20_000, 30_000]) parts.advanceTo(T0 + t);
 
     expect(parts.state).toEqual(whole.state);
-    expect(parts.drainEvents()).toEqual(whole.drainEvents());
-    expect(whole.state.roster[0]?.phase).toBe('looting');
+    const events = whole.drainEvents();
+    expect(parts.drainEvents()).toEqual(events);
+    expect(events.some((e) => e.type === 'enemyKilled')).toBe(true);
   });
 
   it('different streams can give a different fight', () => {

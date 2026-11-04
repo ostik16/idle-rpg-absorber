@@ -3,6 +3,7 @@
  * Events a character step emits are also the ordered list that carries shared effects at the end of the step
  * (ADR 0002 "Multiple characters").
  */
+import type { Attributes } from '../game/stats';
 import type { Phase } from '../state/types';
 import type { Command } from './commands';
 
@@ -14,10 +15,15 @@ export type EngineEvent =
   | { type: 'characterCreated'; characterId: string }
   /** A character won a fight. XP, drops and absorption hang off this. */
   | { type: 'enemyKilled'; characterId: string; enemyId: string }
+  | { type: 'xpGained'; characterId: string; amount: number }
+  /** One per level, so a kill worth two levels emits two. */
+  | { type: 'levelUp'; characterId: string; level: number }
   | { type: 'characterDied'; characterId: string; enemyId: string }
+  | { type: 'xpLost'; characterId: string; amount: number }
+  | { type: 'characterPointsSpent'; characterId: string; attribute: keyof Attributes; amount: number }
   /** A command could not be applied. Nothing changed. */
   | { type: 'commandRejected'; command: Command; reason: string }
-  /** Emitted by a character step through `enterPhase`; nothing emits it until phase transitions exist. */
+  /** Emitted through `enterPhase`, by a character step or a command. */
   | { type: 'phaseChanged'; characterId: string; from: Phase; to: Phase };
 
 /**

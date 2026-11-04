@@ -4,13 +4,11 @@
  */
 import { constantSection, requireRow } from '../data/game-data';
 import { enemyCombatant, fightTick, type Combatant, type EnemyCombatStats } from '../game/combat';
-import { quantiseToSteps } from '../game/formulas';
-import { movementSeconds } from '../game/proficiency';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState, FightState } from '../state/types';
-import { enterPhase, type StepContext } from './step-context';
-
-const MS_PER_SECOND = 1000;
+import { loseXpOnDeath } from './death';
+import { grantKillXp } from './rewards';
+import { enterPhase, movementDurationMs, type StepContext } from './step-context';
 
 function enemyStats(enemyId: string, ctx: StepContext): EnemyCombatStats {
   return requireRow(ctx.data, 'enemies', enemyId) as unknown as EnemyCombatStats;
@@ -43,12 +41,7 @@ export function startFleeing(character: CharacterState, ctx: StepContext): void 
 
 /** Time fleeing takes: `combat.fleeSeconds`, shortened by the speed skill like travel, in whole steps. */
 export function fleeDurationMs(character: CharacterState, ctx: StepContext): number {
-  const seconds = movementSeconds(
-    constantSection(ctx.data, 'combat').fleeSeconds,
-    character.proficiency.speed,
-    constantSection(ctx.data, 'proficiency'),
-  );
-  return quantiseToSteps(seconds * MS_PER_SECOND, ctx.tickMs);
+  return movementDurationMs(constantSection(ctx.data, 'combat').fleeSeconds, character, ctx);
 }
 
 /** Runs one tick of the current fight. Returns false when it ended the fight. */
@@ -71,10 +64,12 @@ function runTick(character: CharacterState, fight: FightState, playerAttacks: bo
   character.fight = null;
   if (tick.outcome === 'win') {
     ctx.emit({ type: 'enemyKilled', characterId: character.id, enemyId: fight.enemyId });
+    grantKillXp(character, fight.enemyId, ctx);
     enterPhase(character, 'looting', ctx);
   } else {
     character.potions = { queue: [], ticksDone: 0, msIntoTick: 0 };
     ctx.emit({ type: 'characterDied', characterId: character.id, enemyId: fight.enemyId });
+    loseXpOnDeath(character, ctx);
     enterPhase(character, 'dead', ctx);
   }
   return false;

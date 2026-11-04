@@ -79,6 +79,10 @@
       "maxMultiplier": 10
     }
   },
+  "save": {
+    "autosaveSeconds": 30,
+    "leaseWaitSeconds": 1
+  },
   "offline": {
     "efficiency": 0.9,
     "proficiencyRate": 0.5,

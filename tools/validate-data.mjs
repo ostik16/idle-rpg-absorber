@@ -144,6 +144,7 @@ for (const a of tables['areas'] ?? []) {
     if (e && e.type !== 'normal') errors.push(`${from}: spawn list enemy "${spawn.enemyId}" must be of type normal`);
   }
   if (!weights) errors.push(`${from}: needs at least one enemy with a spawn weight`);
+  if ((a.bossSpawnChance ?? 0) + (a.miniBossSpawnChance ?? 0) > 1) errors.push(`${from}: bossSpawnChance and miniBossSpawnChance share one roll and must add up to 1 or less`);
   for (let l = a.levelRange?.min; l <= a.levelRange?.max; l++) {
     if ((perLevel[l] ?? 0) < 2) errors.push(`${from}: level ${l} has ${perLevel[l] ?? 0} normal enemies in the spawn list, needs at least 2`);
   }

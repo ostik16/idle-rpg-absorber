@@ -24,6 +24,7 @@ export function createCharacterState(id: string, name: string, data: GameData): 
     gold: creation.startingGold,
     level: creation.startingLevel,
     xpInLevel: 0,
+    highestMarkReached: 0,
     points: { characterUnspent: 0, characterSpent: 0, skillUnspent: 0, skillSpent: 0 },
     attributes: startingAttributes(undefined, creation),
     proficiency: Object.fromEntries(skills.map((skill) => [skill, 0])) as Record<ProficiencyId, number>,
@@ -38,6 +39,7 @@ export function createCharacterState(id: string, name: string, data: GameData): 
     fight: null,
     areaId: null,
     targetEnemyId: null,
+    stayInCity: false,
     phase: 'idle',
     timeInPhaseMs: 0,
     settings: {
