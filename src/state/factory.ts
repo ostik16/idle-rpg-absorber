@@ -38,6 +38,7 @@ export function createCharacterState(id: string, name: string, data: GameData): 
     fight: null,
     areaId: null,
     targetEnemyId: null,
+    stayInCity: false,
     phase: 'idle',
     timeInPhaseMs: 0,
     settings: {

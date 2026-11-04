@@ -138,6 +138,8 @@ export interface CharacterState {
   areaId: string | null;
   /** The enemy type it targets, or null when it fights whatever it finds (design 3.3). */
   targetEnemyId: string | null;
+  /** The player called it home, so it stops farming and stays in the city, even if it dies on the way. */
+  stayInCity: boolean;
   phase: Phase;
   /** Time spent in the current phase, in ms. Grows by `combat.tickMs` every step. */
   timeInPhaseMs: number;
