@@ -7,7 +7,8 @@
  */
 import { enemyMoneyRange } from '../../src/game/enemies';
 import { movementSeconds } from '../../src/game/proficiency';
-import { absorbOnKill, absorptionLevelModifier, dropChance, dropLevelModifier } from '../../src/game/formulas';
+import { dropSources, poolTotalWeight } from '../../src/game/drops';
+import { absorbOnKill, absorptionLevelModifier, dropLevelModifier } from '../../src/game/formulas';
 import { killXp } from '../../src/game/progression';
 import {
   BalanceError,
@@ -17,7 +18,6 @@ import {
   type AreaEntry,
   type DropTableEntry,
   type EnemyEntry,
-  type GuaranteedPool,
   type ItemEntry,
   targetingMultiplier,
 } from './load-data';
@@ -129,38 +129,6 @@ export function areaAverageXp(area: AreaEntry, enemies: readonly EnemyEntry[]): 
   return area.enemies.reduce((sum, ref, i) => sum + (shares[i] ?? 0) * enemyXp(findEnemy(enemies, ref.enemyId)), 0);
 }
 
-function avgQuantity(min: number | undefined, max: number | undefined): number {
-  return ((min ?? 1) + (max ?? min ?? 1)) / 2;
-}
-
-function poolRows(
-  enemy: EnemyEntry,
-  pool: GuaranteedPool,
-  killsPerHour: number,
-  items: ReadonlyMap<string, ItemEntry>,
-): DropRow[] {
-  const total = pool.entries.reduce((s, e) => s + e.weight, 0);
-  if (!(total > 0)) throw new BalanceError(`Guaranteed pool "${pool.id}" of enemy "${enemy.id}" has no weight.`);
-  return pool.entries.map((entry) => {
-    const item = items.get(entry.itemId);
-    const quantity = avgQuantity(entry.minQuantity, entry.maxQuantity);
-    const chance = entry.weight / total;
-    const dropsPerKill = chance * quantity;
-    const dropsPerHour = dropsPerKill * killsPerHour;
-    return {
-      itemId: entry.itemId,
-      itemName: item?.name ?? entry.itemId,
-      poolId: pool.id,
-      baseChance: chance,
-      finalChance: chance,
-      avgQuantity: quantity,
-      dropsPerKill,
-      dropsPerHour,
-      sellValuePerHour: typeof item?.sellPrice === 'number' ? dropsPerHour * item.sellPrice : null,
-    };
-  });
-}
-
 function dropRows(
   enemy: EnemyEntry,
   characterLevel: number,
@@ -171,26 +139,26 @@ function dropRows(
   if (enemy.dropTableId === undefined) return [];
   const dropTable = tables.get(enemy.dropTableId);
   if (!dropTable) throw new BalanceError(`Enemy "${enemy.id}" uses drop table "${enemy.dropTableId}", which is not in data/drop-tables.json.`);
-  const rows = dropTable.entries.map((entry): DropRow => {
-    const item = items.get(entry.itemId);
-    const quantity = avgQuantity(entry.minQuantity, entry.maxQuantity);
-    const finalChance = dropChance(entry.baseChance, characterLevel, enemy.level);
-    const dropsPerKill = finalChance * quantity;
+  for (const pool of dropTable.guaranteedPools ?? []) {
+    if (!(poolTotalWeight(pool) > 0)) throw new BalanceError(`Guaranteed pool "${pool.id}" of enemy "${enemy.id}" has no weight.`);
+  }
+  // The same reading of the table that the engine rolls from (src/game/drops.ts).
+  return dropSources(dropTable, characterLevel, enemy.level).map((source): DropRow => {
+    const item = items.get(source.itemId);
+    const dropsPerKill = source.finalChance * source.avgQuantity;
     const dropsPerHour = dropsPerKill * killsPerHour;
     return {
-      itemId: entry.itemId,
-      itemName: item?.name ?? entry.itemId,
-      poolId: null,
-      baseChance: entry.baseChance,
-      finalChance,
-      avgQuantity: quantity,
+      itemId: source.itemId,
+      itemName: item?.name ?? source.itemId,
+      poolId: source.poolId,
+      baseChance: source.baseChance,
+      finalChance: source.finalChance,
+      avgQuantity: source.avgQuantity,
       dropsPerKill,
       dropsPerHour,
       sellValuePerHour: typeof item?.sellPrice === 'number' ? dropsPerHour * item.sellPrice : null,
     };
   });
-  for (const pool of dropTable.guaranteedPools ?? []) rows.push(...poolRows(enemy, pool, killsPerHour, items));
-  return rows;
 }
 
 /** How long a kill takes (3.3): the fight, and the movement to the next enemy. */
