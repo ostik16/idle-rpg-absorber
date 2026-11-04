@@ -476,6 +476,7 @@ describe('determinism (ADR 0002)', () => {
   function fightingState(): GameState {
     const state = createGameState(SEED, T0, data);
     const { character, ctx } = harness(data);
+    character.areaId = 'mossfang-glade';
     startFight(character, 'glade-rat', ctx);
     character.health = 20;
     state.roster.push(character);
@@ -490,8 +491,9 @@ describe('determinism (ADR 0002)', () => {
     for (const t of [37, 100, 250, 999, 1100, 4321, 7777, 12_345, 20_000, 30_000]) parts.advanceTo(T0 + t);
 
     expect(parts.state).toEqual(whole.state);
-    expect(parts.drainEvents()).toEqual(whole.drainEvents());
-    expect(whole.state.roster[0]?.phase).toBe('looting');
+    const events = whole.drainEvents();
+    expect(parts.drainEvents()).toEqual(events);
+    expect(events.some((e) => e.type === 'enemyKilled')).toBe(true);
   });
 
   it('different streams can give a different fight', () => {

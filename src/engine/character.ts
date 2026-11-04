@@ -8,6 +8,7 @@ import { stepDead } from './death';
 import { stepFighting, stepFleeing } from './fight';
 import { autoUsePotion, stepHealing } from './healing';
 import type { StepContext } from './step-context';
+import { stepLooting, stepReturning, stepSearching, stepTravelling } from './travel';
 
 export { enterPhase, type StepContext } from './step-context';
 
@@ -22,17 +23,15 @@ type PhaseStep = (character: CharacterState, ctx: StepContext) => void;
 const stayInPhase: PhaseStep = () => {};
 
 /**
- * What each phase does in one step. The other transitions (travelling to searching to fighting, looting to
- * searching, returning to restocking) and their formulas come with the issues that build each phase. They will
- * call `enterPhase`.
+ * What each phase does in one step. They change phase through `enterPhase`.
  */
 const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
-  travelling: stayInPhase,
-  searching: stayInPhase,
+  travelling: stepTravelling,
+  searching: stepSearching,
   fighting: stepFighting,
   fleeing: stepFleeing,
-  looting: stayInPhase,
-  returning: stayInPhase,
+  looting: stepLooting,
+  returning: stepReturning,
   restocking: stepCityHealing,
   dead: stepDead,
   idle: stayInPhase,

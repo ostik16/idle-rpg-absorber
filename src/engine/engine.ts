@@ -115,14 +115,17 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
 
   function applyPendingCommands(): void {
     if (pendingCommands.length === 0) return;
-    const rosterSize = state.roster.length;
+    const contextOf = (characterId: string): StepContext | undefined =>
+      runners.find(({ character }) => character.id === characterId)?.ctx;
     for (const command of pendingCommands.splice(0)) {
-      const event = applyCommand(state, command, data);
+      const rosterSize = state.roster.length;
+      const event = applyCommand(state, command, data, contextOf);
+      publishStepEvents(stepEvents, outbox);
       if (event) outbox.push(event);
-    }
-    if (state.roster.length !== rosterSize) {
-      saveStreams();
-      loadRunners();
+      if (state.roster.length !== rosterSize) {
+        saveStreams();
+        loadRunners();
+      }
     }
   }
 
