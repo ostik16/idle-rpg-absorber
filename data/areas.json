@@ -17,10 +17,10 @@
       { "enemyId": "thornhide-boar", "spawnWeight": 6 },
       { "enemyId": "glade-stag", "spawnWeight": 6 }
     ],
-    "miniBossId": "old-mossfang",
-    "miniBossSpawnChance": 0.02,
-    "bossId": "mossfang-matriarch",
-    "bossSpawnChance": 0.005,
+    "miniBossId": null,
+    "miniBossSpawnChance": 0,
+    "bossId": null,
+    "bossSpawnChance": 0,
     "cursedObjectId": null,
     "cursedObjectSpawnChance": 0,
     "distanceFromCity": 10

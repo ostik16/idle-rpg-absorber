@@ -145,6 +145,8 @@ for (const a of tables['areas'] ?? []) {
   }
   if (!weights) errors.push(`${from}: needs at least one enemy with a spawn weight`);
   if ((a.bossSpawnChance ?? 0) + (a.miniBossSpawnChance ?? 0) > 1) errors.push(`${from}: bossSpawnChance and miniBossSpawnChance share one roll and must add up to 1 or less`);
+  // Decision S2: the first area has no mini-boss or boss. A cursed object is the only special it can have.
+  if (a.levelRange?.min === 1 && (a.miniBossId != null || a.bossId != null || a.miniBossSpawnChance > 0 || a.bossSpawnChance > 0)) errors.push(`${from}: an area that starts at level 1 has no mini-boss or boss`);
   for (let l = a.levelRange?.min; l <= a.levelRange?.max; l++) {
     if ((perLevel[l] ?? 0) < 2) errors.push(`${from}: level ${l} has ${perLevel[l] ?? 0} normal enemies in the spawn list, needs at least 2`);
   }

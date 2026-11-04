@@ -14,12 +14,12 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Each area has an enemy level range. Ranges overlap: area 1 is levels 1-5, area 2 is 3-8, area 3 is 5-10.
 - Areas go up to level 30.
 - No final boss.
-- Each area has a small chance to spawn mini-bosses, bosses or cursed objects.
+- Each area has a small chance to spawn mini-bosses, bosses or cursed objects, within the limit on the first area below.
 - No unlock conditions. A character can enter any area, but will probably die if it is too weak.
 - Nine areas cover levels 1 to 30, from level 1-5 up to level 25-30. More areas will be added later.
 - Every area has at least 2 enemies for each level in its range. An enemy can appear in more than one area.
 - Area 1 is 10 seconds from the city.
-- The first area has a boss.
+- The first area has no mini-boss or boss. A cursed object is the only special it can have.
 - Magical traits belong to enemies, not areas. Areas can still have their own visual or thematic identity.
 
 **Data.** id, name, theme, level range, enemy list with spawn weights, mini-boss/boss/cursed object spawn chances, distance from city, movement time between enemies (optional, overrides the default in 3.3).
