@@ -1,12 +1,16 @@
-import { notice } from './store';
+import { lastingNotices, notice } from './store';
 
-/** The latest one-line message from the engine, on every screen (ADR 0002 "Clock going backwards"). */
+/** One-line messages, on every screen: lasting ones first, then the engine's latest (ADR 0002, ADR 0003). */
 export function Notice() {
-  return notice.value === null ? null : (
-    <div class="app__notice">
-      <span class="ab-notice" role="status">
-        {notice}
-      </span>
+  const lines = notice.value === null ? lastingNotices.value : [...lastingNotices.value, notice.value];
+  if (lines.length === 0) return null;
+  return (
+    <div class="app__notices" role="status">
+      {lines.map((line) => (
+        <span key={line} class="ab-notice">
+          {line}
+        </span>
+      ))}
     </div>
   );
 }

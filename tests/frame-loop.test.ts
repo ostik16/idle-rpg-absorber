@@ -13,12 +13,14 @@ const T0 = 1_000_000;
 const TICK = constants.combat.tickMs;
 const FRAME = 16;
 const MINUTE = 60_000;
+const AREA = 'mossfang-glade';
 const data = loadGameData();
 
 /** A character in a real fight, so a wrong catch-up shows up in health, RNG streams and kills. */
 function fightingState(): GameState {
   const state = createGameState(7, T0, data);
   const character = createCharacterState('c1', 'Ysolde', data);
+  character.areaId = AREA;
   startFight(
     character,
     'glade-rat',
@@ -42,12 +44,14 @@ describe('frame loop (ADR 0002)', () => {
   let stop: () => void = () => {};
   let engine: Engine;
   let refresh: ReturnType<typeof vi.fn<() => void>>;
+  let onFailure: ReturnType<typeof vi.fn<(error: unknown) => void>>;
 
   function start(state: GameState = fightingState()): void {
     engine = createEngine({ data, state });
     const publish = connectEngine(engine, data);
     refresh = vi.fn(publish);
-    stop = startFrameLoop(engine, refresh);
+    onFailure = vi.fn();
+    stop = startFrameLoop(engine, refresh, onFailure);
   }
 
   beforeEach(() => {
@@ -145,5 +149,62 @@ describe('frame loop (ADR 0002)', () => {
     start();
     vi.advanceTimersByTime(FRAME * 10);
     expect(engine.state.clock.lastSimulatedAt).toBe(T0);
+  });
+
+  it('fights in a real area, because the next phases need one when the fight ends', () => {
+    const character = fightingState().roster[0];
+    expect(data.areas.map((area) => area.id)).toContain(character?.areaId);
+  });
+
+  describe('when a frame throws', () => {
+    const boom = new Error('boom');
+
+    it('stops stepping and reports once when advanceTo throws', () => {
+      start();
+      const advance = vi.spyOn(engine, 'advanceTo').mockImplementation(() => {
+        throw boom;
+      });
+      runFrames(5);
+      expect(advance).toHaveBeenCalledTimes(1);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith(boom);
+    });
+
+    it('stops stepping and reports once when refresh throws', () => {
+      start();
+      refresh.mockImplementation(() => {
+        throw boom;
+      });
+      const advance = vi.spyOn(engine, 'advanceTo');
+      runFrames(20);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith(boom);
+      const calls = advance.mock.calls.length;
+      runFrames(5);
+      expect(advance).toHaveBeenCalledTimes(calls);
+    });
+
+    it('does not come back when the tab returns', () => {
+      start();
+      const advance = vi.spyOn(engine, 'advanceTo').mockImplementation(() => {
+        throw boom;
+      });
+      runFrames(1);
+      setVisibility('hidden');
+      setVisibility('visible');
+      runFrames(5);
+      expect(advance).toHaveBeenCalledTimes(1);
+      expect(onFailure).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports a failed catch-up on return, without throwing into the event', () => {
+      start();
+      setVisibility('hidden');
+      const advance = vi.spyOn(engine, 'advanceTo').mockImplementation(() => {
+        throw boom;
+      });
+      expect(() => setVisibility('visible')).not.toThrow();
+      runFrames(5);
+      expect(advance).toHaveBeenCalledTimes(1);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith(boom);
+    });
   });
 });

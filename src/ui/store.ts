@@ -10,6 +10,7 @@ import { DEFAULT_ROUTE, watchHash, type Route } from './router';
 
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
 
 export const route = signal<Route>(DEFAULT_ROUTE);
 
@@ -22,7 +23,7 @@ export function startRouteSync(): () => void {
 
 /**
  * One character, one signal per live value (ADR 0001), so a change updates only what is bound to that value.
- * Health and mana are whole numbers rounded up: the engine's are fractional, and a living character never reads 0.
+ * Health, mana and XP are whole numbers rounded up: the engine's are fractional, and a living character never reads 0.
  * The loot feed joins this when the engine reports drops.
  */
 export interface CharacterView {
@@ -36,7 +37,7 @@ export interface CharacterView {
   readonly xpInLevel: ReadonlySignal<number>;
   readonly gold: ReadonlySignal<number>;
   readonly activity: ReadonlySignal<Phase>;
-  /** Time in the current phase, in the design system's format: `3m 12s`. */
+  /** Time in the current phase, in the design system's formats: `12s`, `3m 12s`, `7h 42m`. */
   readonly timeInActivity: ReadonlySignal<string>;
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
 }
@@ -45,6 +46,7 @@ const rosterSignal = signal<readonly CharacterView[]>([]);
 const warehouseTabsSignal = signal<readonly ReadonlySignal<WarehouseTab>[]>([]);
 const pendingSummarySignal = signal<OfflineSummary | null>(null);
 const noticeSignal = signal<string | null>(null);
+const lastingNoticesSignal = signal<readonly string[]>([]);
 
 /** Changes only when a character joins or leaves. */
 export const roster: ReadonlySignal<readonly CharacterView[]> = rosterSignal;
@@ -52,23 +54,37 @@ export const roster: ReadonlySignal<readonly CharacterView[]> = rosterSignal;
 export const warehouseTabs: ReadonlySignal<readonly ReadonlySignal<WarehouseTab>[]> = warehouseTabsSignal;
 /** The Welcome back screen's data, until the player has seen it. */
 export const pendingSummary: ReadonlySignal<OfflineSummary | null> = pendingSummarySignal;
-/** The latest one-line message: a refused command or a clock rewind. The next command clears it. */
+/** The latest answer from the engine: a refused command or a clock rewind. The next command clears it. */
 export const notice: ReadonlySignal<string | null> = noticeSignal;
+/** Lines that stay on screen until the page reloads: what the save load found, or that the game stopped. */
+export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesSignal;
 
-let dispatchCommand: ((command: Command) => void) | null = null;
+/** Adds lines to `lastingNotices`. Works before `connectEngine`, because a load finishes before the engine exists. */
+export function showLastingNotices(lines: readonly string[]): void {
+  if (lines.length > 0) lastingNoticesSignal.value = [...lastingNoticesSignal.value, ...lines];
+}
+
+export interface SendOptions {
+  /** The command cannot be undone, so save once it has been applied (ADR 0003 "Writing"). */
+  saveAfter?: boolean;
+}
+
+let dispatchCommand: ((command: Command, options: SendOptions) => void) | null = null;
 
 /** Sends a command to the engine. This is the only way the UI changes the game. */
-export function send(command: Command): void {
+export function send(command: Command, options: SendOptions = {}): void {
   if (dispatchCommand === null) throw new Error('send() called before connectEngine()');
   noticeSignal.value = null;
-  dispatchCommand(command);
+  dispatchCommand(command, options);
 }
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / MS_PER_SECOND);
-  const minutes = Math.floor(totalSeconds / SECONDS_PER_MINUTE);
+  const totalMinutes = Math.floor(totalSeconds / SECONDS_PER_MINUTE);
   const seconds = totalSeconds % SECONDS_PER_MINUTE;
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+  if (totalMinutes === 0) return `${seconds}s`;
+  if (totalMinutes < MINUTES_PER_HOUR) return `${totalMinutes}m ${seconds}s`;
+  return `${Math.floor(totalMinutes / MINUTES_PER_HOUR)}h ${totalMinutes % MINUTES_PER_HOUR}m`;
 }
 
 /**
@@ -126,7 +142,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       mana.value = Math.ceil(character.mana);
       maxMana.value = Math.ceil(stats.maxMana);
       level.value = character.level;
-      xpInLevel.value = character.xpInLevel;
+      xpInLevel.value = Math.ceil(character.xpInLevel);
       gold.value = character.gold;
       activity.value = character.phase;
       timeInActivity.value = formatDuration(character.timeInPhaseMs);
@@ -151,11 +167,18 @@ function noticeFor(event: EngineEvent): string | null {
 /**
  * Connects the signals to the engine and publishes its state. Returns `refresh`, which brings every signal in line
  * with state and reads the events since the last call. The store is the only reader of `drainEvents`.
+ * `onSaveDue` runs after the `refresh` that follows a `saveAfter` command being applied.
  */
-export function connectEngine(engine: Pick<Engine, 'state' | 'dispatch' | 'drainEvents'>, data: GameData): () => void {
+export function connectEngine(
+  engine: Pick<Engine, 'state' | 'dispatch' | 'drainEvents'>,
+  data: GameData,
+  onSaveDue: () => void = () => {},
+): () => void {
   const bindings = new Map<string, CharacterBinding>();
   const copySummary = copyInto(pendingSummarySignal);
   let copyTabs: ((source: WarehouseTab) => void)[] = [];
+  let saveWanted = false;
+  let simulatedAt = engine.state.clock.lastSimulatedAt;
 
   function refreshRoster(): void {
     const characters = engine.state.roster;
@@ -182,7 +205,18 @@ export function connectEngine(engine: Pick<Engine, 'state' | 'dispatch' | 'drain
     source.forEach((tab, i) => copyTabs[i]?.(tab));
   }
 
+  /**
+   * The engine applies queued commands before a step or an estimate, and both move the clock forward. A clock
+   * rewind moves it back and leaves them queued, and a call with no whole step due leaves it where it was.
+   */
+  function commandsApplied(): boolean {
+    const previous = simulatedAt;
+    simulatedAt = engine.state.clock.lastSimulatedAt;
+    return simulatedAt > previous;
+  }
+
   function refresh(): void {
+    const applied = commandsApplied();
     batch(() => {
       refreshRoster();
       refreshWarehouse();
@@ -192,11 +226,18 @@ export function connectEngine(engine: Pick<Engine, 'state' | 'dispatch' | 'drain
         if (message !== null) noticeSignal.value = message;
       }
     });
+    if (applied && saveWanted) {
+      saveWanted = false;
+      onSaveDue();
+    }
   }
 
   rosterSignal.value = [];
   noticeSignal.value = null;
-  dispatchCommand = (command) => engine.dispatch(command);
+  dispatchCommand = (command, options) => {
+    if (options.saveAfter) saveWanted = true;
+    engine.dispatch(command);
+  };
   refresh();
   return refresh;
 }

@@ -17,7 +17,7 @@ The game is a pure TypeScript engine over JSON data. The UI is a thin view on to
 | `save/` | IndexedDB wrapper, envelope, migrations, export and import, backup rotation | Depends on `state/` types only. |
 | `ui/` | Preact components, signals adapter, hash router, screens, icon set | Uses `ab-` classes from `design/ui/design-system/components/bundle.css`. |
 | `styles/` | `tokens.css` (generated), imports of `bundle.css` | Do not edit `tokens.css` by hand. |
-| `main.tsx` | Composition root: load data, load save, start engine, mount UI, wire autosave | Only place that knows every module. |
+| `main.tsx`, `start-game.tsx` | Composition root: load data, load save, start engine, mount UI, wire autosave | Only place that knows every module. `start-game.tsx` holds the order, so tests can run it; `main.tsx` holds the page and the save seam. |
 
 ## Dependency direction
 
@@ -31,7 +31,7 @@ main
  '- data -----> (nothing in src)
 ```
 
-Rules: lower layers never import upper ones. `engine` never imports `ui` or `save`. `ui` never mutates `state`; it dispatches commands. Browser APIs (`Date`, IndexedDB, DOM, `visibilitychange`) are touched only in `main.tsx`, `save/` and `ui/`; the engine receives time as an argument.
+Rules: lower layers never import upper ones. `engine` never imports `ui` or `save`. `ui` never mutates `state`; it dispatches commands. Browser APIs (`Date`, IndexedDB, DOM, `visibilitychange`) are touched only in `main.tsx`, `start-game.tsx`, `save/` and `ui/`; the engine receives time as an argument.
 
 ## Data flow
 

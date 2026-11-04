@@ -8,7 +8,7 @@ import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterState, GameState } from '../src/state/types';
 import { App } from '../src/ui/App';
 import { LiveRoster } from '../src/ui/LiveRoster';
-import { connectEngine, notice, roster, send, warehouseTabs } from '../src/ui/store';
+import { connectEngine, lastingNotices, notice, roster, send, showLastingNotices, warehouseTabs } from '../src/ui/store';
 
 const T0 = 1_000_000;
 const TICK = constants.combat.tickMs;
@@ -189,5 +189,122 @@ describe('the UI only sends commands (ADR 0001)', () => {
     engine.advanceTo(T0 - 5000);
     refresh();
     expect(notice.value).toBe('Clock moved back. No time was added.');
+  });
+});
+
+describe('numbers on screen', () => {
+  function viewOf(change: (character: CharacterState) => void) {
+    const state = gameWith('Ysolde');
+    change(state.roster[0] as CharacterState);
+    connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
+    return roster.value[0];
+  }
+
+  it('rounds XP up to a whole number, like health and mana', () => {
+    const view = viewOf((character) => {
+      character.xpInLevel = 12.25;
+    });
+    expect(view?.xpInLevel.value).toBe(13);
+  });
+
+  it.each([
+    [12_000, '12s'],
+    [59_999, '59s'],
+    [60_000, '1m 0s'],
+    [192_000, '3m 12s'],
+    [3_599_000, '59m 59s'],
+    [3_600_000, '1h 0m'],
+    [7_500_000, '2h 5m'],
+    [27_720_000, '7h 42m'],
+  ])('shows %i ms in a phase as %s (design system README)', (ms, text) => {
+    const view = viewOf((character) => {
+      character.timeInPhaseMs = ms;
+    });
+    expect(view?.timeInActivity.value).toBe(text);
+  });
+});
+
+describe('lasting notices', () => {
+  it('survive connectEngine and the next command, while the engine notice does not', () => {
+    showLastingNotices(['Loaded the previous save, 3m 12s old.']);
+    const engine = createEngine({ data, state: createGameState(7, T0, data) });
+    const refresh = connectEngine(engine, data);
+    send({ type: 'createCharacter', name: '' });
+    step(engine, refresh);
+    expect(notice.value).toEqual(expect.any(String));
+
+    send({ type: 'createCharacter', name: 'Ysolde' });
+    expect(notice.value).toBeNull();
+    expect(lastingNotices.value).toContain('Loaded the previous save, 3m 12s old.');
+  });
+
+  it('show every line on every screen', () => {
+    showLastingNotices(['Line one.', 'Line two.']);
+    connectEngine({ state: gameWith(), dispatch: () => {}, drainEvents: () => [] }, data);
+    render(<App />, host);
+    const shown = [...host.querySelectorAll('.ab-notice')].map((line) => line.textContent);
+    expect(shown).toEqual(expect.arrayContaining(['Line one.', 'Line two.']));
+  });
+});
+
+describe('saving after an irreversible command (ADR 0003 "Writing")', () => {
+  function connected() {
+    const engine = createEngine({ data, state: createGameState(7, T0, data) });
+    const rosterAtSave: number[] = [];
+    const refresh = connectEngine(engine, data, () => rosterAtSave.push(engine.state.roster.length));
+    return { engine, refresh, rosterAtSave };
+  }
+  const create = { type: 'createCharacter', name: 'Ysolde' } as const;
+
+  it('fires once the command has been applied, so the save holds its result', () => {
+    const { engine, refresh, rosterAtSave } = connected();
+    send(create, { saveAfter: true });
+    expect(rosterAtSave).toEqual([]);
+
+    step(engine, refresh);
+    expect(rosterAtSave).toEqual([1]);
+
+    step(engine, refresh);
+    expect(rosterAtSave).toEqual([1]);
+  });
+
+  it('waits when a refresh comes before any step has run', () => {
+    const { engine, refresh, rosterAtSave } = connected();
+    send(create, { saveAfter: true });
+    refresh();
+    expect(rosterAtSave).toEqual([]);
+    engine.advanceTo(T0 + TICK / 2);
+    refresh();
+    expect(rosterAtSave).toEqual([]);
+
+    step(engine, refresh);
+    expect(rosterAtSave).toEqual([1]);
+  });
+
+  it('waits through a clock rewind, which leaves commands queued', () => {
+    const { engine, refresh, rosterAtSave } = connected();
+    send(create, { saveAfter: true });
+    engine.advanceTo(T0 - 60_000);
+    refresh();
+    expect(rosterAtSave).toEqual([]);
+
+    step(engine, refresh);
+    expect(rosterAtSave).toEqual([1]);
+  });
+
+  it('fires after an offline estimate, which applies queued commands too', () => {
+    const { engine, refresh, rosterAtSave } = connected();
+    send(create, { saveAfter: true });
+    engine.advanceTo(T0 + (constants.offline.stepSimMaxSeconds + 1) * 1000);
+    refresh();
+    expect(rosterAtSave).toEqual([1]);
+  });
+
+  it('does not fire for a command without the option', () => {
+    const { engine, refresh, rosterAtSave } = connected();
+    send(create);
+    step(engine, refresh);
+    expect(rosterAtSave).toEqual([]);
+    expect(engine.state.roster).toHaveLength(1);
   });
 });
