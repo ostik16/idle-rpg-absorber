@@ -38,8 +38,8 @@ function fixture(area: Record<string, unknown> = {}): GameData {
   });
 }
 
-/** The balance tool leaves bosses and mini-bosses out of its model, so this is the area as it models it. */
-const NO_SPECIALS = { miniBossSpawnChance: 0, bossSpawnChance: 0 };
+/** The first area has no specials (decision S2), so these tests add them, as a later area will have them. */
+const SPECIALS = { miniBossId: MINI_BOSS, miniBossSpawnChance: 0.02, bossId: BOSS, bossSpawnChance: 0.005 };
 
 function freshState(data: GameData): GameState {
   return createGameState(SEED, T0, data);
@@ -228,7 +228,7 @@ describe('searching (3.3)', () => {
 
   it('targeting does not touch the fight: a rat takes as long, targeted or not', () => {
     const fightTicks = (target: string | null): number => {
-      const { engine, character, advance, id } = atArea(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }], ...NO_SPECIALS }));
+      const { engine, character, advance, id } = atArea(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }] }));
       engine.dispatch({ type: 'setTarget', characterId: id, enemyId: target });
       advance((target === null ? 6000 : 12_000) + TICK);
       let ticks = 0;
@@ -242,7 +242,7 @@ describe('searching (3.3)', () => {
   });
 
   it('goes from looting straight back to searching, and the whole gap between fights is the movement time', () => {
-    const { engine, character, advance } = atArea(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }], ...NO_SPECIALS }));
+    const { engine, character, advance } = atArea(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }] }));
     advance(6000 + TICK);
     while (character.phase === 'fighting') advance(TICK);
     expect(character.phase).toBe('looting');
@@ -258,7 +258,7 @@ describe('searching (3.3)', () => {
   });
 
   it('runs the phases in order, with no help', () => {
-    const { engine, advance, id } = setup(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }], ...NO_SPECIALS }));
+    const { engine, advance, id } = setup(fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }] }));
     engine.drainEvents();
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(60_000);
@@ -363,7 +363,7 @@ describe('commands (3.2, 3.3, L5)', () => {
   });
 
   it('refuses a target while fleeing, and keeps one set while dead', () => {
-    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }], ...NO_SPECIALS });
+    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }] });
     const { engine, character, advance, id } = setup(data);
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(16_000 + TICK);
@@ -402,7 +402,7 @@ describe('commands (3.2, 3.3, L5)', () => {
   });
 
   it('marks the return in a fight, so it holds if the character dies fleeing, and arriving clears it', () => {
-    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }], ...NO_SPECIALS });
+    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }] });
     const { engine, character, advance, id } = setup(data);
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(16_000 + TICK);
@@ -445,7 +445,7 @@ describe('commands (3.2, 3.3, L5)', () => {
   });
 
   it('can target the mini-boss and the boss, at their own multiplier, and clear the target', () => {
-    const { engine, character, advance, id } = setup();
+    const { engine, character, advance, id } = setup(fixture(SPECIALS));
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     engine.dispatch({ type: 'setTarget', characterId: id, enemyId: MINI_BOSS });
     advance(TICK);
@@ -485,7 +485,7 @@ describe('commands (3.2, 3.3, L5)', () => {
   });
 
   it('can leave while looting, and walks the whole way back', () => {
-    const data = fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }], ...NO_SPECIALS });
+    const data = fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }] });
     const { engine, character, advance, id } = setup(data);
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(16_000 + TICK);
@@ -500,7 +500,7 @@ describe('commands (3.2, 3.3, L5)', () => {
   });
 
   it('in a fight, it leaves through fleeing, shortened by movement speed (L5)', () => {
-    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }], ...NO_SPECIALS });
+    const data = fixture({ enemies: [{ enemyId: BOSS, spawnWeight: 1 }] });
     const { engine, character, advance, id } = setup(data);
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(16_000 + TICK);
@@ -595,26 +595,46 @@ describe('kill rate against the balance tool, with deaths turned off (3.3, 5.3)'
     expect(Math.abs(actual / expected - 1)).toBeLessThan(0.05);
   };
 
-  it('a new character, untargeted, on the tool\'s model of the area', () => {
-    const { perHour } = farm(fixture(NO_SPECIALS), 4, null);
+  it('a new character, untargeted', () => {
+    const { perHour } = farm(fixture(), 4, null);
     within5Percent(perHour, toolKillsPerHour(defaultBuild(), null));
   });
 
   it('a new character, targeted', () => {
-    const { perHour } = farm(fixture(NO_SPECIALS), 4, WISP);
+    const { perHour } = farm(fixture(), 4, WISP);
     within5Percent(perHour, toolKillsPerHour(defaultBuild(), WISP));
   });
 
-  it('a character strong for the area, with the real boss and mini-boss chances', () => {
-    const { perHour } = farm(fixture(), 4, null, STRONG.attributes);
+  it('a character strong for the area, with a boss and a mini-boss in it', () => {
+    const { perHour } = farm(fixture(SPECIALS), 4, null, STRONG.attributes);
     within5Percent(perHour, toolKillsPerHour(STRONG, null));
   });
 });
 
-describe('spawn shares over a long seeded run (3.1)', () => {
-  it('match the weights, and the boss and mini-boss chances, in the real area', () => {
-    const { kills, total } = farm(fixture(), 40, null, STRONG.attributes);
+describe('the first area (decision S2)', () => {
+  it('has no mini-boss or boss, in the real data', () => {
     const area = loadGameData().areas[0] as unknown as (typeof areasJson)[number];
+    expect([area.miniBossId, area.miniBossSpawnChance, area.bossId, area.bossSpawnChance]).toEqual([null, 0, null, 0]);
+  });
+
+  it('refuses them as a target', () => {
+    const { engine, character, advance, id } = setup();
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    engine.drainEvents();
+    for (const enemyId of [MINI_BOSS, BOSS]) {
+      engine.dispatch({ type: 'setTarget', characterId: id, enemyId });
+      advance(TICK);
+      expect(rejections(engine)).toEqual([`No "${enemyId}" in this area.`]);
+    }
+    expect(character.targetEnemyId).toBeNull();
+  });
+});
+
+describe('spawn shares over a long seeded run (3.1)', () => {
+  it('match the weights, and the boss and mini-boss chances, in an area that has them', () => {
+    const { kills, total } = farm(fixture(SPECIALS), 40, null, STRONG.attributes);
+    const area = { ...(AREA_ROW as (typeof areasJson)[number]), ...SPECIALS };
     const weightTotal = area.enemies.reduce((sum, e) => sum + e.spawnWeight, 0);
     const special = area.miniBossSpawnChance + area.bossSpawnChance;
 

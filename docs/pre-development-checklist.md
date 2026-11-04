@@ -75,7 +75,7 @@ Small things that will cause arguments during implementation. All eight are sett
 
 ## 3. Design and content still to produce
 
-- [x] **First vertical slice content.** (Issue #8: see decisions S1 to S8 and T1 to T9. Area 1 has 11 normal enemies, a mini-boss and a boss. The loop itself is issue #9.) Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
+- [x] **First vertical slice content.** (Issue #8: see decisions S1 to S8 and T1 to T9. Area 1 has 11 normal enemies. The mini-boss and boss written for it are in no area for now (S2). The loop itself is issue #9.) Do not fill every table. Fill just enough to play one loop end to end: Area 1 (levels 1-5), about 5 normal enemies with traits, 1 mini-boss, a drop table each, around 15 items, 2 potions, 3 spells, the XP table to level 10, one upgrade table. Build the loop (travel, fight, loot, return, restock, offline summary) on that, then widen.
 - [x] **Screens not sketched.** Character creation, backpack, loot filter rule editor, save export and import, settings, travelling state and death state detail are sketched. The content editor and debug tools (5.2, 5.4) are not, and wait for their issues.
 - [ ] **Item art.** None exists. Slots show category icons until it does, and the design system is set up for that.
 - [x] **Dev tools plan.** Data validation, the combat simulator, drop calculator and progression curve are built. A proper editor (5.2) comes later.
@@ -103,7 +103,7 @@ Small things that will cause arguments during implementation. All eight are sett
 - [ ] **Choices made building death (#24), for the owner to check.** None of these is in the design. (1) Healing after death runs in the `restocking` phase, the character's time in the city, so #27 can put selling and restocking ahead of it. (2) In the city a character drinks one potion at a time, and only when none is running, so regeneration can save the last one. (3) It picks the largest potion that fits what is missing up to its healing target, or the smallest when none fits: the L9 rule, measured to 65% for balanced and 100% for fast. (4) XP lost rounds down to a whole number, so a character always holds whole XP. (5) Character points can be spent in any phase, including in a fight and while dead. (6) Raising vitality raises maximum health and does not heal.
 - [ ] **Confirm the farming assumptions from issue #22.** The design does not settle these, so the engine assumes them:
   - Looting takes no time of its own.
-  - A spawn chance applies per finished search, and the boss and mini-boss share one roll, so listed enemies take the remaining 97.5% of spawns.
+  - A spawn chance applies per finished search, and the boss and mini-boss share one roll, so listed enemies take the rest of the spawns.
   - A target skips the spawn roll, so no boss or mini-boss turns up while targeting. The mini-boss and boss can be targeted, because their data sets a multiplier for it.
   - A target needs an area, so it cannot be set in the city. It is refused while fleeing or on the way back, and kept if set while dead. On a search under way it applies at once and keeps the time already spent, so a fight can start straight away.
   - A return clears the target.
@@ -111,8 +111,10 @@ Small things that will cause arguments during implementation. All eight are sett
   - Turning back on the way out takes as long as it has walked.
   - A character changes area only from the city.
   - A character needs full health to be sent out, following 3.2.
-- [ ] **Owner question from the #22 review.** Should a level 1 character meet a boss and a mini-boss it cannot beat?
-- [ ] **Model bosses in `balance:drops`.** The owner decided that the kills-per-hour bar on #22 covers listed enemies only, and bosses are tracked here. The tool leaves out the boss and mini-boss. With deaths turned off, so that a character grinds through fights it would really lose, the engine kills 21% fewer enemies per hour than the tool says for a new character, and 11% fewer with the reference attributes. These are not real play numbers: on real data with no return trigger yet (#27), a new character dies after a median of 306 s, and neither build won a simulated fight against either special. The tool first needs a rule for a boss the build cannot beat, and `--target` needs to accept the boss and mini-boss, as the engine does.
+- [x] **Owner question from the #22 review.** Answered in S2: the first area has no mini-boss or boss, and a cursed object is the only special it can have.
+- [ ] **Model bosses in `balance:drops`.** The tool leaves out the boss and mini-boss. Area 1 now has neither (S2), so this waits for the first area that does. The tool will need a rule for a boss the build cannot beat, and `--target` will need to accept the boss and mini-boss, as the engine does.
+- [ ] **A source for rare items.** Every rare item that drops lists only Mossfang Matriarch as its source, and she is in no area now (S2). No rare item can drop until a cursed object or a later area exists. Cursed objects are outside the first playable batch (#9). Decide where Old Mossfang and Mossfang Matriarch go.
+- [ ] **Update the UI sketches for S2.** Change any sketch that shows a boss in Area 1 in the claude.ai artifact, then re-snapshot it.
 
 ## 6. Choices made while building the save system (#30)
 
