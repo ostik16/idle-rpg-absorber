@@ -5,7 +5,7 @@
 import constants from '../../data/constants.json';
 import xpTable from '../../data/xp-table.json';
 
-type XpTable = readonly { level: number; xpToNext: number }[];
+export type XpTable = readonly { level: number; xpToNext: number }[];
 type ProgressionConstants = typeof constants.progression;
 type PointsConstants = typeof constants.points;
 
@@ -51,6 +51,14 @@ export function xpReward(enemyLevel: number, c: ProgressionConstants = constants
   return Math.round(c.xpReward.base * c.xpReward.growthPerLevel ** (enemyLevel - 1));
 }
 
+/** XP of one kill (design 3.5): the enemy's own `xpReward` if its row has one, else the formula. */
+export function killXp(
+  enemy: { readonly level: number; readonly xpReward?: number },
+  c: ProgressionConstants = constants.progression,
+): number {
+  return enemy.xpReward ?? xpReward(enemy.level, c);
+}
+
 /** Kills of enemies at `enemyLevel` needed to clear a whole character level. Used by the balance tools (5.3). */
 export function killsToClearLevel(characterLevel: number, enemyLevel: number): number {
   return Math.ceil(xpToNextLevel(characterLevel) / xpReward(enemyLevel));
@@ -82,7 +90,8 @@ export function xpFloor(xp: number, xpToNext: number, c: PointsConstants = const
 /**
  * XP into the level after dying (design 3.7). `lossFraction` is a random share of the level's requirement
  * (`xpToNext`), drawn by the caller between constants.death.xpLossMin and xpLossMax (0 to 25%).
- * Loss = min(lossFraction x xpToNext, xp - floor), so XP never drops below the highest point mark passed.
+ * Loss = min(lossFraction x xpToNext, xp - floor), rounded down, so XP stays whole and never drops below the
+ * highest point mark passed.
  * Example, level of 100 XP, maximum roll 25%: 74 XP has floor 50, loses 24; 76 XP has floor 75, loses 1;
  * 20 XP has floor 0, loses 20.
  */
@@ -93,7 +102,7 @@ export function xpAfterDeath(
   c: PointsConstants = constants.points,
 ): number {
   if (!(lossFraction >= 0 && lossFraction <= 1)) throw new RangeError(`loss fraction must be 0 to 1, got ${lossFraction}`);
-  const loss = Math.min(lossFraction * xpToNext, xp - xpFloor(xp, xpToNext, c));
+  const loss = Math.floor(Math.min(lossFraction * xpToNext, xp - xpFloor(xp, xpToNext, c)));
   return xp - loss;
 }
 
@@ -117,6 +126,59 @@ export function newlyAwardedPoints(
   const perMark = c.characterPointsPerLevel / c.characterPointAwardAtLevelFraction.length;
   const reached = Math.max(highestMarkReached, pointsAwardedAt(newXp, xpToNext, c));
   return { points: (reached - highestMarkReached) * perMark, highestMarkReached: reached };
+}
+
+/** Where a character stands in its levels. `highestMarkReached` is explained at `newlyAwardedPoints`. */
+export interface XpProgress {
+  level: number;
+  xpInLevel: number;
+  highestMarkReached: number;
+}
+
+/** The progress after gaining XP, and the points and levels that came with it. */
+export interface XpGain extends XpProgress {
+  /** The XP that counted: what the level cap throws away is left out. */
+  xpGained: number;
+  characterPoints: number;
+  skillPoints: number;
+  levelsGained: number;
+}
+
+/**
+ * Adds `amount` XP (design 4.3, 4.4). XP past a level's requirement carries into the next level, so one kill can
+ * pass several marks or levels. Reaching a level pays skillPointsPerLevel. At the level cap XP stays at 0.
+ */
+export function gainXp(
+  progress: XpProgress,
+  amount: number,
+  levelCap: number = constants.levelCap,
+  table: XpTable = xpTable,
+  c: PointsConstants = constants.points,
+): XpGain {
+  let { level, highestMarkReached } = progress;
+  let xpInLevel = progress.xpInLevel + amount;
+  let characterPoints = 0;
+  while (level < levelCap) {
+    const need = xpToNextLevel(level, table);
+    const award = newlyAwardedPoints(xpInLevel, need, highestMarkReached, c);
+    characterPoints += award.points;
+    highestMarkReached = award.highestMarkReached;
+    if (xpInLevel < need) break;
+    xpInLevel -= need;
+    level++;
+    highestMarkReached = 0;
+  }
+  const discarded = level >= levelCap ? xpInLevel : 0;
+  const levelsGained = level - progress.level;
+  return {
+    level,
+    xpInLevel: xpInLevel - discarded,
+    highestMarkReached,
+    xpGained: amount - discarded,
+    characterPoints,
+    skillPoints: levelsGained * c.skillPointsPerLevel,
+    levelsGained,
+  };
 }
 
 /**

@@ -1,9 +1,9 @@
 /**
- * Health regeneration and potions (design 2.6, decisions T10, N11, L9). Regeneration and running potions
- * work in every phase except `dead`; a character only starts a potion on its own in a fight.
+ * Health regeneration and potions (design 2.6, decisions T10, N11, L9, L10). Regeneration and running potions
+ * work in every phase except `dead`; a character only starts a potion on its own in a fight or in the city.
  */
 import { constantSection, type GameData } from '../data/game-data';
-import { chooseAutoPotion, pendingHeal, type HeldPotion } from '../game/potions';
+import { chooseAutoPotion, chooseCityPotion, cityPotionTarget, pendingHeal, type HeldPotion } from '../game/potions';
 import { healthRegenPerSecond, potionHealPerTick, potionTickCount, type PotionTier } from '../game/stats';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState } from '../state/types';
@@ -100,6 +100,20 @@ export function autoUsePotion(character: CharacterState, ctx: StepContext): void
   );
   const { maxHealth } = derivedStats(character, ctx.data);
   const itemId = chooseAutoPotion(character.health, maxHealth, pending, heldPotions(character, ctx.data));
+  if (itemId === null) return;
+  takeFromBag(character, itemId);
+  drinkPotion(character, itemId);
+}
+
+/**
+ * City healing (decisions L10): drinks up to the character's healing choice, one potion at a time so regeneration
+ * can save the last one. Called before `stepHealing`, so the next potion starts with no gap.
+ */
+export function drinkInCity(character: CharacterState, ctx: StepContext): void {
+  if (character.potions.queue.length > 0) return;
+  const { maxHealth } = derivedStats(character, ctx.data);
+  const target = cityPotionTarget(character.settings.cityHealing, constantSection(ctx.data, 'cityHealing').balancedFraction);
+  const itemId = chooseCityPotion(character.health, maxHealth, target, heldPotions(character, ctx.data));
   if (itemId === null) return;
   takeFromBag(character, itemId);
   drinkPotion(character, itemId);

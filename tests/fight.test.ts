@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
 import enemiesJson from '../data/enemies.json';
 import itemsJson from '../data/items.json';
+import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, requireRow, type GameData } from '../src/data/game-data';
 import { stepCharacter, type StepContext } from '../src/engine/character';
 import { createEngine } from '../src/engine/engine';
@@ -23,7 +24,7 @@ const SEED = 7;
 const MINOR = 'minor-health-potion';
 const LESSER = 'lesser-health-potion';
 
-const DUMMY = { id: 'dummy', health: 24, damage: 5, attackSpeed: 1, defence: 0 };
+const DUMMY = { id: 'dummy', level: 1, health: 24, damage: 5, attackSpeed: 1, defence: 0 };
 const WALL = { id: 'wall', health: 1_000_000, damage: 5, attackSpeed: 1, defence: 0 };
 const HARMLESS = { id: 'harmless', health: 1_000_000, damage: 0, attackSpeed: 0.01, defence: 1_000_000 };
 
@@ -38,6 +39,7 @@ function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
     constants: { ...constants, stats },
     items: itemsJson,
     enemies: [DUMMY, WALL, HARMLESS, ...enemiesJson],
+    xpTable: xpTableJson,
   });
 }
 
@@ -197,7 +199,7 @@ describe('a fight on engine steps (3.5, 3.6)', () => {
 
     expect(character.phase).toBe('dead');
     expect(character.potions).toEqual({ queue: [], ticksDone: 0, msIntoTick: 0 });
-    run(100);
+    run(39); // level 1 respawns after 4 s
     expect(character.health).toBe(0);
   });
 

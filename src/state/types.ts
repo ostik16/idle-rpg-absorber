@@ -23,7 +23,7 @@ export const PHASES = [
 export type Phase = (typeof PHASES)[number];
 
 /** The random streams every character has, one per purpose (ADR 0002 "RNG"). */
-export type StreamName = 'combat' | 'drops' | 'search';
+export type StreamName = 'combat' | 'drops' | 'search' | 'death';
 
 /** The four 32-bit words of one sfc32 stream. Same shape as `RngState` in game/rng.ts. */
 export type StreamState = readonly [number, number, number, number];
@@ -121,6 +121,8 @@ export interface CharacterState {
   gold: number;
   level: number;
   xpInLevel: number;
+  /** Point marks (0 to 3) ever reached in this level, so a mark never pays twice (design 4.4). */
+  highestMarkReached: number;
   points: PointsState;
   attributes: Attributes;
   /** Hidden numbers, shown only as titles (design 4.6). */

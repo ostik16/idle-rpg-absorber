@@ -26,7 +26,7 @@ Each character is an independent state machine (travel, search, fight, flee, loo
 
 ### RNG
 
-**sfc32** (four 32-bit words of state), seeded from a 128-bit seed through splitmix32. Pure TypeScript, about 15 lines, fast, passes PractRand. A master seed is stored in the save. Each character has its own stream, derived as `splitmix(masterSeed, characterId, streamIndex)`. Separate streams per purpose (combat, drops, search) keep a change in one system from reshuffling the others, which makes balance diffs readable. Stream state (4 words) is part of the save (ADR 0003). No `Math.random` anywhere in `src/game` or `src/engine`; `tests/purity.test.ts` enforces it.
+**sfc32** (four 32-bit words of state), seeded from a 128-bit seed through splitmix32. Pure TypeScript, about 15 lines, fast, passes PractRand. A master seed is stored in the save. Each character has its own stream, derived as `splitmix(masterSeed, characterId, streamIndex)`. Separate streams per purpose (combat, drops, search, death) keep a change in one system from reshuffling the others, which makes balance diffs readable. Stream state (4 words) is part of the save (ADR 0003). No `Math.random` anywhere in `src/game` or `src/engine`; `tests/purity.test.ts` enforces it.
 
 ### Catch-up on return and offline
 

@@ -3,6 +3,7 @@ import constants from '../data/constants.json';
 import areasJson from '../data/areas.json';
 import enemiesJson from '../data/enemies.json';
 import itemsJson from '../data/items.json';
+import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
 import { applyCommand } from '../src/engine/commands';
 import { createEngine, type Engine } from '../src/engine/engine';
@@ -33,6 +34,7 @@ function fixture(area: Record<string, unknown> = {}): GameData {
     items: itemsJson,
     enemies: enemiesJson,
     areas: [{ ...AREA_ROW, ...area } as (typeof areasJson)[number]],
+    xpTable: xpTableJson,
   });
 }
 
@@ -386,6 +388,7 @@ describe('commands (3.2, 3.3, L5)', () => {
       const { engine, character, advance, id } = setup();
       character.areaId = AREA;
       character.phase = phase;
+      character.health = 1; // at full health it would leave the city at once
       engine.drainEvents();
       engine.dispatch({ type: 'returnToCity', characterId: id });
       advance(TICK);
@@ -555,13 +558,15 @@ function farm(data: GameData, hours: number, target: string | null, attributes?:
   advance(10_000);
   const kills: Record<string, number> = {};
   const count = (events: readonly EngineEvent[]): void => {
-    for (const e of events) if (e.type === 'enemyKilled') kills[e.enemyId] = (kills[e.enemyId] ?? 0) + 1;
+    for (const e of events) {
+      if (e.type === 'enemyKilled') kills[e.enemyId] = (kills[e.enemyId] ?? 0) + 1;
+      expect(e.type).not.toBe('characterDied');
+    }
   };
   engine.drainEvents();
   for (let minute = 0; minute < hours * 60; minute++) {
     advance(60_000);
     count(engine.drainEvents());
-    expect(character.phase).not.toBe('dead');
   }
   const total = Object.values(kills).reduce((a, b) => a + b, 0);
   return { kills, total, perHour: total / hours };

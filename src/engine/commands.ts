@@ -1,11 +1,11 @@
 /**
  * Commands from the UI (architecture "Data flow" 5). `dispatch` only queues them; the engine applies
  * them between steps, never in the middle of one (ADR 0002). The UI never mutates state itself.
- * Later issues add the rest of the list (spend points...).
+ * Later issues add the rest of the list.
  */
 import { constantSection, type GameData } from '../data/game-data';
 import { spawnsInArea } from '../game/farming';
-import { characterNameError } from '../game/stats';
+import { characterNameError, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState, GameState } from '../state/types';
@@ -16,6 +16,8 @@ import { returnToCity, sendToArea, type AreaRow } from './travel';
 export type Command =
   /** Name rules and slots are in design 4.1. The engine picks the id. */
   | { type: 'createCharacter'; name: string }
+  /** Raises an attribute (design 4.4). Spending is final; respec needs a rare item. */
+  | { type: 'spendCharacterPoints'; characterId: string; attribute: keyof Attributes; amount: number }
   /** The player has seen the Welcome back screen. */
   | { type: 'dismissSummary' }
   /** Sets out from the city to farm an area (3.2). */
@@ -33,6 +35,24 @@ function createCharacterError(state: GameState, name: string, data: GameData): s
   }
   const names = state.roster.map((character) => character.name);
   return characterNameError(name, names, constantSection(data, 'creation'));
+}
+
+/** Spends the points, or returns why it cannot, in the design system's voice. */
+function spendCharacterPoints(
+  state: GameState,
+  command: Extract<Command, { type: 'spendCharacterPoints' }>,
+): string | null {
+  const { attribute, amount } = command;
+  const character = state.roster.find((c) => c.id === command.characterId);
+  if (character === undefined) return 'That character no longer exists.';
+  if (!Object.hasOwn(character.attributes, attribute)) return `No attribute called ${attribute}.`;
+  if (!Number.isInteger(amount) || amount < 1) return 'Spend at least 1 whole point.';
+  const { characterUnspent } = character.points;
+  if (amount > characterUnspent) return `${characterUnspent} of ${amount} character points available.`;
+  character.attributes[attribute] += amount;
+  character.points.characterUnspent -= amount;
+  character.points.characterSpent += amount;
+  return null;
 }
 
 function findArea(areaId: string, data: GameData): AreaRow | undefined {
@@ -107,6 +127,12 @@ export function applyCommand(
       state.account.nextCharacterNumber += 1;
       state.roster.push(createCharacterState(id, command.name.trim(), data));
       return { type: 'characterCreated', characterId: id };
+    }
+    case 'spendCharacterPoints': {
+      const reason = spendCharacterPoints(state, command);
+      if (reason !== null) return { type: 'commandRejected', command, reason };
+      const { characterId, attribute, amount } = command;
+      return { type: 'characterPointsSpent', characterId, attribute, amount };
     }
     case 'dismissSummary':
       state.pendingSummary = null;

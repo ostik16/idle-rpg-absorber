@@ -3,7 +3,9 @@ import constants from '../data/constants.json';
 import xpTable from '../data/xp-table.json';
 import {
   characterPointsEarned,
+  gainXp,
   killsToClearLevel,
+  killXp,
   levelForTotalXp,
   newlyAwardedPoints,
   pointMarks,
@@ -178,6 +180,23 @@ describe('point marks and the death floor (design 3.7, 4.4)', () => {
     }
   });
 
+  it('keeps XP whole, whatever the level and the roll, and on a mark that is not whole', () => {
+    expect(pointMarks(311)).toEqual([77.75, 155.5, 233.25]);
+    expect(xpAfterDeath(233, 311, 0.25)).toBe(156); // floor 155.5, so 77 of the 77.5 allowed
+    expect(xpAfterDeath(100, 311, 0.25)).toBe(78); // floor 77.75
+    expect(xpAfterDeath(77, 311, 0.25)).toBe(0); // no floor yet: the most a level of 311 can lose
+    for (const { xpToNext } of xpTable) {
+      for (const f of [0, 0.0123, 0.1, 0.17, 0.2499, 0.25]) {
+        for (const share of [0.1, 0.26, 0.49, 0.5, 0.74, 0.99]) {
+          const xp = Math.floor(share * xpToNext);
+          const after = xpAfterDeath(xp, xpToNext, f);
+          expect(Number.isInteger(after)).toBe(true);
+          expect(after).toBeGreaterThanOrEqual(xpFloor(xp, xpToNext));
+        }
+      }
+    }
+  });
+
   it('rejects a loss fraction outside 0..1', () => {
     expect(() => xpAfterDeath(50, 100, -0.1)).toThrow(RangeError);
     expect(() => xpAfterDeath(50, 100, 1.5)).toThrow(RangeError);
@@ -281,5 +300,73 @@ describe('roster slots (design 4.1)', () => {
   it('rejects a negative or fractional ticket count', () => {
     expect(() => unlockedSlots(-1)).toThrow(RangeError);
     expect(() => unlockedSlots(0.5)).toThrow(RangeError);
+  });
+});
+
+describe('killXp (design 3.5)', () => {
+  it("uses the enemy's own reward, or the formula when it has none", () => {
+    expect(killXp({ level: 1, xpReward: 9 })).toBe(9);
+    expect(killXp({ level: 5 })).toBe(15);
+  });
+});
+
+describe('gainXp (design 4.3, 4.4)', () => {
+  const start = { level: 1, xpInLevel: 0, highestMarkReached: 0 };
+
+  it('pays one character point per mark, on reaching it', () => {
+    expect(gainXp(start, 24)).toMatchObject({ xpInLevel: 24, characterPoints: 0, highestMarkReached: 0 });
+    expect(gainXp(start, 25)).toMatchObject({ xpInLevel: 25, characterPoints: 1, highestMarkReached: 1 });
+    expect(gainXp(start, 75)).toMatchObject({ xpInLevel: 75, characterPoints: 3, highestMarkReached: 3, level: 1 });
+  });
+
+  it('a level 1 character has 3 points before level 2, and the level pays 1 skill point', () => {
+    expect(gainXp(start, 99)).toMatchObject({ level: 1, characterPoints: 3, skillPoints: 0 });
+    expect(gainXp(start, 100)).toEqual({
+      level: 2,
+      xpInLevel: 0,
+      highestMarkReached: 0,
+      xpGained: 100,
+      characterPoints: 3,
+      skillPoints: 1,
+      levelsGained: 1,
+    });
+  });
+
+  it('carries XP into the next level and pays that level its marks', () => {
+    // Level 2 needs 311, so 100 + 78 is past its first mark at 77.75.
+    expect(gainXp(start, 178)).toMatchObject({ level: 2, xpInLevel: 78, characterPoints: 4, highestMarkReached: 1 });
+  });
+
+  it('crosses several levels in one go', () => {
+    const gain = gainXp(start, totalXpForLevel(4));
+    expect(gain).toMatchObject({ level: 4, xpInLevel: 0, characterPoints: 9, skillPoints: 3, levelsGained: 3 });
+  });
+
+  it('does not pay a mark twice when XP has fallen and rises again', () => {
+    const after = gainXp({ level: 1, xpInLevel: 50, highestMarkReached: 3 }, 26);
+    expect(after).toMatchObject({ xpInLevel: 76, characterPoints: 0, highestMarkReached: 3 });
+  });
+
+  it('stops at the level cap with no XP: 87 character points and 29 skill points in all', () => {
+    let progress = start;
+    let characterPoints = 0;
+    let skillPoints = 0;
+    while (progress.level < constants.levelCap) {
+      const gain = gainXp(progress, 1000);
+      characterPoints += gain.characterPoints;
+      skillPoints += gain.skillPoints;
+      progress = gain;
+    }
+    expect(progress).toMatchObject({ level: 30, xpInLevel: 0 });
+    expect(gainXp({ level: 29, xpInLevel: xpToNextLevel(29) - 5, highestMarkReached: 3 }, 12)).toMatchObject({
+      level: 30,
+      xpInLevel: 0,
+      xpGained: 5,
+    });
+    expect(gainXp(progress, 12).xpGained).toBe(0);
+    expect(characterPoints).toBe(87);
+    expect(characterPoints).toBe(characterPointsEarned(30, 0));
+    expect(skillPoints).toBe(skillPointsEarned(30));
+    expect(gainXp(progress, 1_000_000)).toMatchObject({ level: 30, xpInLevel: 0, characterPoints: 0, skillPoints: 0 });
   });
 });

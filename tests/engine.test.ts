@@ -195,7 +195,8 @@ describe('characters (ADR 0002 "Multiple characters")', () => {
       streams: createCharacterStreams(SEED, 'a'),
       emit: (event) => void emitted.push(event),
     };
-    const moving = ['travelling', 'searching', 'looting', 'returning'];
+    // These change phase on their own; at full health `restocking` leaves the city at once.
+    const moving = ['travelling', 'searching', 'looting', 'returning', 'restocking'];
     for (const phase of PHASES.filter((p) => !moving.includes(p))) {
       const character: CharacterState = { ...newCharacter('a', 'A'), phase };
       stepCharacter(character, ctx);
