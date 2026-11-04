@@ -173,3 +173,6 @@ Still open:
 - [x] **Absorption level.** The character's level at the end of the fight, before the kill's XP.
 - [x] **Regeneration trait.** Heals the absorbed percent of maximum health every `constants.traits.regenerationIntervalSeconds` (10), counted in `traitRegenMs` on the character. Life steal heals the percent of the damage each hit dealt, capped at maximum health.
 - [x] **Bestiary kills.** Every kill counts, mini-bosses and bosses too. A deleted character's kill counts may go; `revealed` stays.
+- [x] **Order inside a fight step.** The hits land, then proficiency training, then life steal (only if the character is still alive after the enemy's blow), then, on a kill, absorption, XP and loot.
+- [x] **Offline proficiency.** #29 counts a kill's proficiency once, after the kill, with `killProficiencyGain` (hits times the gain at the points held before the kill), then applies `offline.proficiencyRate`. Not built until #29. The gain falls as the skill rises, so counting once is not lower than hit by hit; the slower offline pace comes from the rate.
+- [x] **Trait and slot ids.** `constants.traits.lifeStealId` and `regenerationId` name the traits the engine acts on, and the weapon slot is the one whose row has `trainsProficiency`.

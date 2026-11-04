@@ -3,9 +3,8 @@
  * traits do (decisions L12). All of it belongs to one character, so it is applied in that character's step.
  */
 import { constantSection, requireRow, type GameData } from '../data/game-data';
-import { absorbOnKill } from '../game/formulas';
+import { absorbOnKill, lifeStealHeal, regenerationHeal } from '../game/formulas';
 import { addProficiency, proficiencyGain, type ProficiencyId } from '../game/proficiency';
-import { LIFE_STEAL, REGENERATION, lifeStealHeal, regenerationHeal } from '../game/traits';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState } from '../state/types';
 import type { StepContext } from './step-context';
@@ -25,8 +24,8 @@ interface SlotRow {
 
 /** The skill a hit trains (decisions L11): the weapon in the main hand decides, no weapon means unarmed. */
 export function trainedWeaponSkill(character: CharacterState, data: GameData): ProficiencyId {
-  const slot = data.equipmentSlots.find((row) => (row as unknown as SlotRow).id === 'main-hand') as SlotRow | undefined;
-  const weapon = character.equipment['main-hand'];
+  const slot = data.equipmentSlots.find((row) => (row as unknown as SlotRow).trainsProficiency !== undefined) as SlotRow | undefined;
+  const weapon = slot === undefined ? undefined : character.equipment[slot.id];
   const type = weapon === undefined ? undefined : (requireRow(data, 'items', weapon.itemId) as { equipmentType?: string }).equipmentType;
   const trains = slot?.trainsProficiency ?? {};
   return (trains[type ?? 'empty'] ?? trains['empty'] ?? 'unarmed') as ProficiencyId;
@@ -78,7 +77,7 @@ export function absorbOnEnemyKill(character: CharacterState, enemyId: string, ct
 
 /** Life steal: the character heals a share of what one hit dealt. */
 export function applyLifeSteal(character: CharacterState, damageDealt: number, ctx: StepContext): void {
-  const percent = character.absorption[LIFE_STEAL] ?? 0;
+  const percent = character.absorption[constantSection(ctx.data, 'traits').lifeStealId] ?? 0;
   if (percent <= 0 || damageDealt <= 0) return;
   const { maxHealth } = derivedStats(character, ctx.data);
   character.health = Math.min(maxHealth, character.health + lifeStealHeal(damageDealt, percent));
@@ -86,7 +85,7 @@ export function applyLifeSteal(character: CharacterState, damageDealt: number, c
 
 /** Regeneration: every `traits.regenerationIntervalSeconds` it restores a share of maximum health. */
 export function stepRegenerationTrait(character: CharacterState, ctx: StepContext): void {
-  const percent = character.absorption[REGENERATION] ?? 0;
+  const percent = character.absorption[constantSection(ctx.data, 'traits').regenerationId] ?? 0;
   if (percent <= 0) return;
   const intervalMs = constantSection(ctx.data, 'traits').regenerationIntervalSeconds * MS_PER_SECOND;
   const elapsed = (character.traitRegenMs ?? 0) + ctx.tickMs;

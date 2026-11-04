@@ -61,11 +61,10 @@ function runTick(character: CharacterState, fight: FightState, playerAttacks: bo
   character.health = Math.max(0, tick.playerHp);
   fight.enemyHp = tick.enemyHp;
   const enemyLevel = (requireRow(ctx.data, 'enemies', fight.enemyId) as unknown as { level: number }).level;
-  if (tick.playerHit) {
-    trainOnHit(character, enemyLevel, ctx);
-    applyLifeSteal(character, tick.playerDamage, ctx);
-  }
+  // Order within a step: the hits land, then training, then life steal, which only a character that lives gets.
+  if (tick.playerHit) trainOnHit(character, enemyLevel, ctx);
   if (tick.enemyHit) trainOnHitTaken(character, enemyLevel, ctx);
+  if (tick.playerHit && tick.outcome !== 'loss') applyLifeSteal(character, tick.playerDamage, ctx);
 
   if (tick.outcome === null) return true;
   character.fight = null;

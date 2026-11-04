@@ -8,7 +8,7 @@ import { requireNumberConstant, type GameData } from '../data/game-data';
 import type { CharacterState, GameState } from '../state/types';
 import { compareCharacterIds, stepCharacter, type StepContext } from './character';
 import { applyCommand, type Command } from './commands';
-import { bestiaryTier } from '../game/bestiary';
+import { bestiaryTier } from '../game/formulas';
 import { publishStepEvents, type EngineEvent } from './events';
 import { mergeSummaries, stubEstimateOffline, type EstimateOffline } from './offline';
 import { createCharacterStreams, readStreamStates, type CharacterStreams } from './streams';

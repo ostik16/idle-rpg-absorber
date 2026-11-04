@@ -21,6 +21,8 @@
     "cursedObjectDefendersAbsorbable": true
   },
   "traits": {
+    "lifeStealId": "life-steal",
+    "regenerationId": "regeneration",
     "regenerationIntervalSeconds": 10
   },
   "upgrade": {

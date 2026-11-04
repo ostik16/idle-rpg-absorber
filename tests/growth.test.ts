@@ -11,8 +11,8 @@ import { createEngine } from '../src/engine/engine';
 import type { EngineEvent } from '../src/engine/events';
 import { startFight } from '../src/engine/fight';
 import { createCharacterStreams } from '../src/engine/streams';
-import { bestiaryTier } from '../src/game/bestiary';
-import { lifeStealHeal, regenerationHeal } from '../src/game/traits';
+import { bestiaryTier, killProficiencyGain, lifeStealHeal, regenerationHeal } from '../src/game/formulas';
+import { addProficiency, proficiencyGain } from '../src/game/proficiency';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import { derivedStats } from '../src/state/selectors';
 
@@ -64,11 +64,26 @@ function fixture(): GameData {
 }
 const DATA = fixture();
 
-function harness() {
-  const character = createCharacterState('c1', 'Ysolde', DATA);
+/** No regeneration, crits or proficiency gain, so only the effect under test changes health. */
+const EXACT = createGameData({
+  constants: {
+    ...constants,
+    stats: { ...constants.stats, critChance: { base: 0, perDexterity: 0, cap: 0 }, healthRegen: { fractionOfMaxPerSecond: 0 } },
+    proficiency: { ...constants.proficiency, gainPerAction: { unarmed: 0, 'one-handed': 0, 'two-handed': 0, toughness: 0, speed: 0, combat: 0 } },
+  },
+  items: itemsJson,
+  enemies: [...ENEMIES, rat('dummy', { health: 1_000_000, traits: [] }), rat('wall', { health: 1_000_000, damage: 1000, attackSpeed: 1, traits: [] })],
+  areas: [AREA],
+  xpTable: xpTableJson,
+  traits: traitsJson,
+  equipmentSlots: slotsJson,
+});
+
+function harness(data: GameData = DATA) {
+  const character = createCharacterState('c1', 'Ysolde', data);
   const events: EngineEvent[] = [];
   const ctx: StepContext = {
-    data: DATA,
+    data,
     tickMs: TICK,
     streams: createCharacterStreams(7, 'c1'),
     emit: (e) => void events.push(e),
@@ -156,18 +171,38 @@ describe('what absorbed traits do (L12)', () => {
     expect(regenerationHeal(200, 3)).toBe(6);
   });
 
-  it('life steal heals a share of each hit, up to maximum health', () => {
-    const { character, ctx } = harness();
+  it('life steal heals the share of each hit and nothing else', () => {
+    const { character, ctx } = harness(EXACT);
+    character.bag = []; // no potions to drink
+    const stats = derivedStats(character, EXACT);
     character.absorption['life-steal'] = 50;
-    const max = derivedStats(character, DATA).maxHealth;
-    character.health = max - 1000;
-    startFight(character, 'biter', ctx);
-    const before = character.health;
-    for (let i = 0; i < 10; i++) stepCharacter(character, ctx);
-    expect(character.health).toBeGreaterThan(before - 2);
-    character.health = max;
-    for (let i = 0; i < 10; i++) stepCharacter(character, ctx);
-    expect(character.health).toBeLessThanOrEqual(max);
+    character.health = 10;
+    startFight(character, 'dummy', ctx);
+    const hits = 4;
+    for (let i = 0; i < hits * (stats.attackIntervalMs / TICK); i++) stepCharacter(character, ctx);
+    expect(character.health).toBeCloseTo(10 + hits * stats.damage * 0.5);
+  });
+
+  it('life steal stops at maximum health', () => {
+    const { character, ctx } = harness(EXACT);
+    character.bag = []; // no potions to drink
+    const { maxHealth } = derivedStats(character, EXACT);
+    character.absorption['life-steal'] = 100;
+    character.health = maxHealth - 0.5;
+    startFight(character, 'dummy', ctx);
+    for (let i = 0; i < 50; i++) stepCharacter(character, ctx);
+    expect(character.health).toBe(maxHealth);
+  });
+
+  it('life steal does not heal a character the same tick kills', () => {
+    const { character, ctx } = harness(EXACT);
+    character.bag = []; // no potions to drink
+    character.absorption['life-steal'] = 100;
+    character.health = 1;
+    startFight(character, 'wall', ctx);
+    for (let i = 0; i < 100 && character.phase === 'fighting'; i++) stepCharacter(character, ctx);
+    expect(character.phase).toBe('dead');
+    expect(character.health).toBe(0);
   });
 
   it('regeneration restores its share every 10 seconds', () => {
@@ -183,6 +218,17 @@ describe('what absorbed traits do (L12)', () => {
     expect(c.health).toBe(1);
     stepCharacter(c, hctx);
     expect(c.health).toBeCloseTo(1 + max * 0.05);
+  });
+});
+
+describe('proficiency maths', () => {
+  it('a gain that is not a number adds nothing', () => {
+    expect(addProficiency(5, Number.NaN)).toBe(5);
+    expect(proficiencyGain('unarmed', 0, Number.NaN)).toBeNaN();
+  });
+
+  it('counting a kill once gives hits x the gain at the points before the kill (offline)', () => {
+    expect(killProficiencyGain('unarmed', 0, 1, 10)).toBeCloseTo(10 * 0.003);
   });
 });
 
