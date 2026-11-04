@@ -625,7 +625,8 @@ describe('spawn shares over a long seeded run (3.1)', () => {
     }
     expect(Math.abs((kills[MINI_BOSS] ?? 0) / total - area.miniBossSpawnChance)).toBeLessThan(0.004);
     expect(Math.abs((kills[BOSS] ?? 0) / total - area.bossSpawnChance)).toBeLessThan(0.002);
-  });
+    // 40 simulated hours take about 2 s here and went past the 5 s default on a busy CI runner.
+  }, 30_000);
 });
 
 describe('determinism (ADR 0002)', () => {

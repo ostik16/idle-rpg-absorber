@@ -1,4 +1,6 @@
 import { Icon } from './Icon';
+import { LiveRoster } from './LiveRoster';
+import { Notice } from './Notice';
 import { hrefFor, ROUTES, type Route } from './router';
 import { route } from './store';
 
@@ -39,13 +41,18 @@ export function App() {
         </header>
         <main class="app__main">
           <div class="app__content">
-            <section class="ab-card">
-              <div class="ab-card__head">
-                <span class="ab-label">{screen.label}</span>
-              </div>
-              <p class="app__text">{screen.empty}</p>
-              <p class="app__text ab-c-muted">This screen is not built yet.</p>
-            </section>
+            <Notice />
+            {current === 'roster' ? (
+              <LiveRoster />
+            ) : (
+              <section class="ab-card">
+                <div class="ab-card__head">
+                  <span class="ab-label">{screen.label}</span>
+                </div>
+                <p class="app__text">{screen.empty}</p>
+                <p class="app__text ab-c-muted">This screen is not built yet.</p>
+              </section>
+            )}
           </div>
         </main>
         <nav class="ab-tabbar app__tabbar" aria-label="Main">

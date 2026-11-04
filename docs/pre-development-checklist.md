@@ -65,6 +65,13 @@ Small things that will cause arguments during implementation. All eight are sett
 - [x] **"Percentage points" wording.** The intro says drop rates fall by 10 percentage points per level. The formula in 3.8 multiplies the base chance by `1 - 0.1 x diff`. That is 10 points of the modifier, not of the chance (a 5% drop does not go to 4.9%, it goes to 4.5%). Reword the intro so nobody implements it as a subtraction.
 - [x] **Proficiency titles.** 4.6 gives four example titles (Novice, Adept, Expert, Master). The sketches use five (adding Apprentice). Fix the list and the thresholds.
 - [x] **Document map.** `design/01-introduction.md` lists sections 2 to 5 and leaves out section 6 (UI and Design System).
+- [ ] **In-session clock.** ADR 0002 asks for `performance.now()` as the in-session accumulator, and also says the loop calls `advanceTo(Date.now())`. Issue #31 built the second, the only one the engine's timeline supports today, so a small clock change while the tab is open adds or removes steps, or shows the rewind notice. The owner can keep this or ask for the accumulator.
+- [ ] **Change notice.** The architecture says the engine "emits a throttled change notice". The engine has none, so `src/ui/frame-loop.ts` refreshes the signals after a frame that ran steps. That caps updates at once per frame, and at 10 Hz with `combat.tickMs` at 100. Issue #31 chose this over changing the engine; the owner can confirm it or reword the architecture.
+- [ ] **Rounding on screen.** The engine's health, mana and XP are fractional (XP after a death loss), and the design does not say how to show them. `src/ui/store.ts` rounds all three up, so a living character never reads 0. XP rounded up can read a full level just before the level comes; the owner can confirm this or ask for XP rounded down.
+- [ ] **When the game hits an error.** The design does not cover it. `src/start-game.tsx` stops the simulation and the autosave, because state may be partly stepped, and leaves the screen up with a lasting notice. Progress since the last save is lost on reload. The owner can confirm it.
+- [ ] **How long save notices stay.** ADR 0003 says the player is told what a load found, not for how long. They stay on screen until the page reloads, with no dismiss button. The owner can confirm it or ask for a dismiss.
+- [ ] **Unreadable save.** ADR 0003 asks for a recovery screen. Until #36 adds import, `unrecoverable` shows its message only, and the player has no way to start fresh from it.
+- [ ] **Cost of copying lists to the UI.** `copyInto` in `src/ui/store.ts` runs `JSON.stringify` on every bag and warehouse tab at each refresh. #28 measures 4 characters on a phone and decides then whether it needs a dirty flag.
 
 ## 3. Design and content still to produce
 

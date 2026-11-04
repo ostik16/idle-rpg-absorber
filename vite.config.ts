@@ -21,6 +21,6 @@ export default defineConfig({
   base: './',
   plugins: [stripGoogleFontsImport()],
   test: {
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.{ts,tsx}'],
   },
 });
