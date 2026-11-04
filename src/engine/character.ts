@@ -6,6 +6,7 @@ import type { CharacterState, Phase } from '../state/types';
 import { stepCityHealing } from './city';
 import { stepDead } from './death';
 import { stepFighting, stepFleeing } from './fight';
+import { stepRegenerationTrait } from './growth';
 import { autoUsePotion, stepHealing } from './healing';
 import type { StepContext } from './step-context';
 import { stepLooting, stepReturning, stepSearching, stepTravelling } from './travel';
@@ -46,5 +47,6 @@ export function stepCharacter(character: CharacterState, ctx: StepContext): void
   PHASE_STEPS[character.phase](character, ctx);
   if (character.phase === 'dead') return;
   stepHealing(character, ctx);
+  stepRegenerationTrait(character, ctx);
   if (character.phase === 'fighting' || character.phase === 'fleeing') autoUsePotion(character, ctx);
 }

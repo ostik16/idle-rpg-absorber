@@ -7,6 +7,7 @@ import { enemyCombatant, fightTick, type Combatant, type EnemyCombatStats } from
 import { derivedStats } from '../state/selectors';
 import type { CharacterState, FightState } from '../state/types';
 import { loseXpOnDeath } from './death';
+import { absorbOnEnemyKill, applyLifeSteal, trainOnHit, trainOnHitTaken } from './growth';
 import { grantKillLoot, grantKillXp } from './rewards';
 import { enterPhase, movementDurationMs, type StepContext } from './step-context';
 
@@ -59,11 +60,17 @@ function runTick(character: CharacterState, fight: FightState, playerAttacks: bo
   });
   character.health = Math.max(0, tick.playerHp);
   fight.enemyHp = tick.enemyHp;
+  const enemyLevel = (requireRow(ctx.data, 'enemies', fight.enemyId) as unknown as { level: number }).level;
+  // Order within a step: the hits land, then training, then life steal, which only a character that lives gets.
+  if (tick.playerHit) trainOnHit(character, enemyLevel, ctx);
+  if (tick.enemyHit) trainOnHitTaken(character, enemyLevel, ctx);
+  if (tick.playerHit && tick.outcome !== 'loss') applyLifeSteal(character, tick.playerDamage, ctx);
 
   if (tick.outcome === null) return true;
   character.fight = null;
   if (tick.outcome === 'win') {
     ctx.emit({ type: 'enemyKilled', characterId: character.id, enemyId: fight.enemyId });
+    absorbOnEnemyKill(character, fight.enemyId, ctx);
     const levelAtKill = character.level;
     grantKillXp(character, fight.enemyId, ctx);
     grantKillLoot(character, fight.enemyId, ctx, levelAtKill);
