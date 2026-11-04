@@ -1,9 +1,13 @@
 /**
  * Rotating records and the recovery order (ADR 0003 "Writing", "Corruption and backup handling").
  *
- * Each write is a new key, `record-<n>`. A `pointer` record lists the live keys, newest first: their positions
- * are `current`, `previous` and `previous2`. The pointer moves only after the new record is fully written, so a
- * crash at any point leaves the older records and the pointer to them as they were.
+ * Each write is a new key, `record-<n>-<writer>`. A `pointer` record lists the live keys, newest first: their
+ * positions are `current`, `previous` and `previous2`. The pointer moves only after the new record is fully written,
+ * so a crash at any point leaves the older records and the pointer to them as they were.
+ *
+ * Only one tab writes. `load` takes a Web Locks lease, held until the page goes, and a second tab gets `otherTab`.
+ * Where Web Locks is missing, a stale writer stops itself: it remembers the pointer's number, and the pointer only
+ * moves by compare-and-swap, so a tab that finds it moved refuses to write and no newer record is pushed out.
  */
 import type { GameState } from '../state/types';
 import { decodeEnvelope, encodeEnvelope, readSave, type RecordFailure } from './envelope';
@@ -11,6 +15,7 @@ import { MIGRATIONS, type Migration } from './migrations';
 import { reconcile, type ReconcileReport, type ReconcileTables } from './reconcile';
 import {
   browserApis,
+  isQuotaError,
   localStorageStore,
   openSaveStore,
   type SaveStore,
@@ -20,7 +25,8 @@ import {
 
 const POINTER_KEY = 'pointer';
 const META_KEY = 'ab.meta';
-const RECORD_KEY = /^record-(\d+)$/;
+const LEASE_NAME = 'idle-rpg-absorber-writer';
+const RECORD_KEY = /^record-(\d+)(?:-\w+)?$/;
 const BACKUP_KEY = /^backup-v(\d+)$/;
 const CORRUPT_PREFIX = 'corrupt-';
 const ROTATION = ['current', 'previous', 'previous2'] as const;
@@ -54,6 +60,8 @@ export type LoadResult =
   | { status: 'empty' }
   /** Do not start the game: writes stay refused and the record is untouched. The player has to update. */
   | { status: 'newerVersion'; record: RecordName; saveVersion: number; gameVersion: number }
+  /** The game is open in another tab, which holds the lease. Do not start it here. Writes are refused. */
+  | { status: 'otherTab' }
   /**
    * The storage failed, or holds less than `ab.meta` says exists: IndexedDB would not open and this is the fallback.
    * Do not start the game and do not offer a fresh start. Writes stay refused, and a later load can try again.
@@ -65,11 +73,19 @@ export type LoadResult =
    */
   | { status: 'unrecoverable'; failures: RecordProblem[] };
 
-/** Thrown by `write` while the last load ended in `newerVersion` or `storeFault`, so no save can be pushed out. */
+type BlockReason = 'unsafeSave' | 'otherTab';
+
+/**
+ * Thrown by `write` so no save can be pushed out. `unsafeSave`: the last load ended in `newerVersion` or `storeFault`.
+ * `otherTab`: another tab holds the lease, or wrote since this one last did, so this tab has stopped saving.
+ */
 export class SaveBlockedError extends Error {
-  constructor() {
-    super('the last load found a save this build must not write over');
+  readonly reason: BlockReason;
+
+  constructor(reason: BlockReason = 'unsafeSave') {
+    super(reason === 'otherTab' ? 'another tab is writing this save' : 'the last load found a save this build must not write over');
     this.name = 'SaveBlockedError';
+    this.reason = reason;
   }
 }
 
@@ -78,6 +94,11 @@ export interface SavesOptions {
   appBuild: string;
   /** What reconcile checks ids against. Pass `GameData`. */
   tables: ReconcileTables;
+  /**
+   * How long a new page waits for the lease before it says `otherTab`, because a reload can start before the old
+   * page has let go. `save.leaseWaitSeconds` in data/constants.json, in ms.
+   */
+  leaseWaitMs: number;
   now?: () => number;
   apis?: StorageApis;
   /** Called after the first save of a session (ADR 0003). Defaults to `navigator.storage.persist()`. */
@@ -88,7 +109,7 @@ export interface SavesOptions {
 export interface Saves {
   /** Where the records go. Anything but `indexeddb` needs a notice (`saveNotices`). */
   readonly storage: StorageKind;
-  /** Runs the recovery order. Call it once at boot, before the first write. */
+  /** Takes the lease and runs the recovery order. Call it at boot, before the first write. Calling it again retries. */
   load(): Promise<LoadResult>;
   /**
    * Serialises the state now and writes it. One write runs at a time: a call during a write waits, and only
@@ -120,6 +141,13 @@ interface Pointer {
   seq: number;
   /** Live record keys, newest first. */
   rotation: string[];
+  /** Set only while the newest record is one taken from the fallback: the fallback's number then. A write clears it. */
+  fallbackSeq?: number;
+}
+
+/** A pointer as read, with the exact text a later compare-and-swap has to find. */
+interface LivePointer extends Pointer {
+  raw: string | undefined;
 }
 
 interface WaitingWrite {
@@ -128,22 +156,17 @@ interface WaitingWrite {
   done: Promise<void>;
 }
 
-function recordKey(seq: number): string {
-  return `record-${seq}`;
-}
-
 function parsePointer(text: string | undefined): Pointer | null {
   if (text === undefined) return null;
   try {
-    const parsed = JSON.parse(text) as Partial<Pointer>;
-    const { seq, rotation } = parsed;
+    const { seq, rotation, fallbackSeq } = JSON.parse(text) as Partial<Pointer>;
     if (
       typeof seq === 'number' &&
       Array.isArray(rotation) &&
       rotation.length <= ROTATION.length &&
       rotation.every((key) => typeof key === 'string')
     ) {
-      return { seq, rotation };
+      return { seq, rotation, ...(fallbackSeq !== undefined && { fallbackSeq }) };
     }
   } catch {
     // Falls through: a damaged pointer is rebuilt from the record keys.
@@ -151,15 +174,24 @@ function parsePointer(text: string | undefined): Pointer | null {
   return null;
 }
 
+/** The number in a record key, or null when it is not a record. */
+function recordNumber(key: string): number | null {
+  const match = key.match(RECORD_KEY);
+  return match ? Number(match[1]) : null;
+}
+
 /** The live pointer, or one rebuilt from the record keys when it is gone or damaged. */
-async function readPointer(store: SaveStore): Promise<Pointer> {
-  const pointer = parsePointer(await store.get(POINTER_KEY));
-  if (pointer !== null) return pointer;
-  const seqs = (await store.keys())
-    .flatMap((key) => key.match(RECORD_KEY)?.[1] ?? [])
-    .map(Number)
-    .sort((a, b) => b - a);
-  return { seq: seqs[0] ?? 0, rotation: seqs.slice(0, ROTATION.length).map(recordKey) };
+async function readPointer(store: SaveStore): Promise<LivePointer> {
+  const raw = await store.get(POINTER_KEY);
+  const pointer = parsePointer(raw);
+  if (pointer !== null) return { ...pointer, raw };
+  const records = (await store.keys())
+    .flatMap((key) => {
+      const seq = recordNumber(key);
+      return seq === null ? [] : [{ key, seq }];
+    })
+    .sort((a, b) => b.seq - a.seq);
+  return { seq: records[0]?.seq ?? 0, rotation: records.slice(0, ROTATION.length).map(({ key }) => key), raw };
 }
 
 /** Corrupt copies as candidates: the latest failure first, and within one failure the newest position first. */
@@ -195,6 +227,18 @@ export function readSaveMeta(apis: StorageApis = browserApis()): SaveMeta | null
   }
 }
 
+/** One try at the lease. Null when Web Locks refuses to run here. The promise it holds never ends, so the page keeps it. */
+function tryLease(locks: NonNullable<StorageApis['locks']>): Promise<boolean | null> {
+  return new Promise((resolve) => {
+    locks
+      .request(LEASE_NAME, { ifAvailable: true }, (lock) => {
+        resolve(lock !== null);
+        return lock === null ? undefined : new Promise<void>(() => {});
+      })
+      .catch(() => resolve(null));
+  });
+}
+
 function requestBrowserPersistence(): Promise<unknown> {
   return globalThis.navigator?.storage?.persist?.() ?? Promise.resolve();
 }
@@ -204,11 +248,16 @@ function requestBrowserPersistence(): Promise<unknown> {
  * `fallback` is the `localStorage` store when `store` is IndexedDB: it may hold a newer save from an outage.
  */
 export function createSaves(store: SaveStore, options: SavesOptions, fallback?: SaveStore): Saves {
-  const { appBuild, tables, now = Date.now, requestPersistence = requestBrowserPersistence } = options;
+  const { appBuild, tables, leaseWaitMs, now = Date.now, requestPersistence = requestBrowserPersistence } = options;
   const { apis = browserApis(), migrations = MIGRATIONS } = options;
   const gameVersion = migrations.length + 1;
+  /** Keeps two tabs that write at once off each other's records. */
+  const writerId = Math.random().toString(36).slice(2, 10);
 
-  let blocked = false;
+  let blocked: BlockReason | null = null;
+  let leased = false;
+  /** The pointer's number after this tab's last load or write. Null until the first of those. */
+  let expectedSeq: number | null = null;
   let persistenceRequested = false;
   let inFlight: Promise<void> | null = null;
   let waiting: WaitingWrite | null = null;
@@ -227,25 +276,109 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
     }
   }
 
-  /** Removes what a crash or an older rotation left. The next write tries again if this fails. */
-  async function removeUnlisted(rotation: readonly string[]): Promise<void> {
+  /** Takes the lease if this tab does not have it. True when it holds it, or when Web Locks is not there to ask. */
+  async function holdLease(): Promise<boolean> {
+    if (leased || apis.locks === undefined) return true;
+    let granted = await tryLease(apis.locks);
+    if (granted === false && leaseWaitMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, leaseWaitMs));
+      granted = await tryLease(apis.locks);
+    }
+    if (granted === null) return true;
+    leased = granted;
+    return granted;
+  }
+
+  function otherWriter(): SaveBlockedError {
+    blocked = 'otherTab';
+    return new SaveBlockedError('otherTab');
+  }
+
+  /** Moves the pointer only if nobody else has since `from` was read. Otherwise this tab stops writing. */
+  async function movePointer(from: LivePointer, next: Pointer): Promise<LivePointer> {
+    const { seq, rotation, fallbackSeq } = next;
+    const raw = JSON.stringify({ seq, rotation, fallbackSeq });
+    if (!(await store.compareAndPut(POINTER_KEY, from.raw, raw))) throw otherWriter();
+    return { ...next, raw };
+  }
+
+  /**
+   * Removes what a crash or an older rotation left. The next write tries again if this fails.
+   * A record numbered above `seq` is left alone: it belongs to another writer, which may be about to move the pointer.
+   */
+  async function removeUnlisted(seq: number, rotation: readonly string[]): Promise<void> {
     try {
-      const stale = (await store.keys()).filter((key) => RECORD_KEY.test(key) && !rotation.includes(key));
+      const stale = (await store.keys()).filter((key) => {
+        const number = recordNumber(key);
+        return number !== null && number <= seq && !rotation.includes(key);
+      });
       await Promise.all(stale.map((key) => store.delete(key)));
     } catch {
       // Only costs space.
     }
   }
 
-  /** New record, then the pointer moves, then the record that fell off the end goes. Returns the new key. */
-  async function addRecord(text: string): Promise<string> {
-    const pointer = await readPointer(store);
-    const seq = pointer.seq + 1;
-    const key = recordKey(seq);
-    await store.put(key, text);
-    const rotation = [key, ...pointer.rotation].slice(0, ROTATION.length);
-    await store.put(POINTER_KEY, JSON.stringify({ seq, rotation } satisfies Pointer));
-    await removeUnlisted(rotation);
+  async function freeOldestCorrupt(): Promise<boolean> {
+    const oldest = corruptCandidates(await store.keys()).at(-1);
+    if (oldest === undefined) return false;
+    await store.delete(oldest.key);
+    return true;
+  }
+
+  /**
+   * Writes a record where `localStorage` may be full (about 5 MB, and a browser that needs the fallback has nowhere
+   * else). `free` removes one thing to make room, and returns false when nothing more may go.
+   */
+  async function putMakingRoom(key: string, text: string, free: () => Promise<boolean>): Promise<void> {
+    for (;;) {
+      try {
+        return await store.put(key, text);
+      } catch (error) {
+        if (store.kind !== 'localStorage' || !isQuotaError(error) || !(await free())) throw error;
+      }
+    }
+  }
+
+  /** The rotation without its oldest record, or null when that would not leave a record that reads. */
+  async function rotationWithoutOldest(live: LivePointer): Promise<string[] | null> {
+    for (const [i, key] of live.rotation.entries()) {
+      const text = await store.get(key);
+      if (text === undefined || !decodeEnvelope(text, gameVersion).ok) continue;
+      return i < live.rotation.length - 1 ? live.rotation.slice(0, -1) : null;
+    }
+    return null;
+  }
+
+  /**
+   * New record, then the pointer moves, then the record that fell off the end goes. Returns the new key.
+   * `theirSeq` marks the record as taken from the fallback at that number.
+   */
+  async function addRecord(text: string, theirSeq?: number): Promise<string> {
+    let live = await readPointer(store);
+    if (expectedSeq !== null && live.seq !== expectedSeq) throw otherWriter();
+    const seq = live.seq + 1;
+    const key = `record-${seq}-${writerId}`;
+    let rotation: string[];
+    try {
+      await putMakingRoom(key, text, async () => {
+        const before = (await store.keys()).length;
+        await removeUnlisted(live.seq, live.rotation);
+        if ((await store.keys()).length < before || (await freeOldestCorrupt())) return true;
+        const shorter = await rotationWithoutOldest(live);
+        if (shorter === null) return false;
+        const dropped = live.rotation.at(-1) as string;
+        live = await movePointer(live, { ...live, rotation: shorter });
+        await store.delete(dropped);
+        return true;
+      });
+      rotation = [key, ...live.rotation].slice(0, ROTATION.length);
+      await movePointer(live, { seq, rotation, ...(theirSeq !== undefined && { fallbackSeq: theirSeq }) });
+    } catch (error) {
+      await store.delete(key).catch(() => {});
+      throw error;
+    }
+    expectedSeq = seq;
+    await removeUnlisted(seq, rotation);
     return key;
   }
 
@@ -265,15 +398,15 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
    * push them out. A failed record goes to `corrupt-<time>-<name>` first. Copies from an earlier load stay as they
    * are. A store error here reaches `load`, which ends in `storeFault`, so no record is left without its copy.
    */
-  async function setAside(pointer: Pointer, failed: readonly TriedRecord[]): Promise<void> {
+  async function setAside(pointer: LivePointer, failed: readonly TriedRecord[]): Promise<void> {
     const leaving = failed.filter(({ key }) => !key.startsWith(CORRUPT_PREFIX));
     if (leaving.length === 0) return;
     for (const { name, text } of leaving) {
-      if (text !== undefined) await store.put(`${CORRUPT_PREFIX}${now()}-${name}`, text);
+      if (text !== undefined) await putMakingRoom(`${CORRUPT_PREFIX}${now()}-${name}`, text, freeOldestCorrupt);
     }
     const keys = new Set(leaving.map(({ key }) => key));
     const rotation = pointer.rotation.filter((key) => !keys.has(key));
-    await store.put(POINTER_KEY, JSON.stringify({ seq: pointer.seq, rotation } satisfies Pointer));
+    await movePointer(pointer, { ...pointer, rotation });
     await Promise.all([...keys].map((key) => store.delete(key)));
   }
 
@@ -290,29 +423,32 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
   }
 
   /**
-   * A save written to the fallback during an outage stays out of sight once IndexedDB works again. When it is newer
-   * than what IndexedDB holds, it becomes the current record. The fallback keeps its copy, and later saves are newer.
+   * A save written to the fallback stays out of sight once IndexedDB works. It becomes the current record only when
+   * it cannot hide anything: IndexedDB has no records, or its newest came from the fallback, nothing was written since,
+   * and the fallback has moved on. `savedAt` plays no part. A game started on the fallback during an outage is a new
+   * game with a later time, and the clock can be wrong, so neither may put it in front of the real save.
    * Returns whether the fallback holds any record, which is evidence of a save even when none could be taken.
    */
   async function adoptFromFallback(): Promise<boolean> {
     if (fallback === undefined) return false;
     let theirs: Awaited<ReturnType<typeof newestRecord>>;
-    let held: boolean;
+    let theirPointer: LivePointer;
     try {
       theirs = await newestRecord(fallback);
-      held = (await readPointer(fallback)).rotation.length > 0;
+      theirPointer = await readPointer(fallback);
     } catch {
       return false; // Only ever a second source: a failure here must not stop a load from IndexedDB.
     }
     if (theirs !== null && theirs !== 'newer') {
-      const ours = await newestRecord(store);
-      if (ours === null || (ours !== 'newer' && ours.savedAt < theirs.savedAt)) await addRecord(theirs.text);
+      const ours = await readPointer(store);
+      const movedOn = ours.fallbackSeq !== undefined && theirPointer.seq > ours.fallbackSeq;
+      if (ours.rotation.length === 0 || movedOn) await addRecord(theirs.text, theirPointer.seq);
     }
-    return held;
+    return theirPointer.rotation.length > 0;
   }
 
   function storeFault(): LoadResult {
-    blocked = true;
+    blocked = 'unsafeSave';
     return { status: 'storeFault' };
   }
 
@@ -325,6 +461,7 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
   async function runRecovery(): Promise<LoadResult> {
     const fallbackHeldRecords = await adoptFromFallback();
     const pointer = await readPointer(store);
+    expectedSeq = pointer.seq;
     const keys = await store.keys();
     const candidates = [
       ...pointer.rotation.map((key, i) => ({ name: ROTATION[i] as RecordName, key })),
@@ -344,8 +481,10 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
 
       const read = readSave(text, migrations);
       if (!read.ok && read.reason === 'newer') {
-        // Nothing is written on this path, not even the earlier failures, and `write` refuses from now on.
-        blocked = true;
+        // Nothing is written on this path, not even the earlier failures, and `write` refuses from now on. This
+        // also holds for an old `backup-v*` or `corrupt-*` entry. It is only reached when nothing before it loaded,
+        // and an update may open it, so the player is told to update rather than sent to the recovery screen.
+        blocked = 'unsafeSave';
         return { status: 'newerVersion', record: name, saveVersion: read.version, gameVersion };
       }
       if (!read.ok) {
@@ -357,7 +496,7 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
       // Migrations are pure, so nothing is lost by running them first, and a record that fails them never
       // replaces a good backup. A failed copy reaches `load`, so a migrated save never goes on without its backup.
       const backup = `backup-v${read.version}`;
-      if (read.version < gameVersion && key !== backup) await store.put(backup, text);
+      if (read.version < gameVersion && key !== backup) await putMakingRoom(backup, text, freeOldestCorrupt);
       await setAside(pointer, failed);
       return {
         status: 'loaded',
@@ -382,16 +521,21 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
     storage: store.kind,
 
     async load() {
-      blocked = false;
+      blocked = null;
+      expectedSeq = null;
+      if (!(await holdLease())) {
+        blocked = 'otherTab';
+        return { status: 'otherTab' };
+      }
       try {
         return await runRecovery();
-      } catch {
-        return storeFault();
+      } catch (error) {
+        return error instanceof SaveBlockedError ? { status: 'otherTab' } : storeFault();
       }
     },
 
     write(state) {
-      if (blocked) return Promise.reject(new SaveBlockedError());
+      if (blocked !== null) return Promise.reject(new SaveBlockedError(blocked));
       const savedAt = now();
       let text: string;
       try {
@@ -425,13 +569,13 @@ export function createSaves(store: SaveStore, options: SavesOptions, fallback?: 
     },
 
     async backupCurrent() {
-      if (blocked) throw new SaveBlockedError();
+      if (blocked !== null) throw new SaveBlockedError(blocked);
       const [key] = (await readPointer(store)).rotation;
       const text = key === undefined ? undefined : await store.get(key);
       const decoded = text === undefined ? null : decodeEnvelope(text, gameVersion);
       if (text === undefined || !decoded?.ok) return null;
       const backup = `backup-v${decoded.envelope.version}`;
-      await store.put(backup, text);
+      await putMakingRoom(backup, text, freeOldestCorrupt);
       return backup;
     },
 

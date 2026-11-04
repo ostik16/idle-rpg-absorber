@@ -24,17 +24,38 @@ export function envelopeText(payload: unknown, version: number, savedAt = T0): s
   return JSON.stringify({ format: SAVE_FORMAT, version, savedAt, appBuild: 'test', checksum, payload });
 }
 
-export function fakeLocalStorage(): LocalStorageApi {
+/** `capacity` is in characters of keys and values. Past it, a write fails as a full `localStorage` does. */
+export function fakeLocalStorage(capacity = Number.POSITIVE_INFINITY): LocalStorageApi {
   const entries = new Map<string, string>();
+  const used = (): number => [...entries].reduce((total, [key, value]) => total + key.length + value.length, 0);
   return {
     get length() {
       return entries.size;
     },
     key: (index) => [...entries.keys()][index] ?? null,
     getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, value),
+    setItem: (key, value) => {
+      const replaced = entries.has(key) ? key.length + (entries.get(key) as string).length : 0;
+      if (used() - replaced + key.length + value.length > capacity) throw new DOMException('full', 'QuotaExceededError');
+      entries.set(key, value);
+    },
     removeItem: (key) => void entries.delete(key),
   };
+}
+
+/**
+ * Web Locks across the tabs of one browser. As in a browser, a lock is held until the promise from its callback
+ * settles. `release` is the page going away, which ends the locks however that promise stands.
+ */
+export function fakeLocks() {
+  const held = new Set<string>();
+  const request = ((name: string, _options: LockOptions, callback: LockGrantedCallback<unknown>) => {
+    if (held.has(name)) return Promise.resolve(callback(null));
+    held.add(name);
+    const result = Promise.resolve(callback({ name, mode: 'exclusive' }));
+    return result.finally(() => held.delete(name));
+  }) as LockManager['request'];
+  return { request, held, release: () => held.clear() };
 }
 
 /** The live record keys, newest first. */

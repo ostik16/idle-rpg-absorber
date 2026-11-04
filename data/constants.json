@@ -80,7 +80,8 @@
     }
   },
   "save": {
-    "autosaveSeconds": 30
+    "autosaveSeconds": 30,
+    "leaseWaitSeconds": 1
   },
   "offline": {
     "efficiency": 0.9,

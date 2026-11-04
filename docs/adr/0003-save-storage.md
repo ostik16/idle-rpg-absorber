@@ -1,6 +1,6 @@
 # ADR 0003: Save storage
 
-Status: accepted, approved by the owner on 2026-11-03. Amended the same day: gold moved from `account` to each character (decisions L16).
+Status: accepted, approved by the owner on 2026-11-03. Amended the same day: gold moved from `account` to each character (decisions L16). Amended on 2026-11-04 after the review of PR 44: one writer at a time, and what a full `localStorage` may remove.
 
 ## Context
 
@@ -38,6 +38,10 @@ Items are stored as `{ itemId, rolled bonuses, upgradeLevel, qty }`, never copie
 
 Autosave every 30 s of real time, on `visibilitychange` to hidden, on `pagehide`, and after irreversible actions (spending points, upgrades, selling, 4.4 and 2.7). Writes go to a rotating set: `current`, `previous`, `previous2`. A write is a new record, then the pointer moves, so a crash mid-write leaves the older record intact. Debounce so only one write is in flight.
 
+The page-hide save holds the state as it stands when the tab hides. A `saveAfter` command still queued at that moment has not applied, so it is not in that save.
+
+Only one tab writes. Load takes a Web Locks lease, held until the page goes, and a second tab does not start the game. Where Web Locks is missing, the pointer moves only by compare-and-swap and a tab that finds it moved stops writing, so a stale tab cannot rotate away newer records.
+
 ### Versioning and migrations
 
 `version` is an integer, bumped on any payload shape change. `src/save/migrations.ts` holds an ordered list of pure functions `v -> v+1`. Load runs every missing step in order, then validates against the current schema. Each migration ships with a fixture of the older shape and a test. Before migrating, the unmigrated record is copied to `backup-v<N>`. A save with a newer version than the game is not opened; the player is told to update, and the record is left untouched.
@@ -52,7 +56,7 @@ Data table changes that keep the shape (an item removed from `data/items.json`) 
 
 ### Corruption and backup handling
 
-On load, try `current`, then `previous`, then `previous2`, then `backup-v<N>`. The first record passing parse, checksum and schema wins; the player is told which was used and its age. If none loads, show a recovery screen: import a file, or start fresh. Nothing is deleted without confirm. Failed records are kept under `corrupt-<time>` for export.
+On load, try `current`, then `previous`, then `previous2`, then `backup-v<N>`. The first record passing parse, checksum and schema wins; the player is told which was used and its age. If none loads, show a recovery screen: import a file, or start fresh. Nothing is deleted without confirm. Failed records are kept under `corrupt-<time>` for export. The one exception is a full `localStorage`, where a write may remove the oldest `corrupt-*` record to make room, and then the oldest of the rotation, as long as one record that reads is left.
 
 ## Consequences
 

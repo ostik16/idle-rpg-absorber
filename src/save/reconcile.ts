@@ -94,6 +94,12 @@ export function reconcile(state: GameState, tables: ReconcileTables): ReconcileR
       recover(stack);
       delete character.equipment[slot];
     }
+    // Settings that name an item, not items the player owns, so they are dropped and not recovered.
+    const { settings } = character;
+    settings.restockList = settings.restockList.filter((entry) => known.has(entry.itemId));
+    settings.potionThresholds = Object.fromEntries(
+      Object.entries(settings.potionThresholds).filter(([itemId]) => known.has(itemId)),
+    );
     const back = returnIfUnknown(character, tables);
     if (back !== null) returned.push(back);
   }

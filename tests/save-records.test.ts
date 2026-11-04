@@ -8,7 +8,9 @@ import { formatAge, saveFailureNotice, saveNotices } from '../src/save/notices';
 import { isRecoveredTab, reconcile } from '../src/save/reconcile';
 import { createSaves, openSaves, readSaveMeta, SaveBlockedError, type LoadResult, type Saves, type SavesOptions } from '../src/save/saves';
 import {
+  DB_NAME,
   FALLBACK_PREFIX,
+  isQuotaError,
   localStorageStore,
   memoryStore,
   openSaveStore,
@@ -22,7 +24,7 @@ import { data, envelopeText, fakeLocalStorage, newState, rotationOf, snapshot, T
 const NOW = T0 + 60_000;
 
 function options(extra: Partial<SavesOptions> = {}): SavesOptions {
-  return { appBuild: 'test', tables: data, now: () => NOW, apis: {}, requestPersistence: async () => {}, ...extra };
+  return { appBuild: 'test', tables: data, leaseWaitMs: 0, now: () => NOW, apis: {}, requestPersistence: async () => {}, ...extra };
 }
 
 function goldOf(result: LoadResult): number | undefined {
@@ -87,6 +89,8 @@ describe.each<[string, () => Promise<SaveStore>]>([
       return {
         ...store,
         put: (key, value) => (match(key) ? Promise.reject(new Error('crash')) : store.put(key, value)),
+        compareAndPut: (key, expected, value) =>
+          match(key) ? Promise.reject(new Error('crash')) : store.compareAndPut(key, expected, value),
       };
     }
 
@@ -427,6 +431,33 @@ describe.each<[string, () => Promise<SaveStore>]>([
   describe('a save from a newer version (ADR 0003)', () => {
     const NEWER = 2;
 
+    it.each([
+      ['an old backup', 'backup-v2'],
+      ['a set-aside record', 'corrupt-100-current'],
+    ])('found only in %s, when nothing else loads: the player is told to update, and nothing is written', async (_label, key) => {
+      await savedWith(store, [1]);
+      await corrupt(store, 0, 'damaged');
+      await store.put(key, envelopeText({ whatever: 'shape' }, NEWER));
+      const before = await snapshot(store);
+      const saves = reboot(store);
+
+      expect(await saves.load()).toEqual({ status: 'newerVersion', record: key, saveVersion: NEWER, gameVersion: 1 });
+      expect(await snapshot(store)).toEqual(before);
+      await expect(saves.write(newState())).rejects.toBeInstanceOf(SaveBlockedError);
+    });
+
+    it.each([
+      ['an old backup', 'backup-v2'],
+      ['a set-aside record', 'corrupt-100-current'],
+    ])('in %s does not matter while a record loads', async (_label, key) => {
+      await savedWith(store, [1]);
+      await store.put(key, envelopeText({ whatever: 'shape' }, NEWER));
+      const saves = reboot(store);
+      expect(goldOf(await saves.load())).toBe(1);
+      await saves.write(newState(2));
+      expect(await store.get(key)).toBeDefined();
+    });
+
     it('is not opened, the player is told to update, and the record is left untouched', async () => {
       await store.put('record-1', envelopeText({ whatever: 'shape' }, NEWER));
       await store.put('pointer', JSON.stringify({ seq: 1, rotation: ['record-1'] }));
@@ -739,11 +770,76 @@ describe('evidence of a save the store cannot show', () => {
     expect(await rotationOf(await openSaveStore({ indexedDB }))).toHaveLength(2);
   });
 
-  it('a newer save in the fallback beats an older one in IndexedDB', async () => {
+  it('a new game started on the fallback, with ab.meta cleared, does not go in front of the real save', async () => {
+    const { indexedDB, localStorage, boot, bootWithoutIndexedDb } = profile();
+    await (await boot({ now: () => T0 })).write(newState(50));
+    const store = await openSaveStore({ indexedDB });
+    const before = await snapshot(store);
+
+    localStorage.removeItem('ab.meta');
+    const outage = await bootWithoutIndexedDb();
+    expect(await outage.load()).toEqual({ status: 'empty' });
+    await outage.write(newState(0));
+
+    const saves = await boot({ now: () => NOW + 1 });
+    const result = await saves.load();
+    expect(goldOf(result)).toBe(50);
+    expect(await snapshot(store)).toEqual(before);
+  });
+
+  it('a clock that jumped does not put the fallback in front either', async () => {
     const { boot, localStorage } = profile();
-    await (await boot({ now: () => T0 })).write(newState(1));
-    await createSaves(localStorageStore(localStorage), options({ now: () => NOW })).write(newState(2));
-    expect(goldOf(await (await boot()).load())).toBe(2);
+    await (await boot({ now: () => NOW })).write(newState(50));
+    await createSaves(localStorageStore(localStorage), options({ now: () => NOW + 1e9 })).write(newState(0));
+    expect(goldOf(await (await boot()).load())).toBe(50);
+  });
+
+  it('the save stays after autosaves on top of it, and the fallback keeps its own game', async () => {
+    const { boot, localStorage } = profile();
+    await (await boot({ now: () => T0 })).write(newState(50));
+    await createSaves(localStorageStore(localStorage), options({ now: () => NOW })).write(newState(0));
+
+    const saves = await boot({ now: () => NOW + 1 });
+    await saves.load();
+    await saves.write(newState(51));
+    await saves.write(newState(52));
+    expect(goldOf(await (await boot()).load())).toBe(52);
+    expect(goldOf(await createSaves(localStorageStore(localStorage), options()).load())).toBe(0);
+  });
+
+  it('takes the fallback again when it moved on from the record IndexedDB took, with no write since', async () => {
+    const { boot, bootWithoutIndexedDb } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+    await (await boot()).load();
+
+    const outage = await bootWithoutIndexedDb();
+    expect(goldOf(await outage.load())).toBe(7);
+    await outage.write(newState(8));
+
+    expect(goldOf(await (await boot()).load())).toBe(8);
+  });
+
+  it('does not take the same fallback record twice, so boots do not push out the older records', async () => {
+    const { indexedDB, boot, bootWithoutIndexedDb } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+    await (await boot()).load();
+    const store = await openSaveStore({ indexedDB });
+    const before = await snapshot(store);
+
+    await (await boot()).load();
+    await (await boot()).load();
+    expect(await snapshot(store)).toEqual(before);
+  });
+
+  it('does not take it when IndexedDB has been written since, whatever the times say', async () => {
+    const { boot, bootWithoutIndexedDb, localStorage } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+    const saves = await boot();
+    await saves.load();
+    await saves.write(newState(9));
+
+    await createSaves(localStorageStore(localStorage), options({ now: () => NOW + 1e9 })).write(newState(10));
+    expect(goldOf(await (await boot()).load())).toBe(9);
   });
 
   it('an older save in the fallback does not replace IndexedDB, and is not taken in again', async () => {
@@ -826,6 +922,36 @@ describe('a closed IndexedDB connection', () => {
     expect(goldOf(await (await openSaves(options({ apis: { indexedDB: factory } }))).load())).toBe(3);
   });
 
+  it('requests arriving together after a close share one new connection', async () => {
+    const { factory, connections } = watchedFactory();
+    const store = await openSaveStore({ indexedDB: factory });
+    connections[0]!.onclose?.(new Event('close') as never);
+
+    await Promise.all([store.get('a'), store.get('b'), store.put('c', 'd'), store.keys()]);
+    expect(connections).toHaveLength(2);
+  });
+
+  it('requests that find the connection closed share one new connection too', async () => {
+    const { factory, connections } = watchedFactory();
+    const store = await openSaveStore({ indexedDB: factory });
+    connections[0]!.close();
+
+    await Promise.all([store.get('a'), store.get('b'), store.put('c', 'd')]);
+    expect(connections).toHaveLength(2);
+  });
+
+  it('gives way when another tab asks for a higher version, so the upgrade is not blocked', async () => {
+    const { factory } = watchedFactory();
+    await openSaveStore({ indexedDB: factory });
+
+    const outcome = await new Promise<string>((resolve) => {
+      const request = factory.open(DB_NAME, 2);
+      request.onblocked = () => resolve('blocked');
+      request.onsuccess = () => resolve('upgraded');
+    });
+    expect(outcome).toBe('upgraded');
+  });
+
   it('does not retry what failed for another reason', async () => {
     const store = await openSaveStore({ indexedDB: new IDBFactory() });
     const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementationOnce(() => {
@@ -879,6 +1005,110 @@ describe('what #36 builds on', () => {
 
   it('exports reconcile from the public API', () => {
     expect(exportedReconcile).toBe(reconcile);
+  });
+});
+
+describe('a full localStorage (the fallback)', () => {
+  const RECORD = encodeEnvelope(newState(1), NOW, 'test').length + 40;
+
+  /** Saves on a `localStorage` that holds `records` records. */
+  function fallbackHolding(records: number) {
+    const localStorage = fakeLocalStorage(RECORD * records);
+    const store = localStorageStore(localStorage);
+    return { store, saves: createSaves(store, options()) };
+  }
+
+  it('keeps saving, dropping the oldest of the rotation, and always holds a good save', async () => {
+    const { store, saves } = fallbackHolding(2.5);
+    for (const gold of [1, 2, 3, 4, 5, 6]) {
+      await saves.write(newState(gold));
+      expect(goldOf(await reboot(store).load())).toBe(gold);
+    }
+    expect((await rotationOf(store)).length).toBeLessThanOrEqual(2);
+  });
+
+  it('frees the oldest corrupt-* before any of the rotation', async () => {
+    const { store, saves } = fallbackHolding(5.1);
+    const filler = 'x'.repeat(RECORD);
+    await saves.write(newState(1));
+    await saves.write(newState(2));
+    await saves.write(newState(3));
+    await store.put('corrupt-100-current', filler);
+    await store.put('corrupt-200-current', filler.slice(0, RECORD / 3));
+    const rotation = await rotationOf(store);
+
+    await saves.write(newState(4));
+
+    const keys = await store.keys();
+    expect(keys).not.toContain('corrupt-100-current');
+    expect(keys).toContain('corrupt-200-current');
+    expect(await rotationOf(store)).toEqual([expect.stringMatching(/^record-4-/), rotation[0], rotation[1]]);
+  });
+
+  it('takes previous2 only when no corrupt-* is left, and previous after it', async () => {
+    const { store, saves } = fallbackHolding(4.5);
+    for (const gold of [1, 2, 3]) await saves.write(newState(gold));
+    await store.put('corrupt-100-current', 'x'.repeat(RECORD / 2));
+    const [current, previous] = await rotationOf(store);
+
+    await saves.write(newState(4));
+    const keys = await store.keys();
+    expect(keys).not.toContain('corrupt-100-current');
+    expect(await rotationOf(store)).toEqual([expect.stringMatching(/^record-4-/), current, previous]);
+  });
+
+  it('keeps one good record when the new one cannot fit, and fails the write', async () => {
+    const { store, saves } = fallbackHolding(1.5);
+    await saves.write(newState(1));
+    await expect(saves.write(newState(2))).rejects.toThrow('full');
+    expect(goldOf(await reboot(store).load())).toBe(1);
+  });
+
+  it('counts a damaged current as not good: the good record behind it stays', async () => {
+    const { store, saves } = fallbackHolding(2.5);
+    for (const gold of [1, 2]) await saves.write(newState(gold));
+    await corrupt(store, 0, 'x'.repeat(RECORD));
+    const [, good] = await rotationOf(store);
+
+    await expect(saves.write(newState(3))).rejects.toThrow('full');
+    expect((await rotationOf(store))[1]).toBe(good);
+    expect(await store.get(good!)).toBeDefined();
+  });
+
+  it('makes room for a corrupt-* copy by dropping an older copy', async () => {
+    const { store, saves } = fallbackHolding(2.2);
+    await saves.write(newState(1));
+    await store.put('corrupt-100-current', 'x'.repeat(RECORD / 2));
+    await corrupt(store, 0, 'y'.repeat(RECORD));
+
+    const later = reboot(store);
+    await later.load();
+    const kept = (await later.corruptRecords()).map(({ key }) => key);
+    expect(kept).toContain(`corrupt-${NOW}-current`);
+    expect(kept).not.toContain('corrupt-100-current');
+  });
+
+  it('frees nothing for other errors, or on another store', async () => {
+    const store = memoryStore();
+    const saves = createSaves(store, options());
+    for (const gold of [1, 2, 3]) await saves.write(newState(gold));
+    const before = await rotationOf(store);
+    const full: SaveStore = {
+      ...store,
+      put: (key, value) => (key.startsWith('record-') ? Promise.reject(new DOMException('full', 'QuotaExceededError')) : store.put(key, value)),
+    };
+    await expect(reboot(full).write(newState(4))).rejects.toThrow('full');
+    expect(await rotationOf(store)).toEqual(before);
+  });
+
+  it.each([
+    ['QuotaExceededError', 0, true],
+    ['NS_ERROR_DOM_QUOTA_REACHED', 0, true],
+    ['Error', 22, true],
+    ['Error', 1014, true],
+    ['Error', 0, false],
+  ])('reads %s with code %i as full: %s', (name, code, full) => {
+    expect(isQuotaError(Object.assign(new Error('x'), { name, code }))).toBe(full);
   });
 });
 
@@ -948,7 +1178,7 @@ describe('ab.meta and persistence (ADR 0003 "Storage")', () => {
     const saves = await openSaves(options({ apis: { indexedDB: new IDBFactory(), localStorage } }));
     expect(readSaveMeta({ localStorage })).toBeNull();
     await saves.write(newState());
-    expect(readSaveMeta({ localStorage })).toEqual({ slot: 'record-1', savedAt: NOW, storage: 'indexeddb' });
+    expect(readSaveMeta({ localStorage })).toEqual({ slot: expect.stringMatching(/^record-1-/), savedAt: NOW, storage: 'indexeddb' });
     expect(localStorage.length).toBe(1);
   });
 

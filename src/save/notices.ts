@@ -1,7 +1,7 @@
 /** What the player is told after a load, as copy for the UI to show (ADR 0003, design system voice rules). */
 import { InvalidSaveError } from './envelope';
 import { RECOVERED_TAB_NAME } from './reconcile';
-import type { LoadResult, RecordName } from './saves';
+import { SaveBlockedError, type LoadResult, type RecordName } from './saves';
 import type { StorageKind } from './store';
 
 /** Fixed formats from the design system: `12s`, `3m 12s`, `7h 42m`. */
@@ -33,6 +33,7 @@ function outcomeNotices(result: LoadResult): string[] {
       `Save version ${result.saveVersion} needs a newer game. This is version ${result.gameVersion}. Update the game to open it. The save is unchanged.`,
     ];
   }
+  if (result.status === 'otherTab') return ['This game is open in another tab. Close that tab, then reload here.'];
   if (result.status === 'storeFault') return ['Save storage did not respond. Reload to try again. Nothing was changed.'];
   if (result.status === 'unrecoverable') {
     const kept = result.failures.some((failure) => failure.reason !== 'missing');
@@ -54,12 +55,16 @@ function outcomeNotices(result: LoadResult): string[] {
 
 /** The line to show when an autosave fails: pass it the error `startAutosave` gives to `onError`. */
 export function saveFailureNotice(error: unknown): string {
+  if (error instanceof SaveBlockedError && error.reason === 'otherTab') {
+    return 'Another tab is saving this game, so this tab has stopped saving. Close this tab and use the other one.';
+  }
   if (error instanceof InvalidSaveError) return 'Save refused: the game state has a fault. Your earlier saves are safe.';
   return 'Save failed. The next autosave tries again.';
 }
 
 /** Every line the player should see after this load, most important first. */
 export function saveNotices(result: LoadResult, storage: StorageKind): string[] {
-  // During a fault nothing is being saved anywhere, so a line about where saves go would be false.
-  return result.status === 'storeFault' ? outcomeNotices(result) : [...outcomeNotices(result), ...storageNotice(storage)];
+  // In these two this tab saves nothing anywhere, so a line about where saves go would be false.
+  const saving = result.status !== 'storeFault' && result.status !== 'otherTab';
+  return saving ? [...outcomeNotices(result), ...storageNotice(storage)] : outcomeNotices(result);
 }

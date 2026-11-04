@@ -85,6 +85,24 @@ describe('unknown item ids (ADR 0003 reconcile)', () => {
   });
 });
 
+describe('settings that name an item', () => {
+  it('drops unknown items from the restock list and potion thresholds, and keeps known ones', () => {
+    const state = newState();
+    const { settings } = state.roster[0]!;
+    settings.restockList = [
+      { itemId: KNOWN_ITEM, quantity: 10 },
+      { itemId: 'removed-item', quantity: 5 },
+    ];
+    settings.potionThresholds = { [KNOWN_ITEM]: 0.5, 'removed-item': 0.3 };
+    const report = reconcile(state, data);
+
+    expect(settings.restockList).toEqual([{ itemId: KNOWN_ITEM, quantity: 10 }]);
+    expect(settings.potionThresholds).toEqual({ [KNOWN_ITEM]: 0.5 });
+    expect(report).toEqual({ recovered: [], returned: [] });
+    expect(state.account.warehouse.tabs.some(isRecoveredTab)).toBe(false);
+  });
+});
+
 describe('the offline summary not yet shown', () => {
   it('drops unknown items from the report, so the Welcome back screen can look up what is left', () => {
     const state = newState();

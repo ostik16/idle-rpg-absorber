@@ -1,13 +1,17 @@
 /**
  * The save system (ADR 0003). What `main` calls:
  *
- *   const saves = await openSaves({ appBuild, tables: data });
+ *   const saves = await openSaves({
+ *     appBuild,
+ *     tables: data,
+ *     leaseWaitMs: requireNumberConstant(data, 'save.leaseWaitSeconds') * 1000,
+ *   });
  *   const result = await saves.load();
  *   for (const line of saveNotices(result, saves.storage)) show(line);
  *   // result.status:
  *   //   'loaded': use result.state.    'empty': start a new game.
  *   //   'unrecoverable': the recovery screen, import a file or start fresh.
- *   //   'newerVersion', 'storeFault': do not start the game. Writes are refused, so the save stays safe.
+ *   //   'newerVersion', 'storeFault', 'otherTab': do not start the game. Writes are refused, so the save stays safe.
  *
  *   const autosave = startAutosave({
  *     saves,
