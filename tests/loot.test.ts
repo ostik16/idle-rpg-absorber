@@ -305,6 +305,26 @@ describe('drops from a kill (3.8)', () => {
     expect(events.filter((e) => e.type === 'xpGained')).toHaveLength(30);
   });
 
+  it('rolls drops at the level the character fought at, not the level the kill earns', () => {
+    // Level 10 against a level 1 enemy keeps 10% of the chance. The kill levels it to 11, which would give 0%.
+    const { character, events, kill } = harness();
+    const xpToNext = (xpTableJson as { level: number; xpToNext: number }[]).find((r) => r.level === 10)!.xpToNext;
+    let levelUps = 0;
+    let drops = 0;
+    for (let i = 0; i < 100; i++) {
+      character.level = 10;
+      character.xpInLevel = xpToNext - 1;
+      kill('soft');
+      expect(character.level).toBe(11);
+      levelUps += events.filter((e) => e.type === 'levelUp').length;
+      drops += events.filter((e) => e.type === 'itemPickedUp' || e.type === 'bagFull').length;
+      events.length = 0;
+      character.bag = [];
+    }
+    expect(levelUps).toBe(100);
+    expect(drops).toBeGreaterThan(0);
+  });
+
   it('a mini-boss kill always gives exactly one pool item, in its quantity range, whatever the level gap', () => {
     for (const level of [1, 11, 40]) {
       const { character, events, kill } = harness();

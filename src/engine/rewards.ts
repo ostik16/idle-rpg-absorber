@@ -50,6 +50,9 @@ function itemRow(data: GameData, itemId: string): ItemRow {
 function bagLimits(character: CharacterState, data: GameData): { capacity: number; maxStack: number } {
   const stack = character.equipment['backpack'];
   const pack = stack === undefined ? null : (itemRow(data, stack.itemId) as Required<Pick<ItemRow, 'bagCells' | 'maxStack'>>);
+  if (stack !== undefined && pack !== null && !(pack.bagCells > 0 && pack.maxStack > 0)) {
+    throw new Error(`Item "${stack.itemId}" in the backpack slot has no bagCells or maxStack.`);
+  }
   const inventory = constantSection(data, 'inventory');
   return { capacity: bagCells(pack, inventory), maxStack: bagMaxStack(pack, inventory) };
 }
