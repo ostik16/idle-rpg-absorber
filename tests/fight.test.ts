@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
 import enemiesJson from '../data/enemies.json';
+import dropTablesJson from '../data/drop-tables.json';
 import itemsJson from '../data/items.json';
 import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, requireRow, type GameData } from '../src/data/game-data';
@@ -38,6 +39,7 @@ function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
   return createGameData({
     constants: { ...constants, stats },
     items: itemsJson,
+    dropTables: dropTablesJson,
     enemies: [DUMMY, WALL, HARMLESS, ...enemiesJson],
     xpTable: xpTableJson,
   });

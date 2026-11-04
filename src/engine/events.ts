@@ -15,6 +15,12 @@ export type EngineEvent =
   | { type: 'characterCreated'; characterId: string }
   /** A character won a fight. XP, drops and absorption hang off this. */
   | { type: 'enemyKilled'; characterId: string; enemyId: string }
+  /** Gold from one kill. Arrives with a full bag. */
+  | { type: 'goldGained'; characterId: string; amount: number }
+  /** Items that went into the bag, after the loot filter. A stack that only partly fits reports the part that did. */
+  | { type: 'itemPickedUp'; characterId: string; itemId: string; qty: number; bonuses: { attribute: string; value: number }[] }
+  /** Items that dropped and did not fit. They are left behind. One per item that dropped. */
+  | { type: 'bagFull'; characterId: string; itemId: string; qty: number }
   | { type: 'xpGained'; characterId: string; amount: number }
   /** One per level, so a kill worth two levels emits two. */
   | { type: 'levelUp'; characterId: string; level: number }

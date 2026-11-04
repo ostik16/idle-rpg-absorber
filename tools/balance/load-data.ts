@@ -11,6 +11,7 @@ import areasJson from '../../data/areas.json';
 import enemiesJson from '../../data/enemies.json';
 import dropTablesJson from '../../data/drop-tables.json';
 import itemsJson from '../../data/items.json';
+import type { DropEntryLike, DropTableLike, GuaranteedPoolLike, PoolEntryLike } from '../../src/game/drops';
 import { baseMovementSeconds, targetingMultiplier as gameTargetingMultiplier } from '../../src/game/farming';
 
 export interface EnemyTrait {
@@ -51,31 +52,11 @@ export interface AreaEntry {
   enemies: AreaEnemyRef[];
 }
 
-export interface DropEntry {
-  itemId: string;
-  baseChance: number;
-  minQuantity?: number;
-  maxQuantity?: number;
-}
-
-export interface GuaranteedPoolEntry {
-  itemId: string;
-  weight: number;
-  minQuantity?: number;
-  maxQuantity?: number;
-}
-
-/** Every kill yields exactly one entry of each pool, chosen by weight; the level modifier does not apply (3.8). */
-export interface GuaranteedPool {
-  id: string;
-  entries: GuaranteedPoolEntry[];
-}
-
-export interface DropTableEntry {
-  id: string;
-  entries: DropEntry[];
-  guaranteedPools?: GuaranteedPool[];
-}
+// The drop table shapes live in src/game/drops.ts, which the engine rolls from, so the two cannot drift.
+export type DropEntry = DropEntryLike;
+export type GuaranteedPoolEntry = PoolEntryLike;
+export type GuaranteedPool = GuaranteedPoolLike;
+export type DropTableEntry = DropTableLike;
 
 export interface ItemEntry {
   id: string;
