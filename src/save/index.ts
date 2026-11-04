@@ -3,23 +3,32 @@
  *
  *   const saves = await openSaves({ appBuild, tables: data });
  *   const result = await saves.load();
- *   // result.status: 'loaded' uses result.state; 'empty' starts a new game;
- *   // 'newerVersion' does not start the game; 'unrecoverable' shows the recovery screen.
  *   for (const line of saveNotices(result, saves.storage)) show(line);
+ *   // result.status:
+ *   //   'loaded': use result.state.    'empty': start a new game.
+ *   //   'unrecoverable': the recovery screen, import a file or start fresh.
+ *   //   'newerVersion', 'storeFault': do not start the game. Writes are refused, so the save stays safe.
+ *
  *   const autosave = startAutosave({
  *     saves,
  *     getState: () => engine.state,
  *     intervalMs: requireNumberConstant(data, 'save.autosaveSeconds') * 1000,
+ *     onError: (error) => show(saveFailureNotice(error)),
+ *     saveAfterEvents: ['characterPointsSpent'],
  *   });
- *   // after an irreversible action: void autosave.saveNow();
+ *   // Wherever `main` or the store drains engine events, after the step that applied the command:
+ *   autosave.onEngineEvents(events);
+ *   // Not `autosave.saveNow()` after `dispatch`: the command has not applied yet, so that saves the old state.
  *
- * Export and import (#36) build on `encodeEnvelope`, `decodeEnvelope`, `readSave` and `corruptRecords`.
+ * Export and import (#36) build on `encodeEnvelope`, `decodeEnvelope`, `readSave`, `reconcile`, and on
+ * `currentText`, `backupCurrent` and `corruptRecords` of `Saves`.
  */
 export { startAutosave, type Autosave, type AutosaveOptions } from './autosave';
 export { crc32 } from './crc32';
 export {
   decodeEnvelope,
   encodeEnvelope,
+  InvalidSaveError,
   readSave,
   SAVE_FORMAT,
   type DecodedEnvelope,
@@ -28,8 +37,8 @@ export {
   type SaveEnvelope,
 } from './envelope';
 export { SAVE_VERSION } from './migrations';
-export { formatAge, saveNotices } from './notices';
-export { isRecoveredTab, RECOVERED_TAB_NAME, type ReconcileReport, type ReconcileTables, type RecoveredTab } from './reconcile';
+export { formatAge, saveFailureNotice, saveNotices } from './notices';
+export { isRecoveredTab, reconcile, RECOVERED_TAB_NAME, type ReconcileReport, type ReconcileTables, type RecoveredTab } from './reconcile';
 export {
   createSaves,
   openSaves,
@@ -42,4 +51,5 @@ export {
   type Saves,
   type SavesOptions,
 } from './saves';
+export { validatePayload } from './schema';
 export type { StorageKind } from './store';

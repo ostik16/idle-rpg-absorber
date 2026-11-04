@@ -54,17 +54,43 @@ function inTransaction<T>(
   });
 }
 
-function indexedDbStore(db: IDBDatabase): SaveStore {
+/**
+ * A browser can close the connection at any time, for example when site data is cleared. The next request then
+ * opens a new one, so saving does not stay broken until a reload. A request is only retried when its transaction
+ * could not start (`InvalidStateError`), so nothing runs twice.
+ */
+function indexedDbStore(factory: IDBFactory, first: IDBDatabase): SaveStore {
+  let connection: IDBDatabase | null = first;
+
+  async function connect(): Promise<IDBDatabase> {
+    if (connection !== null) return connection;
+    const db = await openDatabase(factory);
+    connection = db;
+    db.onclose = () => void (connection = null);
+    return db;
+  }
+  first.onclose = () => void (connection = null);
+
+  async function run<T>(mode: IDBTransactionMode, makeRequest: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+    try {
+      return await inTransaction(await connect(), mode, makeRequest);
+    } catch (error) {
+      if ((error as Partial<DOMException>).name !== 'InvalidStateError') throw error;
+      connection = null;
+      return inTransaction(await connect(), mode, makeRequest);
+    }
+  }
+
   return {
     kind: 'indexeddb',
-    get: (key) => inTransaction(db, 'readonly', (store) => store.get(key) as IDBRequest<string | undefined>),
-    put: async (key, value) => void (await inTransaction(db, 'readwrite', (store) => store.put(value, key))),
-    delete: async (key) => void (await inTransaction(db, 'readwrite', (store) => store.delete(key))),
-    keys: async () => (await inTransaction(db, 'readonly', (store) => store.getAllKeys())).map(String),
+    get: (key) => run('readonly', (store) => store.get(key) as IDBRequest<string | undefined>),
+    put: async (key, value) => void (await run('readwrite', (store) => store.put(value, key))),
+    delete: async (key) => void (await run('readwrite', (store) => store.delete(key))),
+    keys: async () => (await run('readonly', (store) => store.getAllKeys())).map(String),
   };
 }
 
-function localStorageStore(storage: LocalStorageApi): SaveStore {
+export function localStorageStore(storage: LocalStorageApi): SaveStore {
   return {
     kind: 'localStorage',
     get: async (key) => storage.getItem(FALLBACK_PREFIX + key) ?? undefined,
@@ -111,7 +137,7 @@ export function browserApis(): StorageApis {
 export async function openSaveStore(apis: StorageApis): Promise<SaveStore> {
   if (apis.indexedDB) {
     try {
-      return indexedDbStore(await openDatabase(apis.indexedDB));
+      return indexedDbStore(apis.indexedDB, await openDatabase(apis.indexedDB));
     } catch {
       // Falls through: some private modes have the API and refuse to open it.
     }

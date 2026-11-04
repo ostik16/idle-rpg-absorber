@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import constants from '../data/constants.json';
+import { createEngine } from '../src/engine/engine';
 import { startAutosave } from '../src/save/autosave';
+import { createGameState } from '../src/state/factory';
 import type { GameState } from '../src/state/types';
-import { newState } from './save-helpers';
+import { data, newState, T0 } from './save-helpers';
 
 const INTERVAL = constants.save.autosaveSeconds * 1000;
 
@@ -84,6 +86,67 @@ describe('autosave timing (ADR 0003 "Writing")', () => {
     expect(onError).toHaveBeenCalledWith(failure);
     await autosave.saveNow();
     expect(write).toHaveBeenCalledTimes(2);
+    autosave.stop();
+  });
+});
+
+describe('saving after an irreversible action', () => {
+  const TICK = constants.combat.tickMs;
+
+  /** A real engine, and each state as `write` saw it. */
+  function withEngine() {
+    const engine = createEngine({ data, state: createGameState(7, T0, data) });
+    const saved: GameState[] = [];
+    const write = async (state: GameState): Promise<void> => void saved.push(structuredClone(state));
+    const page = fakePage();
+    const autosave = startAutosave({
+      saves: { write },
+      getState: () => engine.state,
+      intervalMs: INTERVAL,
+      page,
+      host: new EventTarget(),
+      saveAfterEvents: ['characterCreated'],
+    });
+    return { engine, saved, autosave };
+  }
+
+  it('saveNow straight after dispatch has the state from before the command: this is why the docs forbid it', async () => {
+    const { engine, saved, autosave } = withEngine();
+    engine.dispatch({ type: 'createCharacter', name: 'Kaela' });
+    await autosave.saveNow();
+    expect(saved[0]?.roster).toEqual([]);
+    autosave.stop();
+  });
+
+  it('onEngineEvents saves the state with the command applied', () => {
+    const { engine, saved, autosave } = withEngine();
+    engine.dispatch({ type: 'createCharacter', name: 'Kaela' });
+    expect(saved).toEqual([]);
+
+    engine.advanceTo(T0 + TICK);
+    autosave.onEngineEvents(engine.drainEvents());
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.roster.map((character) => character.name)).toEqual(['Kaela']);
+    autosave.stop();
+  });
+
+  it('does not save for an event not listed, a refused command, or nothing', () => {
+    const { engine, saved, autosave } = withEngine();
+    engine.dispatch({ type: 'createCharacter', name: '' });
+    engine.advanceTo(T0 + TICK);
+    const events = engine.drainEvents();
+    expect(events.map((event) => event.type)).toEqual(['commandRejected']);
+
+    autosave.onEngineEvents(events);
+    autosave.onEngineEvents([]);
+    expect(saved).toEqual([]);
+    autosave.stop();
+  });
+
+  it('saves once for a batch, however many of its events are listed', () => {
+    const { saved, autosave } = withEngine();
+    autosave.onEngineEvents([{ type: 'characterCreated' }, { type: 'characterCreated' }]);
+    expect(saved).toHaveLength(1);
     autosave.stop();
   });
 });

@@ -19,12 +19,23 @@ export interface SaveEnvelope {
   payload: unknown;
 }
 
+/** Thrown instead of serialising a state the load would refuse. `NaN` would become `null` under a valid checksum. */
+export class InvalidSaveError extends Error {
+  constructor(problem: string) {
+    super(`refused to save: ${problem}`);
+    this.name = 'InvalidSaveError';
+  }
+}
+
 /**
  * The text of a save. Nothing later changes it, so the state is free to move on while the write runs.
  * The state itself is not touched: only the copy gets the new `clock.savedAt`.
+ * Throws `InvalidSaveError` when the state does not fit the schema, so a bad state can never push out good records.
  */
 export function encodeEnvelope(state: GameState, savedAt: number, appBuild: string): string {
   const payload = { ...state, clock: { ...state.clock, savedAt } };
+  const problem = validatePayload(payload);
+  if (problem !== null) throw new InvalidSaveError(problem);
   const envelope: SaveEnvelope = {
     format: SAVE_FORMAT,
     version: SAVE_VERSION,

@@ -1,12 +1,21 @@
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEngine } from '../src/engine/engine';
-import { encodeEnvelope } from '../src/save/envelope';
+import { reconcile as exportedReconcile } from '../src/save';
+import { encodeEnvelope, InvalidSaveError } from '../src/save/envelope';
 import type { Migration } from '../src/save/migrations';
-import { formatAge, saveNotices } from '../src/save/notices';
-import { isRecoveredTab } from '../src/save/reconcile';
+import { formatAge, saveFailureNotice, saveNotices } from '../src/save/notices';
+import { isRecoveredTab, reconcile } from '../src/save/reconcile';
 import { createSaves, openSaves, readSaveMeta, SaveBlockedError, type LoadResult, type Saves, type SavesOptions } from '../src/save/saves';
-import { FALLBACK_PREFIX, memoryStore, openSaveStore, type SaveStore, type StorageApis } from '../src/save/store';
+import {
+  FALLBACK_PREFIX,
+  localStorageStore,
+  memoryStore,
+  openSaveStore,
+  type LocalStorageApi,
+  type SaveStore,
+  type StorageApis,
+} from '../src/save/store';
 import type { GameState } from '../src/state/types';
 import { data, envelopeText, fakeLocalStorage, newState, rotationOf, snapshot, T0 } from './save-helpers';
 
@@ -183,7 +192,7 @@ describe.each<[string, () => Promise<SaveStore>]>([
       await corrupt(store, 0, 'damaged text');
       const saves = reboot(store);
       await saves.load();
-      expect(await saves.corruptRecords()).toEqual([{ key: `corrupt-${NOW}-current`, text: 'damaged text' }]);
+      expect(await saves.corruptRecords()).toEqual([{ key: `corrupt-${NOW}-current`, text: 'damaged text', readable: false }]);
     });
 
     it('moves a failed record out of the rotation, so the next boot neither repeats the notice nor copies it again', async () => {
@@ -263,18 +272,154 @@ describe.each<[string, () => Promise<SaveStore>]>([
       expect((await next.corruptRecords()).map((record) => record.text)).toEqual(['kept']);
     });
 
-    it('a store that fails altogether is not taken for "no save"', async () => {
-      const failing: SaveStore = { ...store, get: () => Promise.reject(new Error('down')), keys: () => Promise.reject(new Error('down')) };
-      expect(await reboot(failing).load()).toMatchObject({ status: 'unrecoverable' });
+    it('says "kept" only when something was', async () => {
+      const localStorage = fakeLocalStorage();
+      localStorage.setItem('ab.meta', JSON.stringify({ slot: 'record-1', savedAt: T0, storage: store.kind }));
+      const result = await reboot(store, { apis: { localStorage } }).load();
+      expect(result).toEqual({ status: 'unrecoverable', failures: [{ record: 'current', reason: 'missing' }] });
+      expect(saveNotices(result, store.kind)[0]).toBe('No save could be read. Import a file or start fresh.');
+    });
+  });
+
+  describe('a good record the state must not push out', () => {
+    it.each<[string, (state: GameState) => void]>([
+      ['NaN, which JSON turns into null', (state) => void (state.roster[0]!.gold = Number.NaN)],
+      ['Infinity, which JSON turns into null', (state) => void (state.clock.lastSimulatedAt = Number.POSITIVE_INFINITY)],
+      ['a missing field', (state) => void delete (state as Partial<GameState>).bestiary],
+    ])('refuses a state with %s, however often it is tried, and every record stays', async (_label, damage) => {
+      await savedWith(store, [1, 2, 3]);
+      const before = await snapshot(store);
+      const bad = newState(4);
+      damage(bad);
+
+      const saves = reboot(store);
+      for (let i = 0; i < 4; i++) await expect(saves.write(bad)).rejects.toBeInstanceOf(InvalidSaveError);
+
+      expect(await snapshot(store)).toEqual(before);
+      expect(goldOf(await reboot(store).load())).toBe(3);
     });
 
-    it('leaves a record it could not read where it is', async () => {
-      await savedWith(store, [1, 2]);
+    it('a refused state does not stop the next good write', async () => {
+      const saves = await savedWith(store, [1]);
+      const bad = newState();
+      bad.roster[0]!.gold = Number.NaN;
+      await expect(saves.write(bad)).rejects.toBeInstanceOf(InvalidSaveError);
+      await saves.write(newState(2));
+      expect(goldOf(await reboot(store).load())).toBe(2);
+    });
+  });
+
+  describe('a build with a bug, then a fixed build', () => {
+    const buggy: Migration[] = [
+      () => {
+        throw new Error('bug in the migration');
+      },
+    ];
+    const fixed: Migration[] = [(payload) => payload];
+
+    it('the buggy build keeps the records; the fixed build opens the newest of them', async () => {
+      await savedWith(store, [1, 2, 3]);
+      const first = await reboot(store, { migrations: buggy }).load();
+      expect(first).toMatchObject({ status: 'unrecoverable' });
+      expect(first.status === 'unrecoverable' && first.failures.map((failure) => failure.reason)).toEqual(['migration', 'migration', 'migration']);
+
+      const result = await reboot(store, { migrations: fixed }).load();
+      expect(goldOf(result)).toBe(3);
+      expect(result).toMatchObject({ status: 'loaded', source: `corrupt-${NOW}-current`, migratedFrom: 1, failures: [] });
+      expect(saveNotices(result, store.kind)[0]).toBe('The newest save could not be read. Loaded a save set aside earlier, 0s old.');
+    });
+
+    it('says what failed on every boot of the buggy build, not an empty list', async () => {
+      await savedWith(store, [1]);
+      await reboot(store, { migrations: buggy }).load();
+      expect(await reboot(store, { migrations: buggy }).load()).toEqual({
+        status: 'unrecoverable',
+        failures: [{ record: `corrupt-${NOW}-current`, reason: 'migration' }],
+      });
+    });
+
+    it('does not copy a set-aside record again when it fails again', async () => {
+      await savedWith(store, [1]);
+      await reboot(store, { migrations: buggy }).load();
+      const again = reboot(store, { migrations: buggy, now: () => NOW + 1 });
+      await again.load();
+      expect(await again.corruptRecords()).toHaveLength(1);
+    });
+
+    it('tries the latest failure first', async () => {
+      await store.put('corrupt-100-current', encodeEnvelope(newState(1), T0, 'test'));
+      await store.put('corrupt-200-previous', encodeEnvelope(newState(2), T0, 'test'));
+      await store.put('corrupt-200-current', encodeEnvelope(newState(3), T0, 'test'));
+      expect(goldOf(await reboot(store).load())).toBe(3);
+    });
+
+    it('marks which kept records a build can open, for a player who started fresh meanwhile', async () => {
+      await savedWith(store, [5]);
+      await reboot(store, { migrations: buggy }).load();
+      await store.put(`corrupt-${NOW}-previous`, 'damaged');
+      const records = await reboot(store, { migrations: fixed }).corruptRecords();
+      expect(records.map(({ readable }) => readable)).toEqual([true, false]);
+    });
+
+    it('a real save stays first once the player has one again', async () => {
+      await savedWith(store, [1]);
+      await store.put(`corrupt-${NOW}-current`, encodeEnvelope(newState(9), T0, 'test'));
+      expect(goldOf(await reboot(store).load())).toBe(1);
+    });
+  });
+
+  describe('a store fault', () => {
+    it('a store that fails altogether is neither "no save" nor a fresh start, and writes are refused', async () => {
+      await savedWith(store, [1]);
+      const before = await snapshot(store);
+      const failing: SaveStore = { ...store, get: () => Promise.reject(new Error('down')), keys: () => Promise.reject(new Error('down')) };
+      const saves = reboot(failing);
+      const result = await saves.load();
+
+      expect(result).toEqual({ status: 'storeFault' });
+      expect(saveNotices(result, store.kind)[0]).toBe('Save storage did not respond. Reload to try again. Nothing was changed.');
+      await expect(saves.write(newState(2))).rejects.toBeInstanceOf(SaveBlockedError);
+      expect(await snapshot(store)).toEqual(before);
+    });
+
+    it('one record it cannot read stops the load, so no older save takes over and pushes it out', async () => {
+      await savedWith(store, [1, 2, 3]);
+      const before = await snapshot(store);
       const [currentKey] = await rotationOf(store);
       const flaky: SaveStore = { ...store, get: (key) => (key === currentKey ? Promise.reject(new Error('down')) : store.get(key)) };
-      const result = await reboot(flaky).load();
+      const saves = reboot(flaky);
 
-      expect(result).toMatchObject({ source: 'previous', failures: [{ record: 'current', reason: 'unreadable' }] });
+      expect(await saves.load()).toEqual({ status: 'storeFault' });
+      for (let i = 0; i < 3; i++) await expect(saves.write(newState(9))).rejects.toBeInstanceOf(SaveBlockedError);
+      expect(await snapshot(store)).toEqual(before);
+      expect(goldOf(await reboot(store).load())).toBe(3);
+    });
+
+    it('a failed copy to corrupt-* leaves the record in its place and refuses writes', async () => {
+      await savedWith(store, [1, 2]);
+      await corrupt(store, 0, 'damaged');
+      const before = await snapshot(store);
+      const noCopies: SaveStore = {
+        ...store,
+        put: (key, value) => (key.startsWith('corrupt-') ? Promise.reject(new Error('full')) : store.put(key, value)),
+      };
+      const saves = reboot(noCopies);
+
+      expect(await saves.load()).toEqual({ status: 'storeFault' });
+      await expect(saves.write(newState(9))).rejects.toBeInstanceOf(SaveBlockedError);
+      expect(await snapshot(store)).toEqual(before);
+    });
+
+    it('a later load in the same session can clear it', async () => {
+      await savedWith(store, [1]);
+      let down = true;
+      const flaky: SaveStore = { ...store, get: (key) => (down ? Promise.reject(new Error('down')) : store.get(key)) };
+      const saves = reboot(flaky);
+      expect(await saves.load()).toEqual({ status: 'storeFault' });
+
+      down = false;
+      expect(goldOf(await saves.load())).toBe(1);
+      await saves.write(newState(2));
       expect(goldOf(await reboot(store).load())).toBe(2);
     });
   });
@@ -364,6 +509,21 @@ describe.each<[string, () => Promise<SaveStore>]>([
       expect(await store.get('backup-v1')).toBe(good);
       expect(goldOf(result)).toBe(40);
       expect(result).toMatchObject({ source: 'backup-v1', failures: [{ record: 'current', reason: 'migration' }] });
+    });
+
+    it('stops when the backup cannot be written: no migrated save, writes refused, the old record untouched', async () => {
+      const text = envelopeText(oldPayload(40), 1);
+      await withOldRecord(text);
+      const before = await snapshot(store);
+      const noBackups: SaveStore = {
+        ...store,
+        put: (key, value) => (key.startsWith('backup-') ? Promise.reject(new Error('full')) : store.put(key, value)),
+      };
+      const saves = reboot(noBackups, { migrations: [cashToGold] });
+
+      expect(await saves.load()).toEqual({ status: 'storeFault' });
+      await expect(saves.write(newState())).rejects.toBeInstanceOf(SaveBlockedError);
+      expect(await snapshot(store)).toEqual(before);
     });
 
     it('a backup that loads is not copied over itself', async () => {
@@ -506,15 +666,233 @@ describe('one write at a time (ADR 0003 "Writing")', () => {
   });
 });
 
-describe('choosing the storage (ADR 0003 "Storage")', () => {
-  const refusesToOpen = {
-    open() {
-      const request = { error: new Error('private mode') } as unknown as IDBOpenDBRequest;
-      queueMicrotask(() => request.onerror?.(new Event('error') as never));
-      return request;
-    },
-  } as unknown as IDBFactory;
+const refusesToOpen = {
+  open() {
+    const request = { error: new Error('private mode') } as unknown as IDBOpenDBRequest;
+    queueMicrotask(() => request.onerror?.(new Event('error') as never));
+    return request;
+  },
+} as unknown as IDBFactory;
 
+describe('evidence of a save the store cannot show', () => {
+  /** One browser profile: IndexedDB and localStorage that outlive each boot. */
+  function profile() {
+    const indexedDB = new IDBFactory();
+    const localStorage: LocalStorageApi = fakeLocalStorage();
+    const boot = (extra: Partial<SavesOptions> = {}) => openSaves(options({ apis: { indexedDB, localStorage }, ...extra }));
+    const bootWithoutIndexedDb = () => openSaves(options({ apis: { indexedDB: refusesToOpen, localStorage } }));
+    return { indexedDB, localStorage, boot, bootWithoutIndexedDb };
+  }
+
+  it('IndexedDB failing to open once is a fault, not a new game, and the real save survives', async () => {
+    const { boot, bootWithoutIndexedDb } = profile();
+    await (await boot()).write(newState(50));
+
+    const outage = await bootWithoutIndexedDb();
+    expect(outage.storage).toBe('localStorage');
+    const result = await outage.load();
+    expect(result).toEqual({ status: 'storeFault' });
+    expect(saveNotices(result, outage.storage)).toEqual(['Save storage did not respond. Reload to try again. Nothing was changed.']);
+    await expect(outage.write(newState(0))).rejects.toBeInstanceOf(SaveBlockedError);
+
+    expect(goldOf(await (await boot()).load())).toBe(50);
+  });
+
+  it('an older save in the fallback does not hide a newer one in IndexedDB', async () => {
+    const { localStorage, boot, bootWithoutIndexedDb } = profile();
+    await createSaves(localStorageStore(localStorage), options({ now: () => T0 })).write(newState(1));
+    await (await boot({ now: () => NOW })).write(newState(2));
+
+    expect(await (await bootWithoutIndexedDb()).load()).toEqual({ status: 'storeFault' });
+  });
+
+  it('a browser that only ever had the fallback carries on as normal', async () => {
+    const { bootWithoutIndexedDb } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+    expect(goldOf(await (await bootWithoutIndexedDb()).load())).toBe(7);
+  });
+
+  it('on such a browser, failed records go to the recovery screen: nothing else is out there', async () => {
+    const { localStorage, bootWithoutIndexedDb } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+    await corrupt(localStorageStore(localStorage), 0);
+    expect(await (await bootWithoutIndexedDb()).load()).toMatchObject({ status: 'unrecoverable' });
+  });
+
+  it('a first visit with no evidence at all is still a new game', async () => {
+    const { boot, bootWithoutIndexedDb } = profile();
+    expect(await (await bootWithoutIndexedDb()).load()).toEqual({ status: 'empty' });
+    expect(await (await boot()).load()).toEqual({ status: 'empty' });
+  });
+
+  it('a save only in the fallback loads once IndexedDB works, and carries on there', async () => {
+    const { indexedDB, boot, bootWithoutIndexedDb } = profile();
+    await (await bootWithoutIndexedDb()).write(newState(7));
+
+    const saves = await boot();
+    const result = await saves.load();
+    expect(goldOf(result)).toBe(7);
+    expect(result).toMatchObject({ source: 'current', failures: [] });
+
+    await saves.write(newState(8));
+    expect(goldOf(await (await boot()).load())).toBe(8);
+    expect(await rotationOf(await openSaveStore({ indexedDB }))).toHaveLength(2);
+  });
+
+  it('a newer save in the fallback beats an older one in IndexedDB', async () => {
+    const { boot, localStorage } = profile();
+    await (await boot({ now: () => T0 })).write(newState(1));
+    await createSaves(localStorageStore(localStorage), options({ now: () => NOW })).write(newState(2));
+    expect(goldOf(await (await boot()).load())).toBe(2);
+  });
+
+  it('an older save in the fallback does not replace IndexedDB, and is not taken in again', async () => {
+    const { indexedDB, boot, localStorage } = profile();
+    await createSaves(localStorageStore(localStorage), options({ now: () => T0 })).write(newState(1));
+    await (await boot()).load();
+    await (await boot({ now: () => NOW })).write(newState(2));
+    const rotation = await rotationOf(await openSaveStore({ indexedDB }));
+
+    expect(goldOf(await (await boot()).load())).toBe(2);
+    expect(await rotationOf(await openSaveStore({ indexedDB }))).toEqual(rotation);
+  });
+
+  it('a fallback holding only damaged records is not "no save"', async () => {
+    const { boot, localStorage } = profile();
+    const fallback = localStorageStore(localStorage);
+    await fallback.put('record-1', 'damaged');
+    await fallback.put('pointer', JSON.stringify({ seq: 1, rotation: ['record-1'] }));
+    expect(await (await boot()).load()).toMatchObject({ status: 'unrecoverable' });
+  });
+
+  it('does not push a newer-version save in IndexedDB down with a record from the fallback', async () => {
+    const { indexedDB, boot, localStorage } = profile();
+    await createSaves(localStorageStore(localStorage), options({ now: () => NOW })).write(newState(1));
+    const store = await openSaveStore({ indexedDB });
+    await store.put('record-1', envelopeText({ whatever: 'shape' }, 2, T0));
+    await store.put('pointer', JSON.stringify({ seq: 1, rotation: ['record-1'] }));
+    const before = await snapshot(store);
+
+    expect(await (await boot()).load()).toMatchObject({ status: 'newerVersion' });
+    expect(await snapshot(store)).toEqual(before);
+  });
+
+  it('a fallback that fails does not stop a load from IndexedDB', async () => {
+    const { indexedDB, boot, localStorage } = profile();
+    await (await boot()).write(newState(3));
+    const broken = { ...localStorageStore(localStorage), get: () => Promise.reject(new Error('down')) };
+    const saves = createSaves(await openSaveStore({ indexedDB }), options({ apis: { localStorage } }), broken);
+    expect(goldOf(await saves.load())).toBe(3);
+  });
+});
+
+describe('a closed IndexedDB connection', () => {
+  /** A factory that remembers its connections, so a test can close them as the browser does. */
+  function watchedFactory() {
+    const factory = new IDBFactory();
+    const connections: IDBDatabase[] = [];
+    const open = factory.open.bind(factory);
+    let refuse = false;
+    factory.open = (...args: Parameters<IDBFactory['open']>) => {
+      if (refuse) return refusesToOpen.open(args[0]);
+      const request = open(...args);
+      request.addEventListener('success', () => connections.push(request.result));
+      return request;
+    };
+    return { factory, connections, setRefuse: (value: boolean) => void (refuse = value) };
+  }
+
+  it('is opened again by the next request, so later saves still land', async () => {
+    const { factory, connections } = watchedFactory();
+    const saves = await openSaves(options({ apis: { indexedDB: factory } }));
+    await saves.write(newState(1));
+    connections[0]!.close();
+
+    await saves.write(newState(2));
+    expect(connections).toHaveLength(2);
+    expect(goldOf(await (await openSaves(options({ apis: { indexedDB: factory } }))).load())).toBe(2);
+  });
+
+  it('a failed reopen rejects that write only, and the next one works', async () => {
+    const { factory, connections, setRefuse } = watchedFactory();
+    const saves = await openSaves(options({ apis: { indexedDB: factory } }));
+    await saves.write(newState(1));
+    connections[0]!.close();
+
+    setRefuse(true);
+    await expect(saves.write(newState(2))).rejects.toThrow('private mode');
+    setRefuse(false);
+    await saves.write(newState(3));
+    expect(goldOf(await (await openSaves(options({ apis: { indexedDB: factory } }))).load())).toBe(3);
+  });
+
+  it('does not retry what failed for another reason', async () => {
+    const store = await openSaveStore({ indexedDB: new IDBFactory() });
+    const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementationOnce(() => {
+      throw new DOMException('no', 'DataError');
+    });
+    await expect(store.put('a', 'b')).rejects.toThrow('no');
+    expect(put).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+});
+
+describe('what #36 builds on', () => {
+  it('reads the current record as it is stored', async () => {
+    const store = memoryStore();
+    const saves = createSaves(store, options());
+    expect(await saves.currentText()).toBeNull();
+    await saves.write(newState(4));
+    expect(await saves.currentText()).toBe(await store.get((await rotationOf(store))[0]!));
+  });
+
+  it('backs up the current record to a key the recovery order tries', async () => {
+    const store = memoryStore();
+    const saves = createSaves(store, options());
+    expect(await saves.backupCurrent()).toBeNull();
+    await saves.write(newState(4));
+    expect(await saves.backupCurrent()).toBe('backup-v1');
+
+    await corrupt(store, 0);
+    expect(await reboot(store).load()).toMatchObject({ source: 'backup-v1' });
+  });
+
+  it('does not back up a damaged record over a good backup', async () => {
+    const store = memoryStore();
+    const saves = createSaves(store, options());
+    await saves.write(newState(4));
+    await saves.backupCurrent();
+    const good = await store.get('backup-v1');
+    await corrupt(store, 0);
+    expect(await saves.backupCurrent()).toBeNull();
+    expect(await store.get('backup-v1')).toBe(good);
+  });
+
+  it('refuses to back up while writes are blocked', async () => {
+    const store = memoryStore();
+    await store.put('pointer', JSON.stringify({ seq: 1, rotation: ['record-1'] }));
+    await store.put('record-1', envelopeText({ whatever: 'shape' }, 2));
+    const saves = reboot(store);
+    await saves.load();
+    await expect(saves.backupCurrent()).rejects.toBeInstanceOf(SaveBlockedError);
+  });
+
+  it('exports reconcile from the public API', () => {
+    expect(exportedReconcile).toBe(reconcile);
+  });
+});
+
+describe('the line for a failed autosave', () => {
+  it('says the earlier saves are safe when the state was refused', () => {
+    expect(saveFailureNotice(new InvalidSaveError('x'))).toBe('Save refused: the game state has a fault. Your earlier saves are safe.');
+  });
+
+  it('says the next autosave tries again otherwise', () => {
+    expect(saveFailureNotice(new Error('quota'))).toBe('Save failed. The next autosave tries again.');
+  });
+});
+
+describe('choosing the storage (ADR 0003 "Storage")', () => {
   it.each<[string, () => StorageApis, string]>([
     ['IndexedDB when it opens', () => ({ indexedDB: new IDBFactory(), localStorage: fakeLocalStorage() }), 'indexeddb'],
     ['localStorage when there is no IndexedDB', () => ({ localStorage: fakeLocalStorage() }), 'localStorage'],
@@ -565,12 +943,12 @@ describe('choosing the storage (ADR 0003 "Storage")', () => {
 });
 
 describe('ab.meta and persistence (ADR 0003 "Storage")', () => {
-  it('holds only the active slot and the last-saved time', async () => {
+  it('holds the active slot, the last-saved time and which storage has it', async () => {
     const localStorage = fakeLocalStorage();
     const saves = await openSaves(options({ apis: { indexedDB: new IDBFactory(), localStorage } }));
     expect(readSaveMeta({ localStorage })).toBeNull();
     await saves.write(newState());
-    expect(readSaveMeta({ localStorage })).toEqual({ slot: 'record-1', savedAt: NOW });
+    expect(readSaveMeta({ localStorage })).toEqual({ slot: 'record-1', savedAt: NOW, storage: 'indexeddb' });
     expect(localStorage.length).toBe(1);
   });
 

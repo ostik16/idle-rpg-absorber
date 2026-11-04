@@ -6,10 +6,17 @@
  * crash at any point leaves the older records and the pointer to them as they were.
  */
 import type { GameState } from '../state/types';
-import { encodeEnvelope, readSave, type RecordFailure } from './envelope';
+import { decodeEnvelope, encodeEnvelope, readSave, type RecordFailure } from './envelope';
 import { MIGRATIONS, type Migration } from './migrations';
 import { reconcile, type ReconcileReport, type ReconcileTables } from './reconcile';
-import { browserApis, openSaveStore, type SaveStore, type StorageApis, type StorageKind } from './store';
+import {
+  browserApis,
+  localStorageStore,
+  openSaveStore,
+  type SaveStore,
+  type StorageApis,
+  type StorageKind,
+} from './store';
 
 const POINTER_KEY = 'pointer';
 const META_KEY = 'ab.meta';
@@ -19,14 +26,15 @@ const CORRUPT_PREFIX = 'corrupt-';
 const ROTATION = ['current', 'previous', 'previous2'] as const;
 
 type BackupName = `backup-v${number}`;
+type CorruptName = `corrupt-${string}`;
 
 /** Which record a load tried or used, in recovery order. */
-export type RecordName = (typeof ROTATION)[number] | BackupName;
+export type RecordName = (typeof ROTATION)[number] | BackupName | CorruptName;
 
 export interface RecordProblem {
   record: RecordName;
-  /** `missing`: the pointer named a record that is gone. `unreadable`: the store failed, so it stays where it is. */
-  reason: RecordFailure | 'missing' | 'unreadable';
+  /** `missing`: the pointer or `ab.meta` named a save that is gone. */
+  reason: RecordFailure | 'missing';
 }
 
 export type LoadResult =
@@ -42,17 +50,25 @@ export type LoadResult =
       failures: RecordProblem[];
       reconcile: ReconcileReport;
     }
-  /** No save at all: start a new game. */
+  /** No save and no sign of one: start a new game. */
   | { status: 'empty' }
   /** Do not start the game: writes stay refused and the record is untouched. The player has to update. */
   | { status: 'newerVersion'; record: RecordName; saveVersion: number; gameVersion: number }
-  /** Records exist and none loads. Show the recovery screen. The failed ones are kept under `corrupt-<time>`. */
+  /**
+   * The storage failed, or holds less than `ab.meta` says exists: IndexedDB would not open and this is the fallback.
+   * Do not start the game and do not offer a fresh start. Writes stay refused, and a later load can try again.
+   */
+  | { status: 'storeFault' }
+  /**
+   * The storage works and nothing in it loads. Show the recovery screen: starting fresh is safe, because each
+   * failed record is kept under `corrupt-<time>`, and a later build tries those again.
+   */
   | { status: 'unrecoverable'; failures: RecordProblem[] };
 
-/** Thrown by `write` once a load has found a save from a newer version, so that save is never rotated out. */
+/** Thrown by `write` while the last load ended in `newerVersion` or `storeFault`, so no save can be pushed out. */
 export class SaveBlockedError extends Error {
   constructor() {
-    super('a save from a newer version exists, so this build does not write');
+    super('the last load found a save this build must not write over');
     this.name = 'SaveBlockedError';
   }
 }
@@ -76,17 +92,27 @@ export interface Saves {
   load(): Promise<LoadResult>;
   /**
    * Serialises the state now and writes it. One write runs at a time: a call during a write waits, and only
-   * the latest of those waiting is written. Rejects when the write fails, and with `SaveBlockedError` as above.
+   * the latest of those waiting is written. Rejects when the write fails, with `InvalidSaveError` when the state
+   * does not fit the schema, and with `SaveBlockedError` as above. A rejected write leaves every record as it was.
    */
   write(state: GameState): Promise<void>;
-  /** The records that failed a load, kept for export (#36). */
-  corruptRecords(): Promise<{ key: string; text: string }[]>;
+  /** The text of the current record, as it is stored, or null when there is none. For export (#36). */
+  currentText(): Promise<string | null>;
+  /**
+   * Copies the current record to `backup-v<its version>`, which the recovery order tries, and returns that key.
+   * Null when there is no current record that reads. For import, which backs up before it replaces (#36).
+   */
+  backupCurrent(): Promise<string | null>;
+  /** The records that failed a load, kept for export. `readable` is true when this build can open one again. */
+  corruptRecords(): Promise<{ key: string; text: string; readable: boolean }[]>;
 }
 
-/** What `ab.meta` holds, for fast boot decisions: is there a save at all, and how old. */
+/** What `ab.meta` holds, for fast boot decisions and as evidence that a save exists. */
 export interface SaveMeta {
   slot: string;
   savedAt: number;
+  /** Where that save went, so a fallback can tell it is not looking at the real one. */
+  storage: StorageKind;
 }
 
 interface Pointer {
@@ -136,6 +162,19 @@ async function readPointer(store: SaveStore): Promise<Pointer> {
   return { seq: seqs[0] ?? 0, rotation: seqs.slice(0, ROTATION.length).map(recordKey) };
 }
 
+/** Corrupt copies as candidates: the latest failure first, and within one failure the newest position first. */
+function corruptCandidates(keys: readonly string[]): { name: RecordName; key: string }[] {
+  const timeOf = (key: string): number => Number(key.slice(CORRUPT_PREFIX.length).split('-')[0]);
+  const rank = (key: string): number => {
+    const position = ROTATION.findIndex((name) => key.endsWith(`-${name}`));
+    return position === -1 ? ROTATION.length : position;
+  };
+  return keys
+    .filter((key) => key.startsWith(CORRUPT_PREFIX))
+    .sort((a, b) => timeOf(b) - timeOf(a) || rank(a) - rank(b))
+    .map((key) => ({ name: key as CorruptName, key }));
+}
+
 /** Backup records as candidates, the newest version first. */
 function backupCandidates(keys: readonly string[]): { name: RecordName; key: string }[] {
   return keys
@@ -149,7 +188,8 @@ function backupCandidates(keys: readonly string[]): { name: RecordName; key: str
 export function readSaveMeta(apis: StorageApis = browserApis()): SaveMeta | null {
   try {
     const text = apis.localStorage?.getItem(META_KEY);
-    return text ? (JSON.parse(text) as SaveMeta) : null;
+    const meta = text ? (JSON.parse(text) as Partial<SaveMeta>) : null;
+    return typeof meta?.savedAt === 'number' ? (meta as SaveMeta) : null;
   } catch {
     return null;
   }
@@ -159,8 +199,11 @@ function requestBrowserPersistence(): Promise<unknown> {
   return globalThis.navigator?.storage?.persist?.() ?? Promise.resolve();
 }
 
-/** Builds the save system on a store. `openSaves` picks the store; tests pass their own. */
-export function createSaves(store: SaveStore, options: SavesOptions): Saves {
+/**
+ * Builds the save system on a store. `openSaves` picks the store; tests pass their own.
+ * `fallback` is the `localStorage` store when `store` is IndexedDB: it may hold a newer save from an outage.
+ */
+export function createSaves(store: SaveStore, options: SavesOptions, fallback?: SaveStore): Saves {
   const { appBuild, tables, now = Date.now, requestPersistence = requestBrowserPersistence } = options;
   const { apis = browserApis(), migrations = MIGRATIONS } = options;
   const gameVersion = migrations.length + 1;
@@ -173,7 +216,8 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
   /** Best effort: a save that went through is not failed by its tidying up. */
   function afterWrite(key: string, savedAt: number): void {
     try {
-      apis.localStorage?.setItem(META_KEY, JSON.stringify({ slot: key, savedAt } satisfies SaveMeta));
+      const meta: SaveMeta = { slot: key, savedAt, storage: store.kind };
+      apis.localStorage?.setItem(META_KEY, JSON.stringify(meta));
     } catch {
       // `ab.meta` is only a hint.
     }
@@ -193,8 +237,8 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
     }
   }
 
-  /** New record, then the pointer moves, then the record that fell off the end goes. */
-  async function writeRecord(text: string, savedAt: number): Promise<void> {
+  /** New record, then the pointer moves, then the record that fell off the end goes. Returns the new key. */
+  async function addRecord(text: string): Promise<string> {
     const pointer = await readPointer(store);
     const seq = pointer.seq + 1;
     const key = recordKey(seq);
@@ -202,7 +246,11 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
     const rotation = [key, ...pointer.rotation].slice(0, ROTATION.length);
     await store.put(POINTER_KEY, JSON.stringify({ seq, rotation } satisfies Pointer));
     await removeUnlisted(rotation);
-    afterWrite(key, savedAt);
+    return key;
+  }
+
+  async function writeRecord(text: string, savedAt: number): Promise<void> {
+    afterWrite(await addRecord(text), savedAt);
   }
 
   function start(text: string, savedAt: number): Promise<void> {
@@ -213,46 +261,82 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
   }
 
   /**
-   * Moves failed records out of the rotation, so the next boot does not try them again and copy them again.
-   * A failed record goes to `corrupt-<time>-<name>` first, and only leaves its place once that copy exists.
+   * Moves failed records out of the rotation, so the next boot does not copy them again and a fresh start cannot
+   * push them out. A failed record goes to `corrupt-<time>-<name>` first. Copies from an earlier load stay as they
+   * are. A store error here reaches `load`, which ends in `storeFault`, so no record is left without its copy.
    */
   async function setAside(pointer: Pointer, failed: readonly TriedRecord[]): Promise<void> {
-    const leaving = new Set<string>();
-    for (const { name, key, text, problem } of failed) {
-      try {
-        if (text !== undefined) await store.put(`${CORRUPT_PREFIX}${now()}-${name}`, text);
-        if (problem !== 'unreadable') leaving.add(key);
-      } catch {
-        // Stays where it is: nothing is deleted without its copy.
-      }
+    const leaving = failed.filter(({ key }) => !key.startsWith(CORRUPT_PREFIX));
+    if (leaving.length === 0) return;
+    for (const { name, text } of leaving) {
+      if (text !== undefined) await store.put(`${CORRUPT_PREFIX}${now()}-${name}`, text);
     }
-    if (leaving.size === 0) return;
+    const keys = new Set(leaving.map(({ key }) => key));
+    const rotation = pointer.rotation.filter((key) => !keys.has(key));
+    await store.put(POINTER_KEY, JSON.stringify({ seq: pointer.seq, rotation } satisfies Pointer));
+    await Promise.all([...keys].map((key) => store.delete(key)));
+  }
+
+  /** The newest record in a store that passes its checksum, or `newer` when a newer version comes first. */
+  async function newestRecord(from: SaveStore): Promise<{ text: string; savedAt: number } | 'newer' | null> {
+    for (const key of (await readPointer(from)).rotation) {
+      const text = await from.get(key);
+      if (text === undefined) continue;
+      const decoded = decodeEnvelope(text, gameVersion);
+      if (decoded.ok) return { text, savedAt: decoded.envelope.savedAt };
+      if (decoded.reason === 'newer') return 'newer';
+    }
+    return null;
+  }
+
+  /**
+   * A save written to the fallback during an outage stays out of sight once IndexedDB works again. When it is newer
+   * than what IndexedDB holds, it becomes the current record. The fallback keeps its copy, and later saves are newer.
+   * Returns whether the fallback holds any record, which is evidence of a save even when none could be taken.
+   */
+  async function adoptFromFallback(): Promise<boolean> {
+    if (fallback === undefined) return false;
+    let theirs: Awaited<ReturnType<typeof newestRecord>>;
+    let held: boolean;
     try {
-      const rotation = pointer.rotation.filter((key) => !leaving.has(key));
-      await store.put(POINTER_KEY, JSON.stringify({ seq: pointer.seq, rotation } satisfies Pointer));
-      await Promise.all([...leaving].map((key) => store.delete(key)));
+      theirs = await newestRecord(fallback);
+      held = (await readPointer(fallback)).rotation.length > 0;
     } catch {
-      // The next load finds these records where they were.
+      return false; // Only ever a second source: a failure here must not stop a load from IndexedDB.
     }
+    if (theirs !== null && theirs !== 'newer') {
+      const ours = await newestRecord(store);
+      if (ours === null || (ours !== 'newer' && ours.savedAt < theirs.savedAt)) await addRecord(theirs.text);
+    }
+    return held;
+  }
+
+  function storeFault(): LoadResult {
+    blocked = true;
+    return { status: 'storeFault' };
+  }
+
+  /** True when `ab.meta` says IndexedDB holds a save newer than `savedAt`, and this store is only the fallback. */
+  function newerSaveOutOfReach(savedAt: number): boolean {
+    const meta = readSaveMeta(apis);
+    return meta !== null && meta.storage === 'indexeddb' && store.kind !== 'indexeddb' && meta.savedAt > savedAt;
   }
 
   async function runRecovery(): Promise<LoadResult> {
+    const fallbackHeldRecords = await adoptFromFallback();
     const pointer = await readPointer(store);
     const keys = await store.keys();
     const candidates = [
       ...pointer.rotation.map((key, i) => ({ name: ROTATION[i] as RecordName, key })),
       ...backupCandidates(keys),
+      // Last: a record set aside by a build with a bug in its migration or schema can open in a fixed build.
+      ...corruptCandidates(keys),
     ];
 
     const failed: TriedRecord[] = [];
     for (const { name, key } of candidates) {
-      let text: string | undefined;
-      try {
-        text = await store.get(key);
-      } catch {
-        failed.push({ name, key, problem: 'unreadable' });
-        continue;
-      }
+      // A store error is not a verdict on the record: it reaches `load`, and no older record replaces this one.
+      const text = await store.get(key);
       if (text === undefined) {
         failed.push({ name, key, problem: 'missing' });
         continue;
@@ -268,13 +352,12 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
         failed.push({ name, key, text, problem: read.reason });
         continue;
       }
+      if (newerSaveOutOfReach(read.savedAt)) return storeFault();
 
       // Migrations are pure, so nothing is lost by running them first, and a record that fails them never
-      // replaces a good backup. The copy still lands before anything migrated can be written.
+      // replaces a good backup. A failed copy reaches `load`, so a migrated save never goes on without its backup.
       const backup = `backup-v${read.version}`;
-      if (read.version < gameVersion && key !== backup) {
-        await store.put(backup, text).catch(() => {});
-      }
+      if (read.version < gameVersion && key !== backup) await store.put(backup, text);
       await setAside(pointer, failed);
       return {
         status: 'loaded',
@@ -288,27 +371,34 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
       };
     }
 
+    if (newerSaveOutOfReach(-Infinity)) return storeFault();
     await setAside(pointer, failed);
-    const anyCorrupt = keys.some((key) => key.startsWith(CORRUPT_PREFIX));
-    return failed.length === 0 && !anyCorrupt ? { status: 'empty' } : { status: 'unrecoverable', failures: failed.map(toProblem) };
+    if (failed.length > 0) return { status: 'unrecoverable', failures: failed.map(toProblem) };
+    if (readSaveMeta(apis) !== null) return { status: 'unrecoverable', failures: [{ record: 'current', reason: 'missing' }] };
+    return fallbackHeldRecords ? { status: 'unrecoverable', failures: [] } : { status: 'empty' };
   }
 
   return {
     storage: store.kind,
 
     async load() {
+      blocked = false;
       try {
         return await runRecovery();
       } catch {
-        // The store itself failed. Treated as unreadable, so nothing starts over on top of the player's save.
-        return { status: 'unrecoverable', failures: [{ record: 'current', reason: 'unreadable' }] };
+        return storeFault();
       }
     },
 
     write(state) {
       if (blocked) return Promise.reject(new SaveBlockedError());
       const savedAt = now();
-      const text = encodeEnvelope(state, savedAt, appBuild);
+      let text: string;
+      try {
+        text = encodeEnvelope(state, savedAt, appBuild);
+      } catch (error) {
+        return Promise.reject(error);
+      }
       if (inFlight === null) return start(text, savedAt);
       if (waiting !== null) {
         waiting.text = text;
@@ -329,10 +419,29 @@ export function createSaves(store: SaveStore, options: SavesOptions): Saves {
       return next.done;
     },
 
+    async currentText() {
+      const [key] = (await readPointer(store)).rotation;
+      return key === undefined ? null : ((await store.get(key)) ?? null);
+    },
+
+    async backupCurrent() {
+      if (blocked) throw new SaveBlockedError();
+      const [key] = (await readPointer(store)).rotation;
+      const text = key === undefined ? undefined : await store.get(key);
+      const decoded = text === undefined ? null : decodeEnvelope(text, gameVersion);
+      if (text === undefined || !decoded?.ok) return null;
+      const backup = `backup-v${decoded.envelope.version}`;
+      await store.put(backup, text);
+      return backup;
+    },
+
     async corruptRecords() {
       const keys = (await store.keys()).filter((key) => key.startsWith(CORRUPT_PREFIX)).sort();
-      const texts = await Promise.all(keys.map((key) => store.get(key)));
-      return keys.map((key, i) => ({ key, text: texts[i] ?? '' }));
+      const texts = await Promise.all(keys.map(async (key) => (await store.get(key)) ?? ''));
+      return keys.map((key, i) => {
+        const text = texts[i] as string;
+        return { key, text, readable: readSave(text, migrations).ok };
+      });
     },
   };
 }
@@ -351,5 +460,7 @@ function toProblem({ name, problem }: TriedRecord): RecordProblem {
 /** Opens the best storage the browser allows and builds the save system on it. */
 export async function openSaves(options: SavesOptions): Promise<Saves> {
   const apis = options.apis ?? browserApis();
-  return createSaves(await openSaveStore(apis), { ...options, apis });
+  const store = await openSaveStore(apis);
+  const fallback = store.kind === 'indexeddb' && apis.localStorage ? localStorageStore(apis.localStorage) : undefined;
+  return createSaves(store, { ...options, apis }, fallback);
 }

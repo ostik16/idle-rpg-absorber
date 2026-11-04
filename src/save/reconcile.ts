@@ -102,6 +102,10 @@ export function reconcile(state: GameState, tables: ReconcileTables): ReconcileR
     if (!isRecoveredTab(tab)) tab.items = keepKnown(tab.items, known, recover);
   }
   state.shops.buyback = keepKnown(state.shops.buyback, known, recover);
+  // Only a report for the Welcome back screen, which looks items up by id. The stacks themselves are moved above.
+  for (const summary of state.pendingSummary?.characters ?? []) {
+    summary.items = Object.fromEntries(Object.entries(summary.items).filter(([itemId]) => known.has(itemId)));
+  }
 
   if (moved.length > 0) {
     let target = tabs.find(isRecoveredTab);

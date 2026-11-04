@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { readSave } from '../src/save/envelope';
-import { migratePayload, MIGRATIONS, SAVE_VERSION, type Migration } from '../src/save/migrations';
+import { migratePayload, SAVE_VERSION, type Migration } from '../src/save/migrations';
 import { reconcile } from '../src/save/reconcile';
 import type { GameState } from '../src/state/types';
 import { data, envelopeText, newState } from './save-helpers';
 
-// One fixture per version, tests/fixtures/saves/v<N>.json, each a whole save of that version's shape. Fixtures
-// are never changed: adding a migration keeps the old fixture and adds v<N+1>.json, so every old version stays covered.
+// One fixture per version, tests/fixtures/saves/v<N>.json. Each is the same game, saved in that version's shape.
+// Fixtures of released versions are never changed: a new migration keeps them and adds v<N+1>.json, so every old
+// version has to migrate to exactly what the newest fixture holds.
 const fixtures = import.meta.glob('./fixtures/saves/v*.json', {
   query: '?raw',
   import: 'default',
@@ -17,25 +18,51 @@ const fixtureVersions = Object.keys(fixtures)
   .map((path) => Number(path.match(/v(\d+)\.json$/)?.[1]))
   .sort((a, b) => a - b);
 
+function fixtureText(version: number): string {
+  return fixtures[`./fixtures/saves/v${version}.json`] as string;
+}
+
 describe('the migration fixtures (ADR 0003)', () => {
   it('has a fixture for every version up to the current one, so each migration has its older shape', () => {
     const versions = Array.from({ length: SAVE_VERSION }, (_, i) => i + 1);
     expect(fixtureVersions).toEqual(versions);
   });
 
-  it('has one migration for each step between versions', () => {
-    expect(MIGRATIONS).toHaveLength(SAVE_VERSION - 1);
+  it.each(fixtureVersions)('version %i migrates to exactly what the current fixture holds', (version) => {
+    const read = readSave(fixtureText(version));
+    if (!read.ok) throw new Error(read.reason);
+    expect(read.version).toBe(version);
+    const current = JSON.parse(fixtureText(SAVE_VERSION)) as { payload: unknown };
+    expect(read.state).toStrictEqual(current.payload);
   });
 
-  it.each(fixtureVersions)('version %i reads, migrates and validates as the current schema', (version) => {
-    const read = readSave(fixtures[`./fixtures/saves/v${version}.json`] as string);
-    expect(read).toMatchObject({ ok: true, version });
+  it.each(fixtureVersions)('version %i keeps the game in it: its character, numbers and bag', (version) => {
+    const read = readSave(fixtureText(version));
+    if (!read.ok) throw new Error(read.reason);
+    expect(read.savedAt).toBe(1_780_000_001_000);
+    expect(read.state.clock).toMatchObject({ lastSimulatedAt: 1_780_000_001_000, masterSeed: 7 });
+    expect(read.state.account).toMatchObject({ nextCharacterNumber: 2, unlockedSlots: 1 });
+    expect(read.state.roster).toHaveLength(1);
+    expect(read.state.roster[0]).toMatchObject({ id: 'c1', name: 'Kaela', gold: 0, level: 1, health: 70, phase: 'idle' });
+    expect(read.state.roster[0]?.bag).toEqual([{ itemId: 'minor-health-potion', bonuses: [], upgradeLevel: 0, qty: 10 }]);
   });
 
   it.each(fixtureVersions)('version %i holds only ids the tables know, so reconcile leaves it alone', (version) => {
-    const read = readSave(fixtures[`./fixtures/saves/v${version}.json`] as string);
+    const read = readSave(fixtureText(version));
     if (!read.ok) throw new Error(read.reason);
     expect(reconcile(read.state, data)).toEqual({ recovered: [], returned: [] });
+  });
+
+  it('a migration that changes a value is caught', () => {
+    const changesLevel: Migration = (payload) => {
+      const state = structuredClone(payload) as GameState;
+      state.roster[0]!.level = 99;
+      return state;
+    };
+    const old = JSON.parse(fixtureText(1)) as { payload: unknown };
+    const read = readSave(envelopeText(old.payload, 1), [changesLevel]);
+    if (!read.ok) throw new Error(read.reason);
+    expect(read.state).not.toStrictEqual(old.payload);
   });
 });
 
@@ -48,7 +75,6 @@ const addTitle: Migration = (payload) => ({ ...(payload as object), title: 'none
 
 describe('running migrations', () => {
   it('runs nothing on a payload that is already current', () => {
-    expect(MIGRATIONS.length).toBe(SAVE_VERSION - 1);
     const payload = newState();
     expect(migratePayload(payload, SAVE_VERSION)).toBe(payload);
   });

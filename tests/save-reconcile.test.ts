@@ -85,6 +85,20 @@ describe('unknown item ids (ADR 0003 reconcile)', () => {
   });
 });
 
+describe('the offline summary not yet shown', () => {
+  it('drops unknown items from the report, so the Welcome back screen can look up what is left', () => {
+    const state = newState();
+    state.pendingSummary = {
+      seconds: 60,
+      discardedSeconds: 0,
+      characters: [{ characterId: 'c1', kills: 2, xp: 5, gold: 9, items: { [KNOWN_ITEM]: 3, 'removed-item': 4 } }],
+    };
+    const report = reconcile(state, data);
+    expect(state.pendingSummary.characters[0]).toEqual({ characterId: 'c1', kills: 2, xp: 5, gold: 9, items: { [KNOWN_ITEM]: 3 } });
+    expect(report.recovered).toEqual([]);
+  });
+});
+
 describe('unknown enemy and area ids (ADR 0003 reconcile)', () => {
   function farming(): GameState {
     const state = newState();
