@@ -93,6 +93,19 @@ Small things that will cause arguments during implementation. All eight are sett
 - [x] **Pacing.** The owner approved the XP table as it is. Gold per hour can still be checked with the balance tools (5.3).
 - [x] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). The validator enforces a low-level source for every material (T12).
 - [x] **Check the drop tables** against the balance principle (S8). The validator enforces the pools and rolls for bosses, cursed objects and mini-bosses.
+- [ ] **Choices made building death (#24), for the owner to check.** None of these is in the design. (1) Healing after death runs in the `restocking` phase, the character's time in the city, so #27 can put selling and restocking ahead of it. (2) In the city a character drinks one potion at a time, and only when none is running, so regeneration can save the last one. (3) It picks the largest potion that fits what is missing up to its healing target, or the smallest when none fits: the L9 rule, measured to 65% for balanced and 100% for fast. (4) XP lost rounds down to a whole number, so a character always holds whole XP. (5) Character points can be spent in any phase, including in a fight and while dead. (6) Raising vitality raises maximum health and does not heal.
+- [ ] **Confirm the farming assumptions from issue #22.** The design does not settle these, so the engine assumes them:
+  - Looting takes no time of its own.
+  - A spawn chance applies per finished search, and the boss and mini-boss share one roll, so listed enemies take the remaining 97.5% of spawns.
+  - A target skips the spawn roll, so no boss or mini-boss turns up while targeting. The mini-boss and boss can be targeted, because their data sets a multiplier for it.
+  - A target needs an area, so it cannot be set in the city. It is refused while fleeing or on the way back, and kept if set while dead. On a search under way it applies at once and keeps the time already spent, so a fight can start straight away.
+  - A return clears the target.
+  - The player's return command ends farming, and the character stays in the city. `stayInCity` keeps this through a death while fleeing, and a return also works while dead or healing.
+  - Turning back on the way out takes as long as it has walked.
+  - A character changes area only from the city.
+  - A character needs full health to be sent out, following 3.2.
+- [ ] **Owner question from the #22 review.** Should a level 1 character meet a boss and a mini-boss it cannot beat?
+- [ ] **Model bosses in `balance:drops`.** The owner decided that the kills-per-hour bar on #22 covers listed enemies only, and bosses are tracked here. The tool leaves out the boss and mini-boss. With deaths turned off, so that a character grinds through fights it would really lose, the engine kills 21% fewer enemies per hour than the tool says for a new character, and 11% fewer with the reference attributes. These are not real play numbers: on real data with no return trigger yet (#27), a new character dies after a median of 306 s, and neither build won a simulated fight against either special. The tool first needs a rule for a boss the build cannot beat, and `--target` needs to accept the boss and mini-boss, as the engine does.
 
 ## 6. Choices made while building the save system (#30)
 

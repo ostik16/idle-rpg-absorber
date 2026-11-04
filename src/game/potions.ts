@@ -1,5 +1,6 @@
 /**
- * Which potion to drink in a fight, and how much healing is already on its way (design 2.6, decisions L9).
+ * Which potion to drink, in a fight or in the city, and how much healing is already on its way (design 2.6,
+ * decisions L9, L10).
  * Pure functions.
  */
 import { potionHealPerTick, type PotionTier } from './stats';
@@ -47,4 +48,28 @@ export function chooseAutoPotion(
     if (expected <= potion.threshold * maxHealth && (best === null || potion.amount < best.amount)) best = potion;
   }
   return best?.itemId ?? null;
+}
+
+/**
+ * Share of maximum health that potions heal to in the city (decisions L10): all of it when fast, `balancedFraction`
+ * when balanced, none when slow. Regeneration does the rest.
+ */
+export function cityPotionTarget(mode: 'fast' | 'balanced' | 'slow', balancedFraction: number): number {
+  if (mode === 'fast') return 1;
+  return mode === 'balanced' ? balancedFraction : 0;
+}
+
+/**
+ * The potion to drink in the city, or null at or above `targetFraction` of maximum health. Assumed, like L9: the
+ * largest potion that fits what is missing up to the target, or the smallest when none fits.
+ */
+export function chooseCityPotion(
+  health: number,
+  maxHealth: number,
+  targetFraction: number,
+  held: readonly HeldPotion[],
+): string | null {
+  const target = targetFraction * maxHealth;
+  if (health >= target) return null;
+  return chooseAutoPotion(health, target, 0, held.map((potion) => ({ ...potion, threshold: 1 })));
 }

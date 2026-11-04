@@ -11,6 +11,7 @@ import areasJson from '../../data/areas.json';
 import enemiesJson from '../../data/enemies.json';
 import dropTablesJson from '../../data/drop-tables.json';
 import itemsJson from '../../data/items.json';
+import { baseMovementSeconds, targetingMultiplier as gameTargetingMultiplier } from '../../src/game/farming';
 
 export interface EnemyTrait {
   id: string;
@@ -110,23 +111,17 @@ export function loadBalanceData(): BalanceData {
   };
 }
 
-/**
- * Seconds of movement between enemies in an area, before targeting (3.3): the area's own
- * `movementSecondsBetweenEnemies` if present, else constants.farming.movementSecondsBetweenEnemies.
- */
-export function baseMovementSeconds(area: AreaEntry): number {
-  return area.movementSecondsBetweenEnemies ?? constants.farming.movementSecondsBetweenEnemies;
-}
+export { baseMovementSeconds };
 
 /**
- * Multiplier on the movement time when targeting this enemy (3.3): its own `targetingMultiplier`,
- * else constants.farming.targeting.commonMultiplier. Rejects values outside 1..maxMultiplier.
+ * Multiplier on the movement time when targeting this enemy (3.3), as the game reads it.
+ * Rejects values outside 1..maxMultiplier.
  */
 export function targetingMultiplier(enemy: EnemyEntry): number {
-  const t = constants.farming.targeting;
-  const m = enemy.targetingMultiplier ?? t.commonMultiplier;
-  if (!(m >= 1 && m <= t.maxMultiplier)) {
-    throw new BalanceError(`Enemy "${enemy.id}" has targetingMultiplier ${m}; it must be between 1 and ${t.maxMultiplier}.`);
+  const m = gameTargetingMultiplier(enemy);
+  const { maxMultiplier } = constants.farming.targeting;
+  if (!(m >= 1 && m <= maxMultiplier)) {
+    throw new BalanceError(`Enemy "${enemy.id}" has targetingMultiplier ${m}; it must be between 1 and ${maxMultiplier}.`);
   }
   return m;
 }
