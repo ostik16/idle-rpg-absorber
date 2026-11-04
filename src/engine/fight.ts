@@ -8,7 +8,7 @@ import { derivedStats } from '../state/selectors';
 import type { CharacterState, FightState } from '../state/types';
 import { loseXpOnDeath } from './death';
 import { absorbOnEnemyKill, applyLifeSteal, trainOnHit, trainOnHitTaken } from './growth';
-import { grantKillXp } from './rewards';
+import { grantKillLoot, grantKillXp } from './rewards';
 import { enterPhase, movementDurationMs, type StepContext } from './step-context';
 
 function enemyStats(enemyId: string, ctx: StepContext): EnemyCombatStats {
@@ -72,7 +72,9 @@ function runTick(character: CharacterState, fight: FightState, playerAttacks: bo
   if (tick.outcome === 'win') {
     ctx.emit({ type: 'enemyKilled', characterId: character.id, enemyId: fight.enemyId });
     absorbOnEnemyKill(character, fight.enemyId, ctx);
+    const levelAtKill = character.level;
     grantKillXp(character, fight.enemyId, ctx);
+    grantKillLoot(character, fight.enemyId, ctx, levelAtKill);
     enterPhase(character, 'looting', ctx);
   } else {
     character.potions = { queue: [], ticksDone: 0, msIntoTick: 0 };

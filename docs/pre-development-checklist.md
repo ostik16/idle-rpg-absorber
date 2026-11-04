@@ -151,7 +151,22 @@ Still open:
 - [ ] **Recovered tab field.** `RecoveredTab` lives in `src/save/reconcile.ts`, because #30 stayed inside `src/save/`. Move `name` to `WarehouseTab` in `src/state/types.ts` when the warehouse screen is built. Tab buying must not count this tab when it reads `constants.storage.tabCosts`.
 - [ ] **Reveals check at load.** ADR 0003 asks for reveals to be recomputed from kills at load, keeping the higher. #25 defines a tier as the number of `data/bestiary-thresholds.json` rows a kill count has reached (`bestiaryTier`), and writes `bestiary.revealed` on each kill. The recompute at load is not built: it needs a load hook in `save/`.
 
-Decided in #25 (assumed, not in the design):
+## 7. Choices made while building drops and the bag (#23)
+
+- [x] **Cells per stack.** A stack takes its item's `size` in cells, whatever its quantity, so a sword is 3 and a stack of scraps is 1. L7 says "a stack uses 1"; every stackable item has `size` 1 today, so the two agree. A stackable item with a larger `size` would take that many cells per stack.
+- [x] **Partial pickup.** A stack that only partly fits goes in as far as it fits (a new stack opens only if its `size` is free), and the rest is left behind with `bagFull`. The design does not say whether a drop is all or nothing.
+- [x] **Merging.** A stackable drop tops up existing stacks of the same item with the same bonuses and upgrade level first, then opens new stacks of up to the max stack. A stack already above the max (a smaller backpack was fitted) takes nothing more and is not split.
+- [x] **Loot filter.** Enabled: an item is picked up only if it matches at least one rule. No rules means nothing is picked up. A rule matches when every field it sets matches: category equal, the item's `requiredLevel` at or above `minRequiredLevel` (an item with no level counts as 1), and one rolled bonus on `bonusAttribute`. A rule with no fields matches everything. Disabled picks up everything. An item the filter refuses is left behind with no event.
+- [x] **Order of kill rewards.** `enemyKilled`, XP, then gold, then drops. Gold is one `nextInt` on the drops stream from `moneyRange` (or `enemyMoneyRange` for the level), so a kill never changes the streams that other systems use. Gold arrives at the level cap and with a full bag.
+- [x] **Draw alignment.** Every kill takes the same draws from the drops stream for a given table: per normal entry a chance, a quantity and two per bonus pool entry of its item; per pool a pick, a quantity and two per bonus pool entry of every item in the pool. A level modifier of 0, a boost, a full bag or the filter never move the stream. The cost is a few unused draws.
+- [x] **Bonus attributes.** Each pool entry rolls its own chance, then a whole value in `min..max`. At most `items.maxBonusAttributes` (3) are kept, the first hits in the pool's listed order. The pool's order in `items.json` therefore matters when an item could roll more than 3.
+- [x] **Events.** `goldGained`, `itemPickedUp` (what went in, with its bonuses) and `bagFull` (what was left, one per dropped item). #27 reads `bagFull` for the return trip and the L2 rule that a full bag does not send the character home again; neither is built.
+- [x] **Drop boost.** `rollDrops` takes a `boost` that multiplies a normal entry's chance after the level modifier (Q5) and never touches a pool. The engine passes none until the boosts of 2.6 exist.
+- [x] **`noDropEnemyLevelsAbove`.** The 3.8 level modifier is unchanged: 0 from 10 levels above (falloff 0.1 per level), and 0 for an enemy 20 or more levels above the character.
+- [ ] **Loot filter and guaranteed pools.** The engine applies an enabled loot filter to pool items too, so a filter can leave behind the one item T3 says every kill yields. L8 does not exempt pool items. The owner can keep this or exempt pools.
+- [x] **Level used for drops.** The drop roll uses the character's level when the kill landed, before that kill's XP can level it up.
+
+## 8. Choices made while building proficiency, absorption and the bestiary (#25)
 
 - [x] **Level of an area for speed training.** Design 4.6 says "the level of the area" and areas only have `levelRange`. The engine uses `levelRange.max`.
 - [x] **What counts as moving.** Speed trains on `travelling`, `searching` and `returning` steps, by the seconds the step covers. Fleeing does not train it.

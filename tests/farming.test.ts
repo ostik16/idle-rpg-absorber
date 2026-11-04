@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
 import areasJson from '../data/areas.json';
 import enemiesJson from '../data/enemies.json';
+import dropTablesJson from '../data/drop-tables.json';
 import itemsJson from '../data/items.json';
 import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
@@ -32,6 +33,7 @@ function fixture(area: Record<string, unknown> = {}): GameData {
   return createGameData({
     constants: { ...constants, stats: { ...constants.stats, healthRegen: { fractionOfMaxPerSecond: 1 } } },
     items: itemsJson,
+    dropTables: dropTablesJson,
     enemies: enemiesJson,
     areas: [{ ...AREA_ROW, ...area } as (typeof areasJson)[number]],
     xpTable: xpTableJson,
@@ -191,6 +193,7 @@ describe('searching (3.3)', () => {
         farming: { ...constants.farming, movementSecondsBetweenEnemies: 2, targeting: { commonMultiplier: 3, maxMultiplier: 10 } },
       },
       items: itemsJson,
+      dropTables: dropTablesJson,
       enemies: enemiesJson.map(({ targetingMultiplier: _unused, ...enemy }) => enemy),
       areas: areasJson,
     });
