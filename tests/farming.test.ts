@@ -4,11 +4,13 @@ import areasJson from '../data/areas.json';
 import enemiesJson from '../data/enemies.json';
 import itemsJson from '../data/items.json';
 import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
+import { applyCommand } from '../src/engine/commands';
 import { createEngine, type Engine } from '../src/engine/engine';
 import type { EngineEvent } from '../src/engine/events';
+import { createCharacterStreams } from '../src/engine/streams';
 import { baseMovementSeconds, rollSpawn, spawnsInArea, targetingMultiplier } from '../src/game/farming';
 import { createRng, createStream } from '../src/game/rng';
-import { createGameState } from '../src/state/factory';
+import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterState, GameState } from '../src/state/types';
 import { buildPlayer, defaultBuild, enemyFromData, meanFightSeconds, type PlayerBuild } from '../tools/balance/combat';
 import { areaReport } from '../tools/balance/drops';
@@ -96,8 +98,8 @@ describe('movement and spawn rules (3.1, 3.3)', () => {
       const id = rollSpawn(area, rng);
       seen[id] = (seen[id] ?? 0) + 1;
     }
-    expect((seen['boss'] ?? 0) / rolls).toBeCloseTo(0.005, 3);
-    expect((seen['mini'] ?? 0) / rolls).toBeCloseTo(0.02, 2);
+    expect(Math.abs((seen['boss'] ?? 0) / rolls - 0.005)).toBeLessThan(0.0005);
+    expect(Math.abs((seen['mini'] ?? 0) / rolls - 0.02)).toBeLessThan(0.001);
     expect((seen['common'] ?? 0) / rolls).toBeCloseTo(0.975 * 0.75, 2);
     expect((seen['rare'] ?? 0) / rolls).toBeCloseTo(0.975 * 0.25, 2);
   });
@@ -107,13 +109,21 @@ describe('movement and spawn rules (3.1, 3.3)', () => {
     const noIds = { enemies, miniBossSpawnChance: 1, bossSpawnChance: 1 };
     const noChance = { enemies, miniBossId: 'mini', bossId: 'boss' };
     const certain = { enemies, bossId: 'boss', bossSpawnChance: 1 };
+    const several = { enemies: [...enemies, { enemyId: 'other', spawnWeight: 1 }] };
     const a = createRng(5);
     const b = createRng(5);
+    const c = createRng(5);
+    const twoDraws = createRng(5);
     for (let i = 0; i < 50; i++) {
       expect(rollSpawn(i % 2 === 0 ? noIds : noChance, a)).toBe('only');
       expect(rollSpawn(certain, b)).toBe('boss');
+      rollSpawn(several, c);
+      twoDraws.nextFloat();
+      twoDraws.nextFloat();
     }
-    expect(a.getState()).toEqual(b.getState());
+    expect(a.getState()).toEqual(twoDraws.getState());
+    expect(b.getState()).toEqual(twoDraws.getState());
+    expect(c.getState()).toEqual(twoDraws.getState());
   });
 });
 
@@ -169,6 +179,30 @@ describe('searching (3.3)', () => {
     expect(character.phase).toBe('searching');
     advance(TICK);
     expect(character.phase).toBe('fighting');
+  });
+
+  it('reads the movement time and the common multiplier from the game data', () => {
+    const data = createGameData({
+      constants: {
+        ...constants,
+        farming: { ...constants.farming, movementSecondsBetweenEnemies: 2, targeting: { commonMultiplier: 3, maxMultiplier: 10 } },
+      },
+      items: itemsJson,
+      enemies: enemiesJson.map(({ targetingMultiplier: _unused, ...enemy }) => enemy),
+      areas: areasJson,
+    });
+    const untargeted = atArea(data);
+    untargeted.advance(1900);
+    expect(untargeted.character.phase).toBe('searching');
+    untargeted.advance(TICK);
+    expect(untargeted.character.phase).toBe('fighting');
+
+    const targeted = atArea(data);
+    targeted.engine.dispatch({ type: 'setTarget', characterId: targeted.id, enemyId: RAT });
+    targeted.advance(5900);
+    expect(targeted.character.phase).toBe('searching');
+    targeted.advance(TICK);
+    expect(targeted.character.fight?.enemyId).toBe(RAT);
   });
 
   it('the speed skill shortens it', () => {
@@ -248,6 +282,68 @@ describe('commands (3.2, 3.3, L5)', () => {
     expect(character.timeInPhaseMs).toBe(2 * TICK);
   });
 
+  it('says why a send is refused while dead, or while busy in the city', () => {
+    const { engine, character, advance, id } = setup();
+    engine.drainEvents();
+    character.phase = 'dead';
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    expect(rejections(engine)).toEqual(['Ysolde is dead.']);
+
+    character.phase = 'restocking';
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    expect(rejections(engine)).toEqual(['Ysolde is busy in the city.']);
+  });
+
+  it('publishes each command in order: its phase change, then the next command', () => {
+    const { engine, advance, id } = setup();
+    engine.drainEvents();
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    expect(engine.drainEvents().map((e) => e.type)).toEqual(['phaseChanged', 'commandRejected']);
+  });
+
+  it('never throws on a saved area or character that the data no longer knows, and changes nothing', () => {
+    const data = fixture();
+    const state = freshState(data);
+    const character = createCharacterState('c1', 'Ysolde', data);
+    character.phase = 'travelling';
+    character.areaId = 'gone';
+    character.timeInPhaseMs = 500;
+    state.roster.push(character);
+    const ctx = { data, tickMs: TICK, streams: createCharacterStreams(SEED, 'c1'), emit: () => {} };
+    const before = JSON.parse(JSON.stringify(character)) as CharacterState;
+
+    const event = applyCommand(state, { type: 'returnToCity', characterId: 'c1' }, data, () => ctx);
+
+    expect(event).toMatchObject({ type: 'commandRejected', reason: 'Ysolde has no area to return from.' });
+    expect(character).toEqual(before);
+    const missing = applyCommand(state, { type: 'returnToCity', characterId: 'c1' }, data, () => undefined);
+    expect(missing).toMatchObject({ type: 'commandRejected', reason: 'No character "c1".' });
+  });
+
+  it('keeps the target when going back to the same area, and drops it for another', () => {
+    const data = createGameData({
+      constants,
+      items: itemsJson,
+      enemies: enemiesJson,
+      areas: [...areasJson, { ...AREA_ROW, id: 'other' } as (typeof areasJson)[number]],
+    });
+    const { engine, character, advance, id } = setup(data);
+    character.areaId = AREA;
+    character.targetEnemyId = RAT;
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(TICK);
+    expect(character.targetEnemyId).toBe(RAT);
+
+    character.phase = 'idle';
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: 'other' });
+    advance(TICK);
+    expect(character).toMatchObject({ areaId: 'other', targetEnemyId: null });
+  });
+
   it('rejects a command for a character that does not exist', () => {
     const { engine, advance } = setup();
     engine.drainEvents();
@@ -314,6 +410,21 @@ describe('commands (3.2, 3.3, L5)', () => {
     advance(3000);
     engine.dispatch({ type: 'returnToCity', characterId: id });
     advance(3000 - TICK);
+    expect(character.phase).toBe('returning');
+    advance(TICK);
+    expect(character.phase).toBe('idle');
+  });
+
+  it('can leave while looting, and walks the whole way back', () => {
+    const data = fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }], ...NO_SPECIALS });
+    const { engine, character, advance, id } = setup(data);
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    advance(16_000 + TICK);
+    while (character.phase === 'fighting') advance(TICK);
+    expect(character.phase).toBe('looting');
+
+    engine.dispatch({ type: 'returnToCity', characterId: id });
+    advance(10_000 - TICK);
     expect(character.phase).toBe('returning');
     advance(TICK);
     expect(character.phase).toBe('idle');
@@ -417,7 +528,7 @@ function toolKillsPerHour(build: PlayerBuild, target: string | null): number {
 /** Kills most things in a hit or two, so the rare boss hardly moves the kill rate and a long run stays short to test. */
 const STRONG: PlayerBuild = { ...defaultBuild(), attributes: { ...defaultBuild().attributes, strength: 100 } };
 
-describe('kill rate against the balance tool (3.3, 5.3)', () => {
+describe('kill rate against the balance tool, with deaths turned off (3.3, 5.3)', () => {
   const within5Percent = (actual: number, expected: number): void => {
     expect(Math.abs(actual / expected - 1)).toBeLessThan(0.05);
   };
@@ -450,8 +561,8 @@ describe('spawn shares over a long seeded run (3.1)', () => {
       const expected = (spawnWeight / weightTotal) * (1 - special);
       expect(Math.abs((kills[enemyId] ?? 0) / total - expected)).toBeLessThan(0.01);
     }
-    expect((kills[MINI_BOSS] ?? 0) / total).toBeCloseTo(area.miniBossSpawnChance, 2);
-    expect((kills[BOSS] ?? 0) / total).toBeCloseTo(area.bossSpawnChance, 2);
+    expect(Math.abs((kills[MINI_BOSS] ?? 0) / total - area.miniBossSpawnChance)).toBeLessThan(0.004);
+    expect(Math.abs((kills[BOSS] ?? 0) / total - area.bossSpawnChance)).toBeLessThan(0.002);
   });
 });
 

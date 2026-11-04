@@ -93,5 +93,15 @@ Small things that will cause arguments during implementation. All eight are sett
 - [x] **Pacing.** The owner approved the XP table as it is. Gold per hour can still be checked with the balance tools (5.3).
 - [x] **Rewrite the upgrade table** for per-type materials and gold-only up to +5 (S6). The validator enforces a low-level source for every material (T12).
 - [x] **Check the drop tables** against the balance principle (S8). The validator enforces the pools and rolls for bosses, cursed objects and mini-bosses.
-- [ ] **Confirm the farming assumptions from issue #22.** The design does not settle these, so the engine assumes them: looting takes no time of its own; a target skips the spawn roll, so no boss or mini-bosses turn up while targeting; the mini-boss and boss can be targeted, because their data sets a multiplier for it; the player's return command ends farming, and the character stays in the city; turning back on the way out takes as long as it has walked; a character changes area only from the city.
-- [ ] **Model bosses in `balance:drops`.** The tool leaves out the boss and mini-boss, and a real run is slower than it says: 21% for a new character, 11% with the reference attributes, measured with deaths turned off. It also needs a rule for a boss the build cannot beat.
+- [ ] **Confirm the farming assumptions from issue #22.** The design does not settle these, so the engine assumes them:
+  - Looting takes no time of its own.
+  - A spawn chance applies per finished search, and the boss and mini-boss share one roll, so listed enemies take the remaining 97.5% of spawns.
+  - A target skips the spawn roll, so no boss or mini-boss turns up while targeting. The mini-boss and boss can be targeted, because their data sets a multiplier for it.
+  - A target needs an area, so it cannot be set in the city. It can be set in any phase with an area. On a search under way it applies at once and keeps the time already spent, so a fight can start straight away.
+  - A return clears the target. Setting one on the way back is accepted and then cleared on arrival.
+  - The player's return command ends farming, and the character stays in the city. This does not yet survive a death while fleeing (see the question below).
+  - Turning back on the way out takes as long as it has walked.
+  - A character changes area only from the city.
+  - A character can be sent out at any health. 3.2 asks for full health before going back, which may mean this should refuse (see the question below).
+- [ ] **Owner questions from the #22 review.** Should a return command survive a death while fleeing, through a saved "stay home" marker? Should `sendToArea` refuse a hurt character? Should a level 1 character meet a boss and a mini-boss it cannot beat? Should the kills-per-hour bar on #22 cover listed enemies only, with bosses tracked separately?
+- [ ] **Model bosses in `balance:drops`.** The tool leaves out the boss and mini-boss. With deaths turned off, so that a character grinds through fights it would really lose, the engine kills 21% fewer enemies per hour than the tool says for a new character, and 11% fewer with the reference attributes. These are not real play numbers: on real data with no return trigger yet (#27), a new character dies after a median of 306 s, and neither build won a simulated fight against either special. The tool first needs a rule for a boss the build cannot beat, and `--target` needs to accept the boss and mini-boss, as the engine does.

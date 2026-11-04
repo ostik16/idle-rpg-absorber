@@ -40,7 +40,16 @@ function findArea(areaId: string, data: GameData): AreaRow | undefined {
 
 function sendToAreaError(character: CharacterState, areaId: string, data: GameData): string | null {
   if (findArea(areaId, data) === undefined) return `No area "${areaId}".`;
-  return character.phase === 'idle' ? null : `${character.name} has to be in the city first.`;
+  switch (character.phase) {
+    case 'idle':
+      return null;
+    case 'dead':
+      return `${character.name} is dead.`;
+    case 'restocking':
+      return `${character.name} is busy in the city.`;
+    default:
+      return `${character.name} has to be in the city first.`;
+  }
 }
 
 function setTargetError(character: CharacterState, enemyId: string | null, data: GameData): string | null {
@@ -50,12 +59,16 @@ function setTargetError(character: CharacterState, enemyId: string | null, data:
   return area !== undefined && spawnsInArea(area, enemyId) ? null : `No "${enemyId}" in this area.`;
 }
 
-function returnToCityError(character: CharacterState): string | null {
+function returnToCityError(character: CharacterState, data: GameData): string | null {
   switch (character.phase) {
     case 'travelling':
     case 'searching':
     case 'fighting':
     case 'looting':
+      // Only a save from older data gets here without a known area (ADR 0003 "reconcile").
+      if (character.areaId === null || findArea(character.areaId, data) === undefined) {
+        return `${character.name} has no area to return from.`;
+      }
       return null;
     case 'fleeing':
     case 'returning':
@@ -108,7 +121,7 @@ export function applyCommand(
         if (reason !== null) return rejected(reason);
         character.targetEnemyId = command.enemyId;
       } else {
-        const reason = returnToCityError(character);
+        const reason = returnToCityError(character, data);
         if (reason !== null) return rejected(reason);
         returnToCity(character, ctx);
       }
