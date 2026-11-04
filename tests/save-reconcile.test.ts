@@ -166,6 +166,20 @@ describe('unknown enemy and area ids (ADR 0003 reconcile)', () => {
     expect(reconcile(state, data).returned[0]?.unknownIds).toEqual(['removed-enemy']);
   });
 
+  it('a character called home has arrived, so the flag does not outlive the trip', () => {
+    const state = farming();
+    Object.assign(state.roster[0]!, { phase: 'returning', fight: null, stayInCity: true, targetEnemyId: 'removed-enemy' });
+    reconcile(state, data);
+    expect(state.roster[0]).toMatchObject({ phase: 'idle', stayInCity: false });
+  });
+
+  it('a dead character called home still stays home after its respawn', () => {
+    const state = newState();
+    Object.assign(state.roster[0]!, { areaId: 'removed-area', phase: 'dead', stayInCity: true });
+    reconcile(state, data);
+    expect(state.roster[0]).toMatchObject({ phase: 'dead', stayInCity: true });
+  });
+
   it('a dead character stays dead, so its respawn still runs', () => {
     const state = newState();
     Object.assign(state.roster[0]!, { areaId: 'removed-area', phase: 'dead', timeInPhaseMs: 900 });

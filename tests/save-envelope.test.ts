@@ -3,6 +3,7 @@ import { crc32 } from '../src/save/crc32';
 import { decodeEnvelope, encodeEnvelope, readSave, SAVE_FORMAT, type SaveEnvelope } from '../src/save/envelope';
 import { SAVE_VERSION } from '../src/save/migrations';
 import { validatePayload } from '../src/save/schema';
+import type { CharacterState } from '../src/state/types';
 import { envelopeText, newState, T0 } from './save-helpers';
 
 describe('crc32', () => {
@@ -75,7 +76,7 @@ describe('the schema (ADR 0003)', () => {
     expect(validatePayload(state)).toBeNull();
     const character = state.roster[0]!;
     character.fight = { enemyId: 'x', enemyHp: 1, ticks: 2 };
-    character.rng = { combat: [1, 2, 3, 4], drops: [1, 2, 3, 4], search: [1, 2, 3, 4] };
+    character.rng = { combat: [1, 2, 3, 4], drops: [1, 2, 3, 4], search: [1, 2, 3, 4], death: [1, 2, 3, 4] };
     state.pendingSummary = { seconds: 1, discardedSeconds: 0, characters: [] };
     expect(validatePayload(state)).toBeNull();
   });
@@ -85,7 +86,11 @@ describe('the schema (ADR 0003)', () => {
     ['a number that is a string', (s) => void ((s.roster[0] as { gold: unknown }).gold = '5'), 'payload.roster[0].gold'],
     ['an unknown phase', (s) => void ((s.roster[0] as { phase: string }).phase = 'dancing'), 'payload.roster[0].phase'],
     ['a stack without an id', (s) => void delete (s.roster[0]!.bag[0] as { itemId?: string }).itemId, 'payload.roster[0].bag[0].itemId'],
-    ['a stream of the wrong length', (s) => void (s.roster[0]!.rng = { combat: [1], drops: [1], search: [1] } as never), 'payload.roster[0].rng.combat'],
+    ['a stream of the wrong length', (s) => void (s.roster[0]!.rng = { combat: [1], drops: [1], search: [1], death: [1] } as never), 'payload.roster[0].rng.combat'],
+    ['a missing point mark', (s) => void delete (s.roster[0] as Partial<CharacterState>).highestMarkReached, 'payload.roster[0].highestMarkReached'],
+    ['a missing stay in city', (s) => void delete (s.roster[0] as Partial<CharacterState>).stayInCity, 'payload.roster[0].stayInCity'],
+    ['a stay in city that is not true or false', (s) => void ((s.roster[0] as { stayInCity: unknown }).stayInCity = 1), 'payload.roster[0].stayInCity'],
+    ['streams without death', (s) => void (s.roster[0]!.rng = { combat: [1, 2, 3, 4], drops: [1, 2, 3, 4], search: [1, 2, 3, 4] } as never), 'payload.roster[0].rng.death'],
   ])('names %s', (_label, damage, path) => {
     const state = newState();
     damage(state);

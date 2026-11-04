@@ -140,6 +140,7 @@ const character = shape<CharacterState>({
   gold: num,
   level: num,
   xpInLevel: num,
+  highestMarkReached: num,
   points,
   attributes: shape({ strength: num, dexterity: num, vitality: num, intelligence: num }),
   // Which skills exist is in the tables, and this layer does not read those: a new skill is a migration.
@@ -153,11 +154,12 @@ const character = shape<CharacterState>({
   fight: nullable(fight),
   areaId: nullable(str),
   targetEnemyId: nullable(str),
+  stayInCity: bool,
   phase: oneOf<Phase>(PHASES),
   timeInPhaseMs: num,
   settings: characterSettings,
   absorption: record(num),
-  rng: optional(shape({ combat: streamState, drops: streamState, search: streamState })),
+  rng: optional(shape({ combat: streamState, drops: streamState, search: streamState, death: streamState })),
 });
 
 const warehouseTab = shape<WarehouseTab>({ cells: num, items: list(itemStack) });

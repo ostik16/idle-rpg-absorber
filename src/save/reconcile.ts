@@ -77,6 +77,7 @@ function returnIfUnknown(character: CharacterState, tables: ReconcileTables): Re
   if (character.phase !== 'dead') {
     character.phase = 'idle';
     character.timeInPhaseMs = 0;
+    character.stayInCity = false; // It has arrived. `dead` keeps it, so a character called home still stays there.
   }
   return { characterId: character.id, name: character.name, unknownIds: [...new Set(unknownIds)] };
 }
