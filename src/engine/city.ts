@@ -7,10 +7,12 @@ import { derivedStats } from '../state/selectors';
 import type { CharacterState } from '../state/types';
 import { drinkInCity } from './healing';
 import { enterPhase, type StepContext } from './step-context';
+import { settleInCity } from './travel';
 
-/** Where a healed character goes. Stops at `idle` until the travel phases of #22 can take it back to its area. */
+/** A healed character walks back to the same area with the same target, unless the player called it home. */
 function goBackToFarming(character: CharacterState, ctx: StepContext): void {
-  enterPhase(character, 'idle', ctx);
+  if (character.stayInCity || character.areaId === null) settleInCity(character, ctx);
+  else enterPhase(character, 'travelling', ctx);
 }
 
 /** Stays until health is full, drinking as the character's healing choice says. Regeneration runs by itself. */

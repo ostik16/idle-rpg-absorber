@@ -20,7 +20,7 @@ export function createCharacterStreams(
     const state = saved?.[name];
     return state ? rngFromState(state) : createStream(masterSeed, characterId, name);
   };
-  return { combat: make('combat'), drops: make('drops'), search: make('search') };
+  return { combat: make('combat'), drops: make('drops'), search: make('search'), death: make('death') };
 }
 
 /** Current state of every stream, for saving (ADR 0003). */
@@ -29,5 +29,6 @@ export function readStreamStates(streams: CharacterStreams): CharacterRngState {
     combat: streams.combat.getState(),
     drops: streams.drops.getState(),
     search: streams.search.getState(),
+    death: streams.death.getState(),
   };
 }

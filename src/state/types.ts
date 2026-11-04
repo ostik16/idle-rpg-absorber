@@ -23,7 +23,7 @@ export const PHASES = [
 export type Phase = (typeof PHASES)[number];
 
 /** The random streams every character has, one per purpose (ADR 0002 "RNG"). */
-export type StreamName = 'combat' | 'drops' | 'search';
+export type StreamName = 'combat' | 'drops' | 'search' | 'death';
 
 /** The four 32-bit words of one sfc32 stream. Same shape as `RngState` in game/rng.ts. */
 export type StreamState = readonly [number, number, number, number];

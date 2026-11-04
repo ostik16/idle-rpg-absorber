@@ -16,9 +16,9 @@ export function grantKillXp(character: CharacterState, enemyId: string, ctx: Ste
   const levelCap = requireNumberConstant(ctx.data, 'levelCap');
   if (character.level >= levelCap) return;
   const enemy = requireRow(ctx.data, 'enemies', enemyId) as unknown as Parameters<typeof killXp>[0];
-  const amount = killXp(enemy, constantSection(ctx.data, 'progression'));
   const previousLevel = character.level;
-  const gain = gainXp(character, amount, levelCap, xpTableOf(ctx.data), constantSection(ctx.data, 'points'));
+  const xp = killXp(enemy, constantSection(ctx.data, 'progression'));
+  const gain = gainXp(character, xp, levelCap, xpTableOf(ctx.data), constantSection(ctx.data, 'points'));
 
   character.level = gain.level;
   character.xpInLevel = gain.xpInLevel;
@@ -26,7 +26,7 @@ export function grantKillXp(character: CharacterState, enemyId: string, ctx: Ste
   character.points.characterUnspent += gain.characterPoints;
   character.points.skillUnspent += gain.skillPoints;
 
-  ctx.emit({ type: 'xpGained', characterId: character.id, amount });
+  ctx.emit({ type: 'xpGained', characterId: character.id, amount: gain.xpGained });
   for (let level = previousLevel + 1; level <= gain.level; level++) {
     ctx.emit({ type: 'levelUp', characterId: character.id, level });
   }

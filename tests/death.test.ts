@@ -2,20 +2,30 @@ import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
 import itemsJson from '../data/items.json';
 import xpTableJson from '../data/xp-table.json';
-import { createGameData, type GameData } from '../src/data/game-data';
+import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
 import { stepCharacter, type StepContext } from '../src/engine/character';
 import { loseXpOnDeath } from '../src/engine/death';
 import { createEngine } from '../src/engine/engine';
 import type { EngineEvent } from '../src/engine/events';
-import { startFight } from '../src/engine/fight';
+import { startFight, startFleeing } from '../src/engine/fight';
 import { createCharacterStreams } from '../src/engine/streams';
 import { chooseCityPotion, cityPotionTarget } from '../src/game/potions';
+import { createStream } from '../src/game/rng';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import { derivedStats } from '../src/state/selectors';
 import type { CharacterState, CityHealingMode, GameState } from '../src/state/types';
 
 const TICK = constants.combat.tickMs;
 const MINOR = 'minor-health-potion';
+
+const PLAIN = {
+  id: 'plain',
+  distanceFromCity: 2,
+  movementSecondsBetweenEnemies: 1,
+  enemies: [{ enemyId: 'wall', spawnWeight: 1 }],
+  miniBossSpawnChance: 0,
+  bossSpawnChance: 0,
+};
 
 /** Dies to one blow on the first enemy attack. */
 const WALL = { id: 'wall', level: 1, health: 1_000_000, damage: 1000, attackSpeed: 1, defence: 0 };
@@ -34,6 +44,7 @@ function fixture(regen = true): GameData {
     constants: { ...constants, stats },
     items: itemsJson,
     enemies: [WALL, SOFT, RAT, GIANT],
+    areas: [PLAIN],
     xpTable: xpTableJson,
   });
 }
@@ -73,9 +84,9 @@ function harness(data: GameData = DATA, id = 'c1') {
   return { character, ctx, events, run, runWhile, kill, die };
 }
 
-/** A context whose combat stream always rolls `r`, so the XP loss is exact. */
+/** A context whose death stream always rolls `r`, so the XP loss is exact. */
 function withRoll(ctx: StepContext, r: number): StepContext {
-  return { ...ctx, streams: { ...ctx.streams, combat: { ...ctx.streams.combat, nextFloat: () => r } } };
+  return { ...ctx, streams: { ...ctx.streams, death: { ...ctx.streams.death, nextFloat: () => r } } };
 }
 
 describe('XP from a kill (3.5, 4.3)', () => {
@@ -127,6 +138,15 @@ describe('XP from a kill (3.5, 4.3)', () => {
     expect(events.filter((e) => e.type === 'levelUp').map((e) => (e as { level: number }).level)).toEqual([2, 3]);
   });
 
+  it('reports only the XP that counted when a kill reaches the level cap', () => {
+    const { character, events, kill } = harness();
+    character.level = constants.levelCap - 1;
+    character.xpInLevel = xpTableJson[constants.levelCap - 2]!.xpToNext - 4;
+    kill(); // worth 10, and 4 of it reach the cap
+    expect(character).toMatchObject({ level: 30, xpInLevel: 0 });
+    expect(events).toContainEqual({ type: 'xpGained', characterId: 'c1', amount: 4 });
+  });
+
   it('at the level cap a kill gives nothing', () => {
     const { character, events, kill } = harness();
     character.level = constants.levelCap;
@@ -158,7 +178,7 @@ describe('XP lost on death (3.7, T6)', () => {
     expect(character.xpInLevel).toBe(74);
     expect(events).toEqual([]);
     loseXpOnDeath(character, withRoll(ctx, 0.4)); // 10% of 100
-    expect(character.xpInLevel).toBeCloseTo(64);
+    expect(character.xpInLevel).toBe(64);
   });
 
   it.each([
@@ -177,6 +197,42 @@ describe('XP lost on death (3.7, T6)', () => {
     }
   });
 
+  it('over many real rolls XP stays whole, and the largest loss at 74 is reached', () => {
+    const { character, ctx } = harness();
+    const after = new Set<number>();
+    for (let i = 0; i < 500; i++) {
+      character.xpInLevel = 74;
+      loseXpOnDeath(character, ctx);
+      expect(Number.isInteger(character.xpInLevel)).toBe(true);
+      after.add(character.xpInLevel);
+    }
+    expect(Math.min(...after)).toBe(50);
+  });
+
+  it('a death while fleeing costs XP like any other', () => {
+    const { character, ctx, events } = harness();
+    const rolled = withRoll(ctx, NEARLY_ONE);
+    character.xpInLevel = 74;
+    character.bag = [];
+    startFight(character, 'wall', rolled);
+    stepCharacter(character, rolled);
+    startFleeing(character, rolled);
+    while (character.phase === 'fleeing') stepCharacter(character, rolled);
+
+    expect(character.phase).toBe('dead');
+    expect(character.xpInLevel).toBe(50);
+    expect(events).toContainEqual({ type: 'xpLost', characterId: 'c1', amount: 24 });
+  });
+
+  it('a death does not shift the combat rolls that come after it', () => {
+    const { character, ctx } = harness();
+    const before = ctx.streams.combat.getState();
+    const deathBefore = ctx.streams.death.getState();
+    loseXpOnDeath(character, ctx);
+    expect(ctx.streams.combat.getState()).toEqual(before);
+    expect(ctx.streams.death.getState()).not.toEqual(deathBefore);
+  });
+
   it('never loses a level: at the start of a level there is nothing to lose', () => {
     const { character, die } = harness();
     character.level = 5;
@@ -192,19 +248,20 @@ describe('XP lost on death (3.7, T6)', () => {
   });
 
   it('dying in a real fight takes the XP and keeps the bag, the gear and the area', () => {
-    const { character, events, die } = harness();
+    const { character, ctx, events } = harness();
+    const rolled = withRoll(ctx, 0.5); // 12.5% of 100, limited by the floor at 50
     character.xpInLevel = 60;
     character.areaId = 'mossfang-glade';
     character.targetEnemyId = 'glade-rat';
     character.equipment.chest = { itemId: 'rusty-sword', bonuses: [], upgradeLevel: 0, qty: 1 };
     const bag = structuredClone(character.bag);
     const equipment = structuredClone(character.equipment);
-    die();
+    startFight(character, 'wall', rolled);
+    while (character.phase === 'fighting') stepCharacter(character, rolled);
 
     expect(character.phase).toBe('dead');
-    expect(character.xpInLevel).toBeGreaterThanOrEqual(50);
-    expect(character.xpInLevel).toBeLessThan(60);
-    expect(events.some((e) => e.type === 'xpLost')).toBe(true);
+    expect(character.xpInLevel).toBe(50);
+    expect(events).toContainEqual({ type: 'xpLost', characterId: 'c1', amount: 10 });
     expect(character.bag).toEqual(bag);
     expect(character.equipment).toEqual(equipment);
     expect(character).toMatchObject({ areaId: 'mossfang-glade', targetEnemyId: 'glade-rat', fight: null });
@@ -367,21 +424,92 @@ describe('healing after death (3.7, T11, L10)', () => {
     expect(h.character.health).toBe(70);
   });
 
-  it('ends in idle until #22 can send it back, keeping the area it farmed', () => {
-    const h = harness();
-    h.character.areaId = 'mossfang-glade';
-    h.character.settings.cityHealing = 'fast';
-    h.die();
-    h.runWhile('dead');
-    h.runWhile('restocking');
-    expect(h.character).toMatchObject({ phase: 'idle', areaId: 'mossfang-glade' });
-  });
-
   it('a character already at full health leaves the city on the next step', () => {
     const { character, run } = harness();
     character.phase = 'restocking';
     run(1);
     expect(character.phase).toBe('idle');
+  });
+});
+
+describe('going back after healing (3.2, 3.7)', () => {
+  const T0 = 1_000_000;
+
+  /** A character on its way to the plain, where the wall kills it, played through the engine. */
+  function farming() {
+    const state = createGameState(7, T0, DATA);
+    const character = createCharacterState('c1', 'Ysolde', DATA);
+    character.settings.cityHealing = 'fast';
+    character.bag = [{ itemId: MINOR, bonuses: [], upgradeLevel: 0, qty: 10 }];
+    state.roster.push(character);
+    const engine = createEngine({ data: DATA, state });
+    engine.dispatch({ type: 'sendToArea', characterId: 'c1', areaId: 'plain' });
+    let now = T0;
+    const stepUntil = (done: () => boolean): void => {
+      for (let i = 0; i < 100_000 && !done(); i++) {
+        now += TICK;
+        engine.advanceTo(now);
+      }
+      expect(done()).toBe(true);
+    };
+    return { engine, character, stepUntil };
+  }
+
+  it('dying with no command, it walks back to its area once healed, target kept', () => {
+    const { engine, character, stepUntil } = farming();
+    engine.dispatch({ type: 'setTarget', characterId: 'c1', enemyId: 'wall' });
+    stepUntil(() => character.phase === 'dead');
+    expect(character).toMatchObject({ areaId: 'plain', targetEnemyId: 'wall', stayInCity: false });
+
+    stepUntil(() => character.phase === 'restocking');
+    stepUntil(() => character.phase !== 'restocking');
+    expect(character).toMatchObject({
+      phase: 'travelling',
+      timeInPhaseMs: 0,
+      health: 70,
+      areaId: 'plain',
+      targetEnemyId: 'wall',
+      stayInCity: false,
+    });
+
+    stepUntil(() => character.phase === 'fighting');
+    expect(character.fight?.enemyId).toBe('wall');
+  });
+
+  it('dying while fleeing after a return command, it stays in the city with no area', () => {
+    const { engine, character, stepUntil } = farming();
+    stepUntil(() => character.phase === 'fighting');
+    engine.dispatch({ type: 'returnToCity', characterId: 'c1' });
+    stepUntil(() => character.phase === 'fleeing');
+    expect(character.stayInCity).toBe(true);
+    stepUntil(() => character.phase === 'dead');
+
+    stepUntil(() => character.phase === 'restocking');
+    stepUntil(() => character.phase !== 'restocking');
+    expect(character).toMatchObject({
+      phase: 'idle',
+      health: 70,
+      areaId: null,
+      targetEnemyId: null,
+      stayInCity: false,
+    });
+  });
+
+  it('a return while healing also keeps it in the city', () => {
+    const { engine, character, stepUntil } = farming();
+    stepUntil(() => character.phase === 'restocking');
+    engine.dispatch({ type: 'returnToCity', characterId: 'c1' });
+    stepUntil(() => character.phase !== 'restocking');
+    expect(character).toMatchObject({ phase: 'idle', areaId: null, stayInCity: false });
+  });
+
+  it('a character with no area has nowhere to go back to', () => {
+    const { character, die, runWhile } = harness();
+    character.settings.cityHealing = 'fast';
+    die();
+    runWhile('dead');
+    runWhile('restocking');
+    expect(character).toMatchObject({ phase: 'idle', areaId: null });
   });
 });
 
@@ -496,5 +624,59 @@ describe('determinism (ADR 0002)', () => {
 
     expect(resumed.state).toEqual(whole.state);
     expect(whole.state.roster[0]).toMatchObject({ phase: 'idle', health: 70 });
+  });
+
+  /** A character farming the real first area: it dies, heals and walks back over and over. */
+  function farmingState(data: GameData): GameState {
+    const state = createGameState(7, T0, data);
+    state.roster.push(createCharacterState('c1', 'Ysolde', data));
+    return state;
+  }
+
+  it('the loop of farming, dying and walking back gives the same result however it is split, and survives JSON', () => {
+    const data = loadGameData();
+    const END = 1_800_000; // 30 minutes: about 5 deaths for a new character
+    const whole = createEngine({ data, state: farmingState(data) });
+    const parts = createEngine({ data, state: farmingState(data) });
+    const send = { type: 'sendToArea', characterId: 'c1', areaId: 'mossfang-glade' } as const;
+    whole.dispatch(send);
+    parts.dispatch(send);
+
+    const wholeEvents: EngineEvent[] = [];
+    for (let t = 200_000; t <= END; t += 200_000) {
+      whole.advanceTo(T0 + t);
+      wholeEvents.push(...whole.drainEvents());
+    }
+
+    let resumed = parts;
+    const resumedEvents: EngineEvent[] = [];
+    for (let t = 137_300; t < END; t += 137_300) {
+      resumed.advanceTo(T0 + t);
+      resumedEvents.push(...resumed.drainEvents());
+      const saved = JSON.parse(JSON.stringify(resumed.state)) as GameState;
+      expect(saved).toStrictEqual(resumed.state);
+      resumed = createEngine({ data, state: saved });
+    }
+    resumed.advanceTo(T0 + END);
+    resumedEvents.push(...resumed.drainEvents());
+
+    expect(wholeEvents.filter((e) => e.type === 'characterDied').length).toBeGreaterThan(1);
+    expect(wholeEvents.filter((e) => e.type === 'phaseChanged' && e.from === 'restocking' && e.to === 'travelling').length).toBeGreaterThan(0);
+    expect(resumed.state).toEqual(whole.state);
+    expect(resumedEvents).toEqual(wholeEvents);
+  });
+
+  it('a save with no death stream starts one fresh, and the other streams carry on', () => {
+    const data = DATA;
+    const state = dyingState();
+    const first = createEngine({ data, state });
+    first.advanceTo(T0 + TICK);
+    const character = first.state.roster[0] as CharacterState;
+    const { combat, drops, search } = character.rng as NonNullable<CharacterState['rng']>;
+    const old = JSON.parse(JSON.stringify(first.state)) as GameState;
+    (old.roster[0] as CharacterState).rng = { combat, drops, search } as NonNullable<CharacterState['rng']>;
+
+    createEngine({ data, state: old });
+    expect(old.roster[0]?.rng).toEqual({ combat, drops, search, death: createStream(7, 'c1', 'death').getState() });
   });
 });

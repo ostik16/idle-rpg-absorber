@@ -180,6 +180,23 @@ describe('point marks and the death floor (design 3.7, 4.4)', () => {
     }
   });
 
+  it('keeps XP whole, whatever the level and the roll, and on a mark that is not whole', () => {
+    expect(pointMarks(311)).toEqual([77.75, 155.5, 233.25]);
+    expect(xpAfterDeath(233, 311, 0.25)).toBe(156); // floor 155.5, so 77 of the 77.5 allowed
+    expect(xpAfterDeath(100, 311, 0.25)).toBe(78); // floor 77.75
+    expect(xpAfterDeath(77, 311, 0.25)).toBe(0); // no floor yet: the most a level of 311 can lose
+    for (const { xpToNext } of xpTable) {
+      for (const f of [0, 0.0123, 0.1, 0.17, 0.2499, 0.25]) {
+        for (const share of [0.1, 0.26, 0.49, 0.5, 0.74, 0.99]) {
+          const xp = Math.floor(share * xpToNext);
+          const after = xpAfterDeath(xp, xpToNext, f);
+          expect(Number.isInteger(after)).toBe(true);
+          expect(after).toBeGreaterThanOrEqual(xpFloor(xp, xpToNext));
+        }
+      }
+    }
+  });
+
   it('rejects a loss fraction outside 0..1', () => {
     expect(() => xpAfterDeath(50, 100, -0.1)).toThrow(RangeError);
     expect(() => xpAfterDeath(50, 100, 1.5)).toThrow(RangeError);
@@ -308,6 +325,7 @@ describe('gainXp (design 4.3, 4.4)', () => {
       level: 2,
       xpInLevel: 0,
       highestMarkReached: 0,
+      xpGained: 100,
       characterPoints: 3,
       skillPoints: 1,
       levelsGained: 1,
@@ -340,6 +358,12 @@ describe('gainXp (design 4.3, 4.4)', () => {
       progress = gain;
     }
     expect(progress).toMatchObject({ level: 30, xpInLevel: 0 });
+    expect(gainXp({ level: 29, xpInLevel: xpToNextLevel(29) - 5, highestMarkReached: 3 }, 12)).toMatchObject({
+      level: 30,
+      xpInLevel: 0,
+      xpGained: 5,
+    });
+    expect(gainXp(progress, 12).xpGained).toBe(0);
     expect(characterPoints).toBe(87);
     expect(characterPoints).toBe(characterPointsEarned(30, 0));
     expect(skillPoints).toBe(skillPointsEarned(30));

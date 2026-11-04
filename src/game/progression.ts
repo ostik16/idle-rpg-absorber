@@ -90,7 +90,8 @@ export function xpFloor(xp: number, xpToNext: number, c: PointsConstants = const
 /**
  * XP into the level after dying (design 3.7). `lossFraction` is a random share of the level's requirement
  * (`xpToNext`), drawn by the caller between constants.death.xpLossMin and xpLossMax (0 to 25%).
- * Loss = min(lossFraction x xpToNext, xp - floor), so XP never drops below the highest point mark passed.
+ * Loss = min(lossFraction x xpToNext, xp - floor), rounded down, so XP stays whole and never drops below the
+ * highest point mark passed.
  * Example, level of 100 XP, maximum roll 25%: 74 XP has floor 50, loses 24; 76 XP has floor 75, loses 1;
  * 20 XP has floor 0, loses 20.
  */
@@ -101,7 +102,7 @@ export function xpAfterDeath(
   c: PointsConstants = constants.points,
 ): number {
   if (!(lossFraction >= 0 && lossFraction <= 1)) throw new RangeError(`loss fraction must be 0 to 1, got ${lossFraction}`);
-  const loss = Math.min(lossFraction * xpToNext, xp - xpFloor(xp, xpToNext, c));
+  const loss = Math.floor(Math.min(lossFraction * xpToNext, xp - xpFloor(xp, xpToNext, c)));
   return xp - loss;
 }
 
@@ -136,6 +137,8 @@ export interface XpProgress {
 
 /** The progress after gaining XP, and the points and levels that came with it. */
 export interface XpGain extends XpProgress {
+  /** The XP that counted: what the level cap throws away is left out. */
+  xpGained: number;
   characterPoints: number;
   skillPoints: number;
   levelsGained: number;
@@ -165,12 +168,13 @@ export function gainXp(
     level++;
     highestMarkReached = 0;
   }
-  if (level >= levelCap) xpInLevel = 0;
+  const discarded = level >= levelCap ? xpInLevel : 0;
   const levelsGained = level - progress.level;
   return {
     level,
-    xpInLevel,
+    xpInLevel: xpInLevel - discarded,
     highestMarkReached,
+    xpGained: amount - discarded,
     characterPoints,
     skillPoints: levelsGained * c.skillPointsPerLevel,
     levelsGained,

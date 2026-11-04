@@ -12,9 +12,9 @@ import { enterPhase, type StepContext } from './step-context';
 
 const MS_PER_SECOND = 1000;
 
-/** Rolls the XP loss with the combat stream. It always draws, so the stream does not depend on the XP held. */
+/** Rolls the XP loss with the death stream. It always draws, so the stream does not depend on the XP held. */
 export function loseXpOnDeath(character: CharacterState, ctx: StepContext): void {
-  const fraction = xpLossFractionFromRoll(ctx.streams.combat.nextFloat(), constantSection(ctx.data, 'death'));
+  const fraction = xpLossFractionFromRoll(ctx.streams.death.nextFloat(), constantSection(ctx.data, 'death'));
   const xpToNext = xpToNextLevel(character.level, xpTableOf(ctx.data));
   const xpInLevel = xpAfterDeath(character.xpInLevel, xpToNext, fraction, constantSection(ctx.data, 'points'));
   const amount = character.xpInLevel - xpInLevel;
