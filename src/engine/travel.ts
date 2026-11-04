@@ -6,6 +6,7 @@ import { constantSection, requireRow } from '../data/game-data';
 import { baseMovementSeconds, rollSpawn, targetingMultiplier, type SpawnTable } from '../game/farming';
 import type { CharacterState } from '../state/types';
 import { startFight, startFleeing } from './fight';
+import { trainOnMove } from './growth';
 import { enterPhase, movementDurationMs, type StepContext } from './step-context';
 
 /** The fields of an area row a character moves by (3.1). */
@@ -66,11 +67,13 @@ export function returnToCity(character: CharacterState, ctx: StepContext): void 
 }
 
 export function stepTravelling(character: CharacterState, ctx: StepContext): void {
+  trainOnMove(character, ctx);
   if (character.timeInPhaseMs >= travelDurationMs(character, ctx)) enterPhase(character, 'searching', ctx);
 }
 
 /** A target skips the spawn roll, and its draws: the character farms only that enemy (3.3). */
 export function stepSearching(character: CharacterState, ctx: StepContext): void {
+  trainOnMove(character, ctx);
   if (character.timeInPhaseMs < searchDurationMs(character, ctx)) return;
   startFight(character, character.targetEnemyId ?? rollSpawn(currentArea(character, ctx), ctx.streams.search), ctx);
 }
@@ -83,5 +86,6 @@ export function stepLooting(character: CharacterState, ctx: StepContext): void {
 
 /** Home: the character stops farming and waits for the player. The city routine comes with #27. */
 export function stepReturning(character: CharacterState, ctx: StepContext): void {
+  trainOnMove(character, ctx);
   if (character.timeInPhaseMs >= travelDurationMs(character, ctx)) settleInCity(character, ctx);
 }

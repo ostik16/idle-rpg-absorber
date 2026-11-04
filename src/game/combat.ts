@@ -57,6 +57,8 @@ export interface FightTick {
   enemyHp: number;
   playerHit: boolean;
   playerCrit: boolean;
+  /** Damage the player's hit took off the enemy, 0 when it did not attack. */
+  playerDamage: number;
   enemyHit: boolean;
   /** How the fight ended on this tick, or null when it goes on. */
   outcome: 'win' | 'loss' | null;
@@ -72,19 +74,21 @@ export function fightTick(input: FightTickInput): FightTick {
   let { playerHp, enemyHp } = input;
   let playerHit = false;
   let playerCrit = false;
+  let playerDamage = 0;
   let enemyHit = false;
 
   if (input.playerAttacks && attacksOnTick(tick, player.intervalMs, tickMs)) {
     playerCrit = rng.chance(player.critChance);
-    enemyHp -= hitDamage(player.damage, enemy.defence, playerCrit);
+    playerDamage = hitDamage(player.damage, enemy.defence, playerCrit);
+    enemyHp -= playerDamage;
     playerHit = true;
-    if (enemyHp <= 0) return { playerHp, enemyHp, playerHit, playerCrit, enemyHit, outcome: 'win' };
+    if (enemyHp <= 0) return { playerHp, enemyHp, playerHit, playerCrit, playerDamage, enemyHit, outcome: 'win' };
   }
   if (attacksOnTick(tick, enemy.intervalMs, tickMs)) {
     const enemyCrit = rng.chance(enemy.critChance);
     playerHp -= hitDamage(enemy.damage, player.defence, enemyCrit);
     enemyHit = true;
-    if (playerHp <= 0) return { playerHp, enemyHp, playerHit, playerCrit, enemyHit, outcome: 'loss' };
+    if (playerHp <= 0) return { playerHp, enemyHp, playerHit, playerCrit, playerDamage, enemyHit, outcome: 'loss' };
   }
-  return { playerHp, enemyHp, playerHit, playerCrit, enemyHit, outcome: null };
+  return { playerHp, enemyHp, playerHit, playerCrit, playerDamage, enemyHit, outcome: null };
 }

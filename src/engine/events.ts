@@ -30,9 +30,16 @@ export type EngineEvent =
  * End of a step: publishes the events the characters emitted, in the order they were emitted
  * (characters run in id order, so the order never depends on roster order), then empties `stepEvents`.
  * Changes to shared state (warehouse deposits, bestiary reveals) are applied here, one case per
- * event type, by the issues that add them. None exist yet, so this only publishes.
+ * event type, by the issues that add them. `applyShared` is that switch; the bestiary is the first case.
  */
-export function publishStepEvents(stepEvents: EngineEvent[], outbox: EngineEvent[]): void {
-  for (const event of stepEvents) outbox.push(event);
+export function publishStepEvents(
+  stepEvents: EngineEvent[],
+  outbox: EngineEvent[],
+  applyShared?: (event: EngineEvent) => void,
+): void {
+  for (const event of stepEvents) {
+    applyShared?.(event);
+    outbox.push(event);
+  }
   stepEvents.length = 0;
 }

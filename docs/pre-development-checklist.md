@@ -149,4 +149,12 @@ Still open:
 - [ ] **A store fault that never clears.** `storeFault` asks the player to reload. If one record stays unreadable for good, the game never starts, and there is no way out until the owner decides on one, such as an export or a choice to load an older save.
 - [ ] **A fresh start on a build with a bug.** If a player starts fresh there and a later build fixes the bug, the new game is `current`, so the old save stays in `corrupt-*` and is not loaded. `corruptRecords()` marks it `readable`, but nothing tells the player yet. #36 can offer it.
 - [ ] **Recovered tab field.** `RecoveredTab` lives in `src/save/reconcile.ts`, because #30 stayed inside `src/save/`. Move `name` to `WarehouseTab` in `src/state/types.ts` when the warehouse screen is built. Tab buying must not count this tab when it reads `constants.storage.tabCosts`.
-- [ ] **Reveals check at load.** ADR 0003 asks for reveals to be recomputed from kills at load, keeping the higher. Nothing defines a tier number yet, so this belongs with #25, which writes `bestiary.revealed`.
+- [ ] **Reveals check at load.** ADR 0003 asks for reveals to be recomputed from kills at load, keeping the higher. #25 defines a tier as the number of `data/bestiary-thresholds.json` rows a kill count has reached (`bestiaryTier`), and writes `bestiary.revealed` on each kill. The recompute at load is not built: it needs a load hook in `save/`.
+
+Decided in #25 (assumed, not in the design):
+
+- [x] **Level of an area for speed training.** Design 4.6 says "the level of the area" and areas only have `levelRange`. The engine uses `levelRange.max`.
+- [x] **What counts as moving.** Speed trains on `travelling`, `searching` and `returning` steps, by the seconds the step covers. Fleeing does not train it.
+- [x] **Absorption level.** The character's level at the end of the fight, before the kill's XP.
+- [x] **Regeneration trait.** Heals the absorbed percent of maximum health every `constants.traits.regenerationIntervalSeconds` (10), counted in `traitRegenMs` on the character. Life steal heals the percent of the damage each hit dealt, capped at maximum health.
+- [x] **Bestiary kills.** Every kill counts, mini-bosses and bosses too. A deleted character's kill counts may go; `revealed` stays.

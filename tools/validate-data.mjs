@@ -178,6 +178,7 @@ if (!Array.isArray(C.storage?.tabCosts) || C.storage.tabCosts.some((cost) => !(c
 inRange01('constants.returnTriggers', 'healthThreshold', C.returnTriggers?.healthThreshold);
 inRange01('constants.cityHealing', 'balancedFraction', C.cityHealing?.balancedFraction);
 if (!['fast', 'balanced', 'slow'].includes(C.cityHealing?.defaultMode)) errors.push('constants.cityHealing.defaultMode must be fast, balanced or slow');
+if (!(C.traits?.regenerationIntervalSeconds > 0)) errors.push('constants.traits.regenerationIntervalSeconds must be a number above 0');
 if (!(C.combat?.fleeSeconds >= 0)) errors.push('constants.combat.fleeSeconds must be a number of 0 or more');
 const slotTypes = new Set((tables['equipment-slots'] ?? []).flatMap((s) => s.allowedTypes ?? []));
 const maxBonus = C.items?.maxBonusAttributes;

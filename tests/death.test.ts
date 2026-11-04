@@ -20,6 +20,7 @@ const MINOR = 'minor-health-potion';
 
 const PLAIN = {
   id: 'plain',
+  levelRange: { min: 1, max: 1 },
   distanceFromCity: 2,
   movementSecondsBetweenEnemies: 1,
   enemies: [{ enemyId: 'wall', spawnWeight: 1 }],
@@ -41,7 +42,11 @@ function fixture(regen = true): GameData {
     ...(regen ? {} : { healthRegen: { fractionOfMaxPerSecond: 0 } }),
   };
   return createGameData({
-    constants: { ...constants, stats },
+    constants: {
+      ...constants,
+      stats,
+      proficiency: { ...constants.proficiency, gainPerAction: { unarmed: 0, 'one-handed': 0, 'two-handed': 0, toughness: 0, speed: 0, combat: 0 } },
+    },
     items: itemsJson,
     enemies: [WALL, SOFT, RAT, GIANT],
     areas: [PLAIN],
