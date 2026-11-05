@@ -1,12 +1,33 @@
 import { useComputed } from '@preact/signals';
 import { CharacterCreate } from './CharacterCreate';
+import { CharacterScreen } from './CharacterScreen';
+import { City } from './City';
 import { DeleteConfirm } from './DeleteConfirm';
 import { formatGold } from './format';
 import { Icon } from './Icon';
 import { Notice } from './Notice';
 import { Roster } from './Roster';
+import { Settings } from './Settings';
+import { Shop } from './Shop';
+import { Warehouse } from './Warehouse';
+import { World } from './World';
 import { hrefFor, ROUTES, type Route } from './router';
-import { closeCreation, creationOpen, route, selectedCharacter } from './store';
+import {
+  closeCharacter,
+  closeCreation,
+  closeSettings,
+  closeShop,
+  closeWarehouse,
+  creationOpen,
+  listShops,
+  openShopId,
+  roster,
+  route,
+  selectedCharacter,
+  settingsCharacterId,
+  viewedCharacterId,
+  warehouseOpen,
+} from './store';
 
 // Placeholder content for the screens not built yet.
 const SCREENS: Record<Route, { label: string; empty: string }> = {
@@ -49,7 +70,17 @@ export function App() {
   const current = route.value;
   const creating = creationOpen.value;
   const screen = SCREENS[current];
-  const title = creating ? 'New character' : screen.label;
+  const viewedId = viewedCharacterId.value;
+  const viewedName = viewedId === null ? undefined : roster.value.find((v) => v.id === viewedId)?.name;
+  const shopName = openShopId.value === null ? undefined : listShops().find((s) => s.id === openShopId.value)?.name;
+  const settingsName = settingsCharacterId.value === null ? undefined : roster.value.find((v) => v.id === settingsCharacterId.value)?.name;
+  const configuring = settingsName !== undefined;
+  const shopping = shopName !== undefined;
+  const storing = warehouseOpen.value;
+  const viewing = !creating && viewedName !== undefined;
+  const pushed = creating || viewing || shopping || storing || configuring;
+  const title = configuring ? `${settingsName} · settings` : shopping ? shopName : storing ? 'Warehouse' : creating ? 'New character' : viewing ? viewedName : screen.label;
+  const back = configuring ? closeSettings : shopping ? closeShop : storing ? closeWarehouse : creating ? closeCreation : closeCharacter;
 
   return (
     <div class="app">
@@ -57,13 +88,13 @@ export function App() {
         <Tabs current={current} />
       </nav>
       <div class="app__col">
-        <header class={`ab-appbar${creating ? ' ab-appbar--pushed' : ''}`}>
-          {creating && (
+        <header class={`ab-appbar${pushed ? ' ab-appbar--pushed' : ''}`}>
+          {pushed && (
             <button
               type="button"
               class="ab-btn ab-btn--ghost ab-btn--icon"
-              aria-label="Back to roster"
-              onClick={closeCreation}
+              aria-label="Back"
+              onClick={back}
             >
               <svg class="ab-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -78,15 +109,27 @@ export function App() {
             </button>
           )}
           <h1 class="ab-appbar__title">{title}</h1>
-          {!creating && <GoldPill />}
+          {!pushed && <GoldPill />}
         </header>
         <main class="app__main">
           <div class="app__content">
             <Notice />
-            {creating ? (
+            {configuring ? (
+              <Settings />
+            ) : shopping ? (
+              <Shop />
+            ) : storing ? (
+              <Warehouse />
+            ) : creating ? (
               <CharacterCreate />
+            ) : viewing ? (
+              <CharacterScreen />
             ) : current === 'roster' ? (
               <Roster />
+            ) : current === 'world' ? (
+              <World />
+            ) : current === 'city' ? (
+              <City />
             ) : (
               <section class="ab-card">
                 <div class="ab-card__head">

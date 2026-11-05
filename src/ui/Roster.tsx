@@ -4,9 +4,11 @@ import { Icon } from './Icon';
 import {
   areaOf,
   maxSlots,
+  openCharacter,
   openCreation,
   openDeleteConfirm,
   roster,
+  selectCharacter,
   unlockedSlots,
   type CharacterView,
 } from './store';
@@ -28,12 +30,16 @@ function CharacterRow({ view }: { view: CharacterView }) {
     return `${a.name} · Lv ${a.levelMin}–${a.levelMax}`;
   });
   const goldText = useComputed(() => formatGold(view.gold.value));
+  const open = () => {
+    selectCharacter(view.id);
+    openCharacter(view.id);
+  };
   return (
     <article class="ab-char app__row">
-      <span class="ab-char__avatar" aria-hidden="true">
+      <span class="ab-char__avatar" aria-hidden="true" onClick={open}>
         {Array.from(view.name)[0]}
       </span>
-      <div class="app__row-body">
+      <button type="button" class="app__row-body app__row-open" aria-label={`Open ${view.name}`} onClick={open}>
         <div class="ab-char__top">
           <span class="ab-char__name">{view.name}</span>
           <span class="ab-level">
@@ -51,7 +57,7 @@ function CharacterRow({ view }: { view: CharacterView }) {
             <b>{goldText}</b>
           </span>
         </div>
-      </div>
+      </button>
       <button
         type="button"
         aria-label={`Delete ${view.name}`}

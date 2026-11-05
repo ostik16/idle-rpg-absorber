@@ -15,6 +15,7 @@ import house from 'lucide-static/icons/house.svg?raw';
 import lock from 'lucide-static/icons/lock.svg?raw';
 import map from 'lucide-static/icons/map.svg?raw';
 import orbit from 'lucide-static/icons/orbit.svg?raw';
+import packageIcon from 'lucide-static/icons/package.svg?raw';
 import scroll from 'lucide-static/icons/scroll.svg?raw';
 import shield from 'lucide-static/icons/shield.svg?raw';
 import skull from 'lucide-static/icons/skull.svg?raw';
@@ -54,6 +55,14 @@ const rawIcons = {
   // Lucide has no ring (decisions L19).
   categoryRing: circleDot,
   categoryScroll: scroll,
+  // The `icon` names used in data/items.json, so an item's icon string is a key (store `itemInfo`).
+  sword,
+  shield,
+  gem,
+  package: packageIcon,
+  coins,
+  hammer,
+  'flask-round': flaskRound,
 } as const;
 
 export type IconName = keyof typeof rawIcons;

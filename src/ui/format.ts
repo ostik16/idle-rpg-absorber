@@ -24,6 +24,7 @@ export function phaseDescriptor(phase: Phase): PhaseDescriptor {
     case 'travelling':
       return { icon: 'travelling', label: 'Travelling', modifier: 'travel' };
     case 'fleeing':
+      return { icon: 'travelling', label: 'Fleeing', modifier: 'travel' };
     case 'returning':
       return { icon: 'travelling', label: 'Returning', modifier: 'travel' };
     case 'dead':
@@ -32,4 +33,9 @@ export function phaseDescriptor(phase: Phase): PhaseDescriptor {
     case 'idle':
       return { icon: 'inCity', label: 'In city', modifier: 'city' };
   }
+}
+
+/** True when a character can shop, change gear and use the warehouse (the engine's rule: idle or restocking). */
+export function inCity(phase: Phase): boolean {
+  return phase === 'idle' || phase === 'restocking';
 }
