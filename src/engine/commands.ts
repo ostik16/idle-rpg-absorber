@@ -23,6 +23,8 @@ import { returnToCity, sendToArea, type AreaRow } from './travel';
 export type Command =
   /** Name rules and slots are in design 4.1. The engine picks the id. */
   | { type: 'createCharacter'; name: string }
+  /** Removes a character and everything it carried (design 4.1). Shared state (warehouse, bestiary reveals) is kept. */
+  | { type: 'deleteCharacter'; characterId: string }
   /** Raises an attribute (design 4.4). Spending is final; respec needs a rare item. */
   | { type: 'spendCharacterPoints'; characterId: string; attribute: keyof Attributes; amount: number }
   /** The player has seen the Welcome back screen. */
@@ -379,6 +381,13 @@ export function applyCommand(
       state.account.nextCharacterNumber += 1;
       state.roster.push(createCharacterState(id, command.name.trim(), data));
       return { type: 'characterCreated', characterId: id };
+    }
+    case 'deleteCharacter': {
+      const index = state.roster.findIndex((c) => c.id === command.characterId);
+      if (index < 0) return rejected(`No character "${command.characterId}".`);
+      const [removed] = state.roster.splice(index, 1);
+      delete state.bestiary.kills[command.characterId];
+      return { type: 'characterDeleted', characterId: (removed as CharacterState).id };
     }
     case 'spendCharacterPoints': {
       const reason = spendCharacterPoints(state, command);

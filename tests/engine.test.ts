@@ -287,6 +287,34 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
     expect(find(engine.state, 'c1').rng).toEqual(readStreamStates(createCharacterStreams(SEED, 'c1')));
   });
 
+  it('deleteCharacter removes the character and its bestiary kills, and nothing else (design 4.1, decisions L15)', () => {
+    const engine = makeEngine(['a', 'b']);
+    engine.state.bestiary.kills['a'] = { 'glade-rat': 5 };
+    engine.state.bestiary.kills['b'] = { 'glade-rat': 3 };
+    engine.state.bestiary.revealed = { 'glade-rat': 2 };
+    const otherWarehouse = engine.state.account.warehouse.tabs[0]?.items;
+
+    engine.dispatch({ type: 'deleteCharacter', characterId: 'a' });
+    engine.advanceTo(T0 + TICK);
+
+    expect(engine.state.roster.map((c) => c.id)).toEqual(['b']);
+    expect(engine.state.bestiary.kills).toEqual({ b: { 'glade-rat': 3 } });
+    expect(engine.state.bestiary.revealed).toEqual({ 'glade-rat': 2 });
+    expect(engine.state.account.warehouse.tabs[0]?.items).toBe(otherWarehouse);
+    expect(engine.drainEvents()).toEqual([{ type: 'characterDeleted', characterId: 'a' }]);
+  });
+
+  it('deleteCharacter rejects an unknown id without changing the roster', () => {
+    const engine = makeEngine(['a']);
+    engine.dispatch({ type: 'deleteCharacter', characterId: 'missing' });
+    engine.advanceTo(T0 + TICK);
+
+    expect(engine.state.roster.map((c) => c.id)).toEqual(['a']);
+    expect(engine.drainEvents()).toEqual([
+      { type: 'commandRejected', command: { type: 'deleteCharacter', characterId: 'missing' }, reason: expect.stringContaining('missing') },
+    ]);
+  });
+
   it('dismissSummary clears the pending summary', () => {
     const engine = makeEngine(['a']);
     engine.advanceTo(T0 + 60_000); // offline: stub summary

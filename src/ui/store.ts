@@ -1,12 +1,17 @@
 // The only place that creates signals (ADR 0001). `connectEngine` publishes engine state into them; `send` is the way back.
-import { batch, signal, type ReadonlySignal, type Signal } from '@preact/signals';
-import type { GameData } from '../data/game-data';
+import { batch, computed, signal, type ReadonlySignal, type Signal } from '@preact/signals';
+import { constantSection, type GameData } from '../data/game-data';
 import type { Command } from '../engine/commands';
 import type { Engine } from '../engine/engine';
 import type { EngineEvent } from '../engine/events';
-import { derivedStats } from '../state/selectors';
+import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
+import { createCharacterState } from '../state/factory';
+import { derivedStats, type DerivedStats } from '../state/selectors';
 import type { CharacterState, ItemStack, OfflineSummary, Phase, WarehouseTab } from '../state/types';
 import { DEFAULT_ROUTE, watchHash, type Route } from './router';
+
+/** Re-export so UI sources that cannot reach into `state/` can still name a phase. */
+export type { Phase } from '../state/types';
 
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
@@ -40,6 +45,8 @@ export interface CharacterView {
   /** Time in the current phase, in the design system's formats: `12s`, `3m 12s`, `7h 42m`. */
   readonly timeInActivity: ReadonlySignal<string>;
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
+  /** The area the character farms, or null when it has none (design 3.2). */
+  readonly areaId: ReadonlySignal<string | null>;
 }
 
 const rosterSignal = signal<readonly CharacterView[]>([]);
@@ -47,6 +54,13 @@ const warehouseTabsSignal = signal<readonly ReadonlySignal<WarehouseTab>[]>([]);
 const pendingSummarySignal = signal<OfflineSummary | null>(null);
 const noticeSignal = signal<string | null>(null);
 const lastingNoticesSignal = signal<readonly string[]>([]);
+const unlockedSlotsSignal = signal(0);
+const maxSlotsSignal = signal(0);
+const selectedIdSignal = signal<string | null>(null);
+const creationOpenSignal = signal(false);
+const pendingDeleteIdSignal = signal<string | null>(null);
+/** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
+let gameData: GameData | null = null;
 
 /** Changes only when a character joins or leaves. */
 export const roster: ReadonlySignal<readonly CharacterView[]> = rosterSignal;
@@ -58,6 +72,22 @@ export const pendingSummary: ReadonlySignal<OfflineSummary | null> = pendingSumm
 export const notice: ReadonlySignal<string | null> = noticeSignal;
 /** Lines that stay on screen until the page reloads: what the save load found, or that the game stopped. */
 export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesSignal;
+/** How many of the 4 slots are unlocked. Design 4.1, decisions L17. */
+export const unlockedSlots: ReadonlySignal<number> = unlockedSlotsSignal;
+/** The maximum roster size (design 4.1, `constants.characters.maxSlots`). */
+export const maxSlots: ReadonlySignal<number> = maxSlotsSignal;
+/** The character whose numbers feed the app bar (decisions L18). Null before the roster has anyone. */
+export const selectedCharacterId: ReadonlySignal<string | null> = selectedIdSignal;
+/** The character behind the app bar's gold pill, or null. */
+export const selectedCharacter: ReadonlySignal<CharacterView | null> = computed(() => {
+  const id = selectedIdSignal.value;
+  if (id === null) return null;
+  return rosterSignal.value.find((view) => view.id === id) ?? null;
+});
+/** True while the character creation screen is pushed over the roster. */
+export const creationOpen: ReadonlySignal<boolean> = creationOpenSignal;
+/** The character the player is about to delete (design 4.1), or null. */
+export const pendingDeleteId: ReadonlySignal<string | null> = pendingDeleteIdSignal;
 
 /** Adds lines to `lastingNotices`. Works before `connectEngine`, because a load finishes before the engine exists. */
 export function showLastingNotices(lines: readonly string[]): void {
@@ -118,6 +148,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const activity = signal(first.phase);
   const timeInActivity = signal('');
   const bag = signal<readonly ItemStack[]>([]);
+  const areaId = signal<string | null>(first.areaId);
   const copyBag = copyInto(bag);
 
   const binding: CharacterBinding = {
@@ -134,6 +165,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       activity,
       timeInActivity,
       bag,
+      areaId,
     },
     refresh(character) {
       const stats = derivedStats(character, data);
@@ -146,6 +178,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       gold.value = character.gold;
       activity.value = character.phase;
       timeInActivity.value = formatDuration(character.timeInPhaseMs);
+      areaId.value = character.areaId;
       copyBag(character.bag);
     },
   };
@@ -193,6 +226,13 @@ export function connectEngine(
     if (shown.length !== ids.length || shown.some((view, i) => view.id !== ids[i])) {
       rosterSignal.value = ids.map((id) => (bindings.get(id) as CharacterBinding).view);
     }
+    unlockedSlotsSignal.value = engine.state.account.unlockedSlots;
+    const currentSelected = selectedIdSignal.value;
+    if (currentSelected !== null && !ids.includes(currentSelected)) selectedIdSignal.value = null;
+    if (selectedIdSignal.value === null && ids.length > 0) selectedIdSignal.value = ids[0] as string;
+    if (pendingDeleteIdSignal.value !== null && !ids.includes(pendingDeleteIdSignal.value)) {
+      pendingDeleteIdSignal.value = null;
+    }
   }
 
   function refreshWarehouse(): void {
@@ -234,6 +274,11 @@ export function connectEngine(
 
   rosterSignal.value = [];
   noticeSignal.value = null;
+  selectedIdSignal.value = null;
+  creationOpenSignal.value = false;
+  pendingDeleteIdSignal.value = null;
+  maxSlotsSignal.value = constantSection(data, 'characters').maxSlots;
+  gameData = data;
   dispatchCommand = (command, options) => {
     if (options.saveAfter) saveWanted = true;
     engine.dispatch(command);
@@ -241,3 +286,93 @@ export function connectEngine(
   refresh();
   return refresh;
 }
+
+/** The game's data, once the engine is connected. Screens read it for area names and creation validation. */
+export function requireGameData(): GameData {
+  if (gameData === null) throw new Error('requireGameData() called before connectEngine()');
+  return gameData;
+}
+
+/** Opens the character creation screen (design 4.1). No-op when no slot is free. */
+export function openCreation(): void {
+  if (rosterSignal.value.length >= unlockedSlotsSignal.value) return;
+  creationOpenSignal.value = true;
+}
+
+/** Closes the character creation screen without creating anyone. */
+export function closeCreation(): void {
+  creationOpenSignal.value = false;
+}
+
+/** Marks a character as pending deletion. The confirm step runs before the command is sent (design 4.1). */
+export function openDeleteConfirm(characterId: string): void {
+  pendingDeleteIdSignal.value = characterId;
+}
+
+export function closeDeleteConfirm(): void {
+  pendingDeleteIdSignal.value = null;
+}
+
+/** Points the app bar at a character (decisions L18). Null is only valid for an empty roster. */
+export function selectCharacter(characterId: string): void {
+  selectedIdSignal.value = characterId;
+}
+
+export interface AreaSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly levelMin: number;
+  readonly levelMax: number;
+}
+
+/** Looks up an area by id; the roster row uses it to print "{name} · Lv {min}–{max}". */
+export function areaOf(areaId: string): AreaSummary | null {
+  const data = requireGameData();
+  const row = (data.areas as readonly { id: string }[]).find((entry) => entry.id === areaId);
+  if (row === undefined) return null;
+  const area = row as unknown as { id: string; name: string; levelRange: { min: number; max: number } };
+  return { id: area.id, name: area.name, levelMin: area.levelRange.min, levelMax: area.levelRange.max };
+}
+
+export interface StartingPreview {
+  readonly attributes: Attributes;
+  readonly stats: DerivedStats;
+  readonly level: number;
+  readonly gold: number;
+  readonly startingItems: readonly { itemId: string; quantity: number }[];
+}
+
+/** What the character creation screen shows so the player sees what they are starting with (design 4.1). */
+export function startingPreview(): StartingPreview {
+  const data = requireGameData();
+  const creation = constantSection(data, 'creation');
+  const template = createCharacterState('__preview', 'Preview', data);
+  return {
+    attributes: template.attributes,
+    stats: derivedStats(template, data),
+    level: template.level,
+    gold: template.gold,
+    startingItems: creation.startingItems,
+  };
+}
+
+/** Rules behind a character name, so the creation screen stays in step with the engine (design 4.1). */
+export interface CreationNameLimits {
+  readonly minLength: number;
+  readonly maxLength: number;
+}
+
+export function creationNameLimits(): CreationNameLimits {
+  const creation = constantSection(requireGameData(), 'creation');
+  return { minLength: creation.nameMinLength, maxLength: creation.nameMaxLength };
+}
+
+/** Returns null when the name is fine, or the design-system-voice error (design 4.1). */
+export function creationNameError(name: string): string | null {
+  const data = requireGameData();
+  const creation = constantSection(data, 'creation');
+  const existing = rosterSignal.value.map((view) => view.name);
+  // Imported from the game layer, not state, so the UI boundary test is happy (tests/ui-boundary.test.ts).
+  return nameErrorFn(name, existing, creation);
+}
+
