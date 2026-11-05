@@ -3,15 +3,18 @@ import { constantSection } from '../data/game-data';
 import { proficiencyTitle, type ProficiencyId } from '../game/proficiency';
 import { pointMarks, respawnHealth, xpToNextLevel } from '../game/progression';
 import type { AttributeId } from '../game/stats';
-import { formatGold, phaseDescriptor } from './format';
+import { formatGold, inCity, phaseDescriptor } from './format';
 import { Icon } from './Icon';
+import { BagGrid, ItemSlot } from './ItemSlot';
 import { hrefFor } from './router';
 import { TargetPicker } from './World';
 import {
   areaEnemies,
   areaOf,
   closeCharacter,
+  equipmentSlots,
   formatDuration,
+  itemInfo,
   listAreas,
   requireGameData,
   roster,
@@ -314,8 +317,90 @@ function Stats({ view }: { view: CharacterView }) {
   );
 }
 
+/** The slot an item of this type goes in: the first empty one that fits, else the first that fits (rings have two). */
+function slotFor(view: CharacterView, equipmentType: string | null): string | null {
+  const fits = equipmentSlots().filter((slot) => equipmentType !== null && slot.allowedTypes.includes(equipmentType));
+  return (fits.find((slot) => view.equipment.value[slot.id] === undefined) ?? fits[0])?.id ?? null;
+}
+
+function Gear({ view }: { view: CharacterView }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const here = inCity(view.activity.value);
+  const bag = view.bag.value;
+  const worn = view.equipment.value;
+  const twoHanded = itemInfo(worn['main-hand']?.itemId ?? '').equipmentType === 'two-handed-weapon';
+  const stack = picked === null ? undefined : bag[picked];
+  const info = stack === undefined ? null : itemInfo(stack.itemId);
+  const slotId = info === null || info.category !== 'equipment' ? null : slotFor(view, info.equipmentType);
+  const slotLabel = equipmentSlots().find((slot) => slot.id === slotId)?.label;
+  const tooLow = info !== null && (info.requiredLevel ?? 1) > view.level.value;
+  const packId = worn['backpack']?.itemId;
+  return (
+    <>
+      {!here && <p class="app__field-help ab-c-warning">{view.name} has to be in the city to change gear.</p>}
+      <section class="ab-card app__stack" aria-labelledby="eq-h">
+        <h2 id="eq-h" class="ab-label">Equipped</h2>
+        <div class="app__paper">
+          {equipmentSlots().map((slot) => {
+            const item = worn[slot.id];
+            const blocked = slot.id === 'off-hand' && twoHanded;
+            return (
+              <div class="app__gear-slot" key={slot.id}>
+                {blocked ? (
+                  <span class="ab-slot ab-slot--locked" role="img" aria-label="Off hand blocked by a two-handed weapon"><Icon name="locked" /></span>
+                ) : item === undefined ? (
+                  <ItemSlot stack={null} />
+                ) : (
+                  <ItemSlot stack={item} onClick={here ? () => send({ type: 'unequipItem', characterId: view.id, slot: slot.id }, { saveAfter: true }) : undefined} />
+                )}
+                <span class="app__target-body">
+                  <span class="ab-label">{slot.label}</span>
+                  <span class="app__field-help ab-c-muted">{blocked ? 'Blocked by a two-handed weapon' : item === undefined ? 'Empty' : itemInfo(item.itemId).name}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section class="ab-card app__stack" aria-labelledby="bag-h">
+        <div class="app__field-head">
+          <h2 id="bag-h" class="ab-label app__grow">Bag</h2>
+          <span class="ab-num">{view.bagUsedCells.value}/{view.bagCapacity.value}</span>
+        </div>
+        <BagGrid label={`${view.name}'s bag`} stacks={bag} capacity={view.bagCapacity.value} used={view.bagUsedCells.value} selected={new Set(picked === null ? [] : [picked])} onToggle={(i) => setPicked(picked === i ? null : i)} />
+        <p class="app__field-help ab-c-muted">
+          Max stack {view.bagMaxStack.value}{packId === undefined ? ', no backpack' : `, set by the ${itemInfo(packId).name}`}.
+        </p>
+        {info !== null && picked !== null && (
+          <div class="app__stack">
+            <span class="ab-num">{info.name}{stack !== undefined && stack.qty > 1 ? ` ×${stack.qty}` : ''}</span>
+            {slotId === null ? (
+              <p class="app__field-help ab-c-muted">Not equipment.</p>
+            ) : (
+              <>
+                {tooLow && <p class="app__field-help ab-c-warning">Needs Lv {info.requiredLevel}.</p>}
+                <button
+                  type="button"
+                  class="ab-btn ab-btn--primary ab-btn--block"
+                  disabled={!here || tooLow}
+                  onClick={() => {
+                    send({ type: 'equipItem', characterId: view.id, bagIndex: picked, slot: slotId }, { saveAfter: true });
+                    setPicked(null);
+                  }}
+                >
+                  Equip in {slotLabel}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
 export function CharacterScreen() {
-  const [tab, setTab] = useState<'farm' | 'stats'>('farm');
+  const [tab, setTab] = useState<'farm' | 'stats' | 'gear'>('farm');
   const id = viewedCharacterId.value;
   const view = roster.value.find((v) => v.id === id);
   if (view === undefined) return null;
@@ -337,8 +422,9 @@ export function CharacterScreen() {
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'stats'} onClick={() => setTab('stats')}>
           Stats{view.unspentPoints.value > 0 && <span class="ab-c-gold" aria-label={`${view.unspentPoints.value} points to spend`}>&nbsp;{view.unspentPoints.value}</span>}
         </button>
+        <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'gear'} onClick={() => setTab('gear')}>Gear</button>
       </div>
-      {tab === 'farm' ? <Farm view={view} /> : <Stats view={view} />}
+      {tab === 'farm' ? <Farm view={view} /> : tab === 'stats' ? <Stats view={view} /> : <Gear view={view} />}
     </section>
   );
 }

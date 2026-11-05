@@ -4,7 +4,9 @@ import { constantSection, type GameData } from '../data/game-data';
 import type { Command } from '../engine/commands';
 import type { Engine } from '../engine/engine';
 import type { EngineEvent } from '../engine/events';
+import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
 import { baseMovementSeconds, targetingMultiplier } from '../game/farming';
+import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
 import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
@@ -12,7 +14,7 @@ import { createCharacterState } from '../state/factory';
 import { derivedStats, type DerivedStats } from '../state/selectors';
 import type { CharacterState, ItemStack, OfflineSummary, Phase, WarehouseTab } from '../state/types';
 import { formatGold } from './format';
-import type { IconName } from './icons';
+import { iconBodies, type IconName } from './icons';
 import { DEFAULT_ROUTE, watchHash, type Route } from './router';
 
 /** Re-export so UI sources that cannot reach into `state/` can still name a phase. */
@@ -50,6 +52,12 @@ export interface CharacterView {
   /** Time in the current phase, in the design system's formats: `12s`, `3m 12s`, `7h 42m`. */
   readonly timeInActivity: ReadonlySignal<string>;
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
+  /** What is worn, by slot id. */
+  readonly equipment: ReadonlySignal<Record<string, ItemStack>>;
+  /** Bag cells and the stack size of stackable items, both set by the equipped backpack (design 2.1). */
+  readonly bagCapacity: ReadonlySignal<number>;
+  readonly bagMaxStack: ReadonlySignal<number>;
+  readonly bagUsedCells: ReadonlySignal<number>;
   /** The area the character farms, or null when it has none (design 3.2). */
   readonly areaId: ReadonlySignal<string | null>;
   /** The enemy type it targets, or null when it fights whatever it finds (design 3.3). */
@@ -92,6 +100,8 @@ const creationOpenSignal = signal(false);
 const pendingDeleteIdSignal = signal<string | null>(null);
 const viewedIdSignal = signal<string | null>(null);
 const openAreaIdSignal = signal<string | null>(null);
+const openShopIdSignal = signal<string | null>(null);
+const warehouseOpenSignal = signal(false);
 /** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
 let gameData: GameData | null = null;
 
@@ -107,6 +117,11 @@ export const notice: ReadonlySignal<string | null> = noticeSignal;
 export const viewedCharacterId: ReadonlySignal<string | null> = viewedIdSignal;
 /** The area whose send sheet is open on the World screen, or null. */
 export const openAreaId: ReadonlySignal<string | null> = openAreaIdSignal;
+
+/** The shop whose screen is pushed over the City, or null. */
+export const openShopId: ReadonlySignal<string | null> = openShopIdSignal;
+/** True while the warehouse screen is pushed over the City. */
+export const warehouseOpen: ReadonlySignal<boolean> = warehouseOpenSignal;
 
 /** Lines that stay on screen until the page reloads: what the save load found, or that the game stopped. */
 export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesSignal;
@@ -177,6 +192,14 @@ interface CharacterBinding {
   refresh(character: CharacterState): void;
 }
 
+/** The item reader the game helpers take, over `data.items`. An unknown id reads as a 1-cell item, so a stale save cannot stop the screen. */
+function itemRowOf(data: GameData): (id: string) => EquipmentItemRow {
+  return (id) => {
+    const row = data.items.find((entry) => entry.id === id);
+    return (row ?? { id, size: 1 }) as unknown as EquipmentItemRow;
+  };
+}
+
 function bindCharacter(first: CharacterState, data: GameData): CharacterBinding {
   const health = signal(0);
   const maxHealth = signal(0);
@@ -188,6 +211,10 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const activity = signal(first.phase);
   const timeInActivity = signal('');
   const bag = signal<readonly ItemStack[]>([]);
+  const equipment = signal<Record<string, ItemStack>>({});
+  const bagCapacity = signal(0);
+  const bagMaxStack = signal(0);
+  const bagUsedCells = signal(0);
   const areaId = signal<string | null>(first.areaId);
   const targetEnemyId = signal<string | null>(first.targetEnemyId);
   const attributes = signal<Attributes>(first.attributes);
@@ -198,6 +225,9 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const phaseTotalMs = signal<number | null>(null);
   const loot = signal<readonly LootEntry[]>([]);
   const copyBag = copyInto(bag);
+  const copyEquipment = copyInto(equipment);
+  const itemOf = itemRowOf(data);
+  const inventory = constantSection(data, 'inventory');
   const copyAttributes = copyInto(attributes);
   const copyDerived = copyInto(derived);
   const copyProficiency = copyInto(proficiency);
@@ -217,6 +247,10 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       activity,
       timeInActivity,
       bag,
+      equipment,
+      bagCapacity,
+      bagMaxStack,
+      bagUsedCells,
       areaId,
       targetEnemyId,
       attributes,
@@ -248,6 +282,11 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       phaseElapsedMs.value = character.timeInPhaseMs;
       phaseTotalMs.value = character.phase === 'dead' ? respawnSeconds(character.level, death) * MS_PER_SECOND : null;
       copyBag(character.bag);
+      copyEquipment(character.equipment);
+      const limits = bagLimitsFor(character.equipment, itemOf, inventory);
+      bagCapacity.value = limits.capacity;
+      bagMaxStack.value = limits.maxStack;
+      bagUsedCells.value = usedCells(character.bag, itemOf);
       copyAttributes(character.attributes);
       copyDerived(stats);
       copyProficiency(character.proficiency);
@@ -392,6 +431,8 @@ export function connectEngine(
   pendingDeleteIdSignal.value = null;
   viewedIdSignal.value = null;
   openAreaIdSignal.value = null;
+  openShopIdSignal.value = null;
+  warehouseOpenSignal.value = false;
   maxSlotsSignal.value = constantSection(data, 'characters').maxSlots;
   gameData = data;
   dispatchCommand = (command, options) => {
@@ -449,6 +490,22 @@ export function openArea(areaId: string): void {
 
 export function closeArea(): void {
   openAreaIdSignal.value = null;
+}
+
+export function openShop(shopId: string): void {
+  openShopIdSignal.value = shopId;
+}
+
+export function closeShop(): void {
+  openShopIdSignal.value = null;
+}
+
+export function openWarehouse(): void {
+  warehouseOpenSignal.value = true;
+}
+
+export function closeWarehouse(): void {
+  warehouseOpenSignal.value = false;
 }
 
 export interface AreaSummary {
@@ -589,4 +646,85 @@ export function areaEnemies(areaId: string): readonly AreaEnemyView[] {
       },
     ];
   });
+}
+
+export interface ItemInfo {
+  readonly id: string;
+  readonly name: string;
+  readonly icon: IconName;
+  readonly category: string;
+  /** Bag cells one stack takes (L7). */
+  readonly size: number;
+  readonly stackable: boolean;
+  readonly requiredLevel: number | null;
+  readonly equipmentType: string | null;
+  readonly sellPrice: number;
+  readonly buyPrice: number | null;
+}
+
+interface ItemRow {
+  id: string;
+  name: string;
+  icon?: string;
+  category: string;
+  size: number;
+  stackable: boolean;
+  requiredLevel?: number;
+  equipmentType?: string;
+  sellPrice: number;
+  buyPrice?: number | null;
+}
+
+/** Name, icon, size and prices for an item id, from data. A missing row falls back to the id so a screen never throws. */
+export function itemInfo(itemId: string): ItemInfo {
+  const row = requireGameData().items.find((entry) => entry.id === itemId) as unknown as ItemRow | undefined;
+  if (row === undefined) {
+    return { id: itemId, name: itemId, icon: 'bag', category: 'unknown', size: 1, stackable: false, requiredLevel: null, equipmentType: null, sellPrice: 0, buyPrice: null };
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon !== undefined && row.icon in iconBodies ? (row.icon as IconName) : 'rareItem',
+    category: row.category,
+    size: row.size,
+    stackable: row.stackable,
+    requiredLevel: row.requiredLevel ?? null,
+    equipmentType: row.equipmentType ?? null,
+    sellPrice: row.sellPrice,
+    buyPrice: row.buyPrice ?? null,
+  };
+}
+
+export interface ShopInfo {
+  readonly id: string;
+  readonly name: string;
+  readonly purpose: string;
+}
+
+/** Every shop in data order. */
+export function listShops(): readonly ShopInfo[] {
+  return (requireGameData().shops as unknown as readonly ShopInfo[]).map(({ id, name, purpose }) => ({ id, name, purpose }));
+}
+
+/** What a shop sells, with its prices. */
+export function shopItems(shopId: string): readonly { itemId: string; price: number }[] {
+  const shop = requireGameData().shops.find((row) => row.id === shopId) as unknown as { itemList: readonly { itemId: string; price: number }[] } | undefined;
+  return shop?.itemList ?? [];
+}
+
+export interface SlotInfo {
+  readonly id: string;
+  readonly label: string;
+  readonly allowedTypes: readonly string[];
+}
+
+/** The paper-doll's order (Character-Gear sketch). Which slots exist and what they take comes from data. */
+const SLOT_ORDER = ['head', 'body', 'hands', 'legs', 'feet', 'main-hand', 'off-hand', 'necklace', 'ring-1', 'ring-2', 'special-item-slot', 'backpack'];
+
+export function equipmentSlots(): readonly SlotInfo[] {
+  const rows = requireGameData().equipmentSlots as unknown as readonly { id: string; name: string; allowedTypes: readonly string[] }[];
+  const rank = (id: string) => SLOT_ORDER.indexOf(id);
+  return rows
+    .map((row) => ({ id: row.id, label: row.name, allowedTypes: row.allowedTypes }))
+    .sort((a, b) => rank(a.id) - rank(b.id));
 }

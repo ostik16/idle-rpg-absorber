@@ -34,3 +34,8 @@ export function phaseDescriptor(phase: Phase): PhaseDescriptor {
       return { icon: 'inCity', label: 'In city', modifier: 'city' };
   }
 }
+
+/** True when a character can shop, change gear and use the warehouse (the engine's rule: idle or restocking). */
+export function inCity(phase: Phase): boolean {
+  return phase === 'idle' || phase === 'restocking';
+}

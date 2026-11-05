@@ -95,6 +95,7 @@ Defaults chosen to close the open questions and inconsistencies in `docs/pre-dev
 | R8 | #22 | Farming assumptions | Confirmed as written in section 5 of the checklist | Sensible defaults. | owner approved |
 | R9 | #30 | Save system leftovers | `pagehide` save stays best-effort and is documented as such. Two tabs on `localStorage` accepted. `version` goes into the checksum on the next schema change. #36 offers: export of a stuck save or loading an older one, the game played only on the fallback, and the old save after a fresh start on a buggy build. `RecoveredTab.name` moves to `WarehouseTab` with the warehouse screen. Reveals at load go with #25 | Small risks, handled where the feature lands. | owner approved |
 | R10 | 3.8 / L8 | Loot filter and guaranteed pools | Pool items are exempt from the loot filter, so T3's "every kill yields one" holds | A filter must not break a guarantee. | owner approved |
+| R11 | #34 | Delivery in two slices | 2026-11-05. The core slice ships the City, Shop, Warehouse and Gear screens on the engine commands that exist. A later pass adds the per-character settings editor, the loot-filter and auto-sell editor and the 5 new settings commands. Shop and item content renders from `data/`: the sketches' potion tiers and extra shops are illustrative | The core screens do not need the new commands, so they can land first. | lead decided |
 
 ## Other numbers set at the same time
 
