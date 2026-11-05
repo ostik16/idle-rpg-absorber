@@ -2,14 +2,15 @@
  * One character's state machine (ADR 0002 "Multiple characters"). A character is independent: it shares
  * nothing with the others except through the events it emits, which the engine applies at the end of the step.
  */
+import { derivedStats } from '../state/selectors';
 import type { CharacterState, Phase } from '../state/types';
-import { stepCityHealing } from './city';
+import { isBagFull, stepCityHealing } from './city';
 import { stepDead } from './death';
 import { stepFighting, stepFleeing } from './fight';
 import { stepRegenerationTrait } from './growth';
 import { autoUsePotion, stepHealing } from './healing';
 import type { StepContext } from './step-context';
-import { stepLooting, stepReturning, stepSearching, stepTravelling } from './travel';
+import { autoReturnToCity, stepLooting, stepReturning, stepSearching, stepTravelling } from './travel';
 
 export { enterPhase, type StepContext } from './step-context';
 
@@ -38,6 +39,30 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   idle: stayInPhase,
 };
 
+/** Field phases where the auto-return trigger watches health and bag space (design 3.2, 2.3 L2). */
+const FIELD_PHASES: ReadonlySet<Phase> = new Set(['travelling', 'searching', 'fighting', 'looting']);
+
+/**
+ * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health below the character's threshold, or a full bag.
+ * In a fight the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag has space
+ * again, so a character sent back out with a still-full bag does not bounce (2.3 L2).
+ */
+function checkReturnTriggers(character: CharacterState, ctx: StepContext): void {
+  if (character.stayInCity || character.areaId === null || !FIELD_PHASES.has(character.phase)) return;
+  const { maxHealth } = derivedStats(character, ctx.data);
+  if (character.health < character.settings.returnHealthThreshold * maxHealth) {
+    autoReturnToCity(character, ctx);
+    return;
+  }
+  const full = isBagFull(character, ctx.data);
+  if (!full) {
+    if (character.blockBagFullReturn) character.blockBagFullReturn = false;
+    return;
+  }
+  if (character.blockBagFullReturn) return;
+  autoReturnToCity(character, ctx);
+}
+
 /**
  * Advances one character by exactly one step: the phase first, so a killing blow lands before any healing on
  * the same tick, then regeneration and potions, then the choice to drink in a fight.
@@ -49,4 +74,5 @@ export function stepCharacter(character: CharacterState, ctx: StepContext): void
   stepHealing(character, ctx);
   stepRegenerationTrait(character, ctx);
   if (character.phase === 'fighting' || character.phase === 'fleeing') autoUsePotion(character, ctx);
+  checkReturnTriggers(character, ctx);
 }

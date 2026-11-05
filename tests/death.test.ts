@@ -631,10 +631,13 @@ describe('determinism (ADR 0002)', () => {
     expect(whole.state.roster[0]).toMatchObject({ phase: 'idle', health: 70 });
   });
 
-  /** A character farming the real first area: it dies, heals and walks back over and over. */
+  /** A character farming the real first area: it dies, heals and walks back over and over. The auto-return
+   * trigger is turned off (threshold 0) so the test still exercises the death cycle it was written for. */
   function farmingState(data: GameData): GameState {
     const state = createGameState(7, T0, data);
-    state.roster.push(createCharacterState('c1', 'Ysolde', data));
+    const character = createCharacterState('c1', 'Ysolde', data);
+    character.settings.returnHealthThreshold = 0;
+    state.roster.push(character);
     return state;
   }
 
