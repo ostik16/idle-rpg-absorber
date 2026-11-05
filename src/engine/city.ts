@@ -4,9 +4,9 @@
  */
 import { constantSection, requireRow, type GameData } from '../data/game-data';
 import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
-import { addToBag, type BagItemLike, type BagStackLike } from '../game/inventory';
+import { addToBag, matchesItemRule, type BagItemLike, type BagStackLike } from '../game/inventory';
 import { derivedStats } from '../state/selectors';
-import type { CharacterState, ItemRule, ItemStack } from '../state/types';
+import type { CharacterState, ItemStack } from '../state/types';
 import { drinkInCity } from './healing';
 import { enterPhase, type StepContext } from './step-context';
 import { settleInCity } from './travel';
@@ -27,15 +27,6 @@ function itemRow(data: GameData, itemId: string): SellableItem & RestockableItem
   return requireRow(data, 'items', itemId) as unknown as SellableItem & RestockableItem;
 }
 
-/** A rule matches when every field it sets matches the item. An auto-sell with no rules sells nothing. */
-function matchesRule(rule: ItemRule, item: BagItemLike, bonuses: readonly { attribute: string }[]): boolean {
-  return (
-    (rule.category === undefined || rule.category === item.category) &&
-    (rule.minRequiredLevel === undefined || (item.requiredLevel ?? 1) >= rule.minRequiredLevel) &&
-    (rule.bonusAttribute === undefined || bonuses.some((b) => b.attribute === rule.bonusAttribute))
-  );
-}
-
 /** Auto-sells every bag stack that matches the character's rules (design 2.3 L6). Gold goes to this character (L16). */
 export function autoSellBag(character: CharacterState, data: GameData): void {
   const rules = character.settings.autoSell;
@@ -44,7 +35,7 @@ export function autoSellBag(character: CharacterState, data: GameData): void {
   let gold = 0;
   for (const stack of character.bag) {
     const item = itemRow(data, stack.itemId);
-    if (rules.rules.some((rule) => matchesRule(rule, item, stack.bonuses))) {
+    if (rules.rules.some((rule) => matchesItemRule(rule, item, stack.bonuses))) {
       gold += (item.sellPrice ?? 0) * stack.qty;
     } else kept.push(stack);
   }
@@ -80,11 +71,11 @@ function isHealthPotion(item: RestockableItem): boolean {
 
 /** Buys up to `want` of `itemId` at `price`, adding to the bag until the gold or bag runs out. */
 function buyUpTo(character: CharacterState, itemId: string, want: number, price: number, data: GameData): void {
-  if (want <= 0 || price <= 0) return;
+  if (want <= 0 || price < 0) return;
   const item = itemRow(data, itemId);
   const itemOf = (id: string): EquipmentItemRow => requireRow(data, 'items', id) as unknown as EquipmentItemRow;
   const limits = bagLimitsFor(character.equipment, itemOf, constantSection(data, 'inventory'));
-  const canAfford = Math.floor(character.gold / price);
+  const canAfford = price === 0 ? want : Math.floor(character.gold / price);
   const qty = Math.min(want, canAfford);
   if (qty === 0) return;
   const stack: BagStackLike = { itemId, bonuses: [], upgradeLevel: 0, qty };

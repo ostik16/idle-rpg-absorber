@@ -40,15 +40,17 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
 };
 
 /**
- * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health in a fight, bag space after a kill. Health only
- * drops in `fighting` and the bag only grows into `looting`, so the other field phases cost nothing. In a fight
- * the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag has space again.
+ * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health in a fight or right after it, bag space after a
+ * kill. Health only drops in `fighting` and the bag only grows into `looting`, so the other field phases cost
+ * nothing. In a fight the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag
+ * has space again.
  */
 function checkReturnTriggers(character: CharacterState, ctx: StepContext): void {
   if (character.stayInCity || character.areaId === null) return;
-  if (character.phase === 'fighting') {
-    const { maxHealth } = derivedStats(character, ctx.data);
-    if (character.health < character.settings.returnHealthThreshold * maxHealth) autoReturnToCity(character, ctx);
+  if (character.phase !== 'fighting' && character.phase !== 'looting') return;
+  const { maxHealth } = derivedStats(character, ctx.data);
+  if (character.health < character.settings.returnHealthThreshold * maxHealth) {
+    autoReturnToCity(character, ctx);
     return;
   }
   if (character.phase !== 'looting') return;

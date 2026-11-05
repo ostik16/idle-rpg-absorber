@@ -151,10 +151,25 @@ export interface LootFilterLike {
 }
 
 /**
+ * A rule matches when every field it sets matches: the category is equal, the item's required level is at least
+ * `minRequiredLevel`, and one of the rolled bonuses is on `bonusAttribute`. An item with no `requiredLevel` counts
+ * as level 1. Shared by the loot filter (2.3) and auto-sell (2.3 L6).
+ */
+export function matchesItemRule(
+  rule: LootRuleLike,
+  item: Pick<BagItemLike, 'category' | 'requiredLevel'>,
+  bonuses: readonly { attribute: string }[],
+): boolean {
+  return (
+    (rule.category === undefined || rule.category === item.category) &&
+    (rule.minRequiredLevel === undefined || (item.requiredLevel ?? 1) >= rule.minRequiredLevel) &&
+    (rule.bonusAttribute === undefined || bonuses.some((b) => b.attribute === rule.bonusAttribute))
+  );
+}
+
+/**
  * Whether a character picks an item up (design 2.3, decisions L8). A disabled filter picks up everything. An enabled
- * one picks up an item that matches at least one rule, and nothing when it has no rules. A rule matches when every
- * field it sets matches: the category is equal, the item's required level is at least `minRequiredLevel`, and one
- * of the rolled bonuses is on `bonusAttribute`. An item with no `requiredLevel` counts as level 1.
+ * one picks up an item that matches at least one rule, and nothing when it has no rules.
  */
 export function matchesLootFilter(
   filter: LootFilterLike,
@@ -162,10 +177,5 @@ export function matchesLootFilter(
   bonuses: readonly { attribute: string }[],
 ): boolean {
   if (!filter.enabled) return true;
-  return filter.rules.some(
-    (rule) =>
-      (rule.category === undefined || rule.category === item.category) &&
-      (rule.minRequiredLevel === undefined || (item.requiredLevel ?? 1) >= rule.minRequiredLevel) &&
-      (rule.bonusAttribute === undefined || bonuses.some((b) => b.attribute === rule.bonusAttribute)),
-  );
+  return filter.rules.some((rule) => matchesItemRule(rule, item, bonuses));
 }
