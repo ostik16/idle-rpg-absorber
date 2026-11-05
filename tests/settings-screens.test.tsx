@@ -96,7 +96,7 @@ describe('settings screen', () => {
     const dispatch = setup({ lootFilter: { enabled: false, rules: [{ category: 'rare' }] } });
     open();
     expect(host.textContent).toContain('Picks up everything.');
-    await click('[role=switch]', 'Loot filter on');
+    await click('[role=switch]', 'Loot filter');
     expect(sent(dispatch)).toEqual([{ type: 'setLootFilter', characterId: 'c1', lootFilter: { enabled: true, rules: [{ category: 'rare' }] } }]);
   });
 
