@@ -85,6 +85,16 @@ Defaults chosen to close the open questions and inconsistencies in `docs/pre-dev
 | L19 | 6 | Ring icon | `circle-dot`, since Lucide has no ring. `flask` means `flask-round`, the potion icon | Reads as a ring seen from above. | owner decided |
 | L20 | 2.6, 3.4, 3.6, 3.8, 4.1, 4.7 | Remaining Proposed lines the loop uses | Moved to Rules as written: mana potions work like health potions; offline time is estimated and rolled in bulk, with a summary per character; the drop table shape, money as a separate roll, and rates shown with the level modifier; the roster screen; absorption per character and per trait. Minimum damage and crit were already in 3.6 Rules, so the Proposed copies are removed | Issue #19. | owner approved |
 | L21 | 2.6 / 3.2 / 3.6 | Small fight details the rules leave open | The enemy's attack timer carries on while fleeing, so a hit may or may not land in the flee time. On one tick the attacks come first, then regeneration and potions, so a killing blow beats a heal. A potion keeps running at full health, and the extra is lost. Dying clears the running and queued potions. A character only starts a potion on its own in a fight or while fleeing, not while moving between fights. A flee time rounds to whole steps, at least one | Issue #21. Needed to build the fight; none of them change a number. | lead default, revisit after playtesting |
+| R1 | ADR 0002 | In-session clock | Keep `advanceTo(Date.now())`. Update ADR 0002 to say so | The only clock the engine's timeline supports. | owner approved |
+| R2 | architecture | Change notice | Keep the per-frame refresh in `src/ui/frame-loop.ts`. Reword the architecture: no engine change notice | Issue #31's choice. | owner approved |
+| R3 | 6 | Rounding on screen | Health and mana round up (a living character never reads 0). XP rounds down (a bar never reads full before the level) | Each rounding avoids a misleading reading. | owner decided |
+| R4 | 6 | Game error | Stop the simulation and autosave, leave the screen up with a lasting notice | State may be partly stepped. | owner approved |
+| R5 | 6 | Notices | Every notice has a dismiss button, unless it is meant to be permanent (such as a game error). Every notice dismisses itself after 5 seconds. Every notice is kept in a notification center, so it can be reviewed later. This replaces the 4 seconds of the proficiency notice | Notices must not pile up, and must not be lost. | owner decided. Notification center details open (see Needs the owner) |
+| R6 | ADR 0003 | Unreadable save | The recovery screen offers two things: export the corrupted records first, then a button to start fresh. Export comes first so a fresh start never destroys the only copy | Do not wait for #36's import: export needs no import. | owner decided |
+| R7 | #24 | Death choices (1) to (6) | Confirmed as written in section 5 of the checklist | Sensible defaults. | owner approved |
+| R8 | #22 | Farming assumptions | Confirmed as written in section 5 of the checklist | Sensible defaults. | owner approved |
+| R9 | #30 | Save system leftovers | `pagehide` save stays best-effort and is documented as such. Two tabs on `localStorage` accepted. `version` goes into the checksum on the next schema change. #36 offers: export of a stuck save or loading an older one, the game played only on the fallback, and the old save after a fresh start on a buggy build. `RecoveredTab.name` moves to `WarehouseTab` with the warehouse screen. Reveals at load go with #25 | Small risks, handled where the feature lands. | owner approved |
+| R10 | 3.8 / L8 | Loot filter and guaranteed pools | Pool items are exempt from the loot filter, so T3's "every kill yields one" holds | A filter must not break a guarantee. | owner approved |
 
 ## Other numbers set at the same time
 
@@ -124,7 +134,9 @@ For content writers.
 
 ## Needs the owner
 
-Nothing blocks work. The owner answered the open questions and approved the earlier assumptions. These soft defaults are still the lead's, to tune with the balance tools (5.3):
+**Notification center (R5).** Not in the design yet. Open: where it lives and how it opens (app bar icon with an unread count?), how many notices it keeps and for how long, whether it is per character or global, whether offline and save notices share it with proficiency notices, whether it can be cleared, and which notices are permanent.
+
+Nothing else blocks work. The owner answered the open questions and approved the earlier assumptions. These soft defaults are still the lead's, to tune with the balance tools (5.3):
 
 - **Health regeneration.** 0.5% of maximum health per second (T10), assumed active in and out of combat.
 - **Backpack numbers.** Base 36 cells and max stack 20 are set. Canvas pack adds 4 cells (max stack 40), Leather pack adds 6 (max stack 60), which gives the 42-cell bag the sketches assume (design 6).
