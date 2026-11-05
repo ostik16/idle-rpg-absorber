@@ -9,6 +9,7 @@ import type { CharacterState, GameState } from '../state/types';
 import { compareCharacterIds, stepCharacter, type StepContext } from './character';
 import { applyCommand, type Command } from './commands';
 import { bestiaryTier } from '../game/formulas';
+import { levelUpReward } from '../game/progression';
 import { publishStepEvents, type EngineEvent } from './events';
 import { mergeSummaries, stubEstimateOffline, type EstimateOffline } from './offline';
 import { createCharacterStreams, readStreamStates, type CharacterStreams } from './streams';
@@ -116,8 +117,9 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
 
   const chars = constantSection(data, 'characters');
 
-  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): kills reveal in the bestiary; the
-   * first time any character reaches slotTicketLevel its ticket unlocks one more slot, once (design 4.1). */
+  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): kills reveal in the bestiary; a
+   * levelUp pays out whatever `levelUpReward` returns for that level, a per-level reward list owned by
+   * progression.ts (design 4.1). */
   function applyShared(event: EngineEvent): void {
     if (event.type === 'enemyKilled') {
       const kills = (state.bestiary.kills[event.characterId] ??= {});
@@ -126,8 +128,11 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
       state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
       return;
     }
-    if (event.type === 'levelUp' && event.level === chars.slotTicketLevel) {
-      state.account.unlockedSlots = Math.min(chars.maxSlots, state.account.unlockedSlots + chars.slotTicketsPerCharacter);
+    if (event.type === 'levelUp') {
+      const reward = levelUpReward(event.level, chars);
+      if (reward.slotTickets > 0) {
+        state.account.unlockedSlots = Math.min(chars.maxSlots, state.account.unlockedSlots + reward.slotTickets);
+      }
     }
   }
 

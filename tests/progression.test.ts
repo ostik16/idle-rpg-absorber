@@ -14,7 +14,7 @@ import {
   respawnSeconds,
   unlockedSlots,
   lockedSlots,
-  slotTicketsEarned,
+  levelUpReward,
   xpAfterDeath,
   xpFloor,
   xpLossFractionFromRoll,
@@ -244,22 +244,17 @@ describe('respawn time (design 3.7)', () => {
   });
 });
 
-describe('slot tickets (design 4.1)', () => {
-  it('gives 1 ticket on first reaching level 20', () => {
-    expect(slotTicketsEarned(19, 20)).toBe(1);
-    expect(slotTicketsEarned(1, 30)).toBe(1); // jumping past 20 still counts once
+describe('level-up rewards (design 4.1)', () => {
+  it('pays 1 slot ticket at level 20, nothing at any other level', () => {
+    expect(levelUpReward(20).slotTickets).toBe(1);
+    for (const level of [2, 5, 19, 21, 25, 30]) {
+      expect(levelUpReward(level).slotTickets).toBe(0);
+    }
   });
 
-  it('gives nothing before 20 or after it was reached', () => {
-    expect(slotTicketsEarned(5, 19)).toBe(0);
-    expect(slotTicketsEarned(20, 21)).toBe(0);
-    expect(slotTicketsEarned(20, 20)).toBe(0);
-    expect(slotTicketsEarned(25, 30)).toBe(0);
-  });
-
-  it('gives 1 ticket in total over a whole career', () => {
+  it('pays 1 slot ticket in total over a whole career', () => {
     let total = 0;
-    for (let level = 2; level <= 30; level++) total += slotTicketsEarned(level - 1, level);
+    for (let level = 2; level <= 30; level++) total += levelUpReward(level).slotTickets;
     expect(total).toBe(1);
   });
 });

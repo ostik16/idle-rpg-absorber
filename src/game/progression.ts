@@ -219,17 +219,22 @@ export function respawnHealth(maxHealth: number, c: typeof constants.death = con
   return Math.max(1, Math.ceil(maxHealth * c.respawnHealthFraction - 1e-9));
 }
 
+/** What crossing INTO a given level grants. Extend this shape as new per-level rewards land. */
+export interface LevelReward {
+  /** Character-slot tickets, each one unlocks one locked slot (design 4.1). */
+  slotTickets: number;
+}
+
 /**
- * Character slot tickets earned by a level change (design 4.1): a character that first reaches
- * constants.characters.slotTicketLevel (20) receives slotTicketsPerCharacter (1) ticket, once.
- * 0 or slotTicketsPerCharacter, never more in total, because only crossing the level from below counts.
+ * Rewards a character gets when it crosses INTO `level`. The engine calls this once per levelUp event,
+ * so a kill that jumps several levels still pays each level's reward exactly once. Today only
+ * `constants.characters.slotTicketLevel` (20) pays anything; add further cases here as design 4 expands.
  */
-export function slotTicketsEarned(
-  previousLevel: number,
-  newLevel: number,
+export function levelUpReward(
+  level: number,
   c: typeof constants.characters = constants.characters,
-): number {
-  return previousLevel < c.slotTicketLevel && newLevel >= c.slotTicketLevel ? c.slotTicketsPerCharacter : 0;
+): LevelReward {
+  return { slotTickets: level === c.slotTicketLevel ? c.slotTicketsPerCharacter : 0 };
 }
 
 /** Skill points earned (design 4.5): skillPointsPerLevel for every level gained after level 1. */
