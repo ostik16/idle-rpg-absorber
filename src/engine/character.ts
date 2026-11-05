@@ -39,28 +39,24 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
   idle: stayInPhase,
 };
 
-/** Field phases where the auto-return trigger watches health and bag space (design 3.2, 2.3 L2). */
-const FIELD_PHASES: ReadonlySet<Phase> = new Set(['travelling', 'searching', 'fighting', 'looting']);
-
 /**
- * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health below the character's threshold, or a full bag.
- * In a fight the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag has space
- * again, so a character sent back out with a still-full bag does not bounce (2.3 L2).
+ * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health in a fight, bag space after a kill. Health only
+ * drops in `fighting` and the bag only grows into `looting`, so the other field phases cost nothing. In a fight
+ * the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag has space again.
  */
 function checkReturnTriggers(character: CharacterState, ctx: StepContext): void {
-  if (character.stayInCity || character.areaId === null || !FIELD_PHASES.has(character.phase)) return;
-  const { maxHealth } = derivedStats(character, ctx.data);
-  if (character.health < character.settings.returnHealthThreshold * maxHealth) {
-    autoReturnToCity(character, ctx);
+  if (character.stayInCity || character.areaId === null) return;
+  if (character.phase === 'fighting') {
+    const { maxHealth } = derivedStats(character, ctx.data);
+    if (character.health < character.settings.returnHealthThreshold * maxHealth) autoReturnToCity(character, ctx);
     return;
   }
-  const full = isBagFull(character, ctx.data);
-  if (!full) {
+  if (character.phase !== 'looting') return;
+  if (!isBagFull(character, ctx.data)) {
     if (character.blockBagFullReturn) character.blockBagFullReturn = false;
     return;
   }
-  if (character.blockBagFullReturn) return;
-  autoReturnToCity(character, ctx);
+  if (!character.blockBagFullReturn) autoReturnToCity(character, ctx);
 }
 
 /**

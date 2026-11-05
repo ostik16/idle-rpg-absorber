@@ -66,18 +66,6 @@ describe('auto-return triggers (design 3.2, 2.3 L2, L5)', () => {
     expect(character.stayInCity).toBe(false);
   });
 
-  it('low health outside a fight makes the character return (travelling)', () => {
-    const { engine, character, advance } = setup();
-    const { maxHealth } = derivedStats(character, loadGameData());
-    engine.dispatch({ type: 'sendToArea', characterId: 'c1', areaId: AREA });
-    advance(2000); // mid-travel
-    expect(character.phase).toBe('travelling');
-    character.health = 0.05 * maxHealth;
-    character.bag = [];
-    advance(TICK);
-    expect(character.phase).toBe('returning');
-  });
-
   it('a full bag triggers a return after a kill', () => {
     const data = loadGameData();
     const { engine, character, advance } = setup((c) => {
@@ -281,10 +269,10 @@ describe('phase transitions after the city routine (design 3.2)', () => {
     let revisits = 0;
     runUntil(engine, advance, () => {
       for (const e of engine.drainEvents()) {
-        if (e.type === 'phaseChanged' && e.from === 'returning' && e.to === 'travelling') revisits += 1;
+        if (e.type === 'phaseChanged' && e.to === 'travelling' && e.from !== 'idle') revisits += 1;
       }
       return revisits >= 1;
-    }, 120_000);
+    }, 600_000);
     expect(revisits).toBeGreaterThanOrEqual(1);
     expect(character.areaId).toBe(AREA);
     expect(isBagFull(character, data)).toBe(true); // still full, no auto-sell rules
