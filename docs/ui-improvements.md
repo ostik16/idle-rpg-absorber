@@ -44,10 +44,15 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 
 ## City, shop, warehouse and gear (#34 core slice)
 
-Deferred to the settings pass (needs the per-character settings editor and the 5 new engine commands):
+Built in the settings pass (#34): a pushed Settings screen per character, with the shared rule editor.
 
-- [ ] **P2** — Gear: "Loot filter" button and editor, and the auto-sell list. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
-- [ ] **P2** — City: "Restock on return" card and its Edit, plus city-healing, return-threshold and potion-threshold editing. [src/ui/City.tsx](src/ui/City.tsx)
+- [x] **P2** — Gear: "Loot filter" button, the loot-filter editor and the auto-sell list. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx), [src/ui/RuleEditor.tsx](src/ui/RuleEditor.tsx)
+- [x] **P2** — City: "Restock on return" card and its Edit, plus city-healing, return-threshold and potion-threshold editing. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
+- [ ] **P3** — Settings: no sketch exists, so the screen is unreviewed against one. The "Drink at" row cannot be turned off, only set or reset to the item's default, because the engine's `null` removes the override. The loot-filter bonus-attribute row is not built (undecided in design 2.3). The "Restock on return" card shows the shopping character only. [src/ui/Settings.tsx](src/ui/Settings.tsx)
+- [ ] **P3** — Rule editor: the sketch's separate summary card and rules card are one card here, and the on/off switch is added (decisions R12). Not checked in a browser at 390px. [src/ui/RuleEditor.tsx](src/ui/RuleEditor.tsx)
+
+Still deferred:
+
 - [ ] **P3** — City: Upgrade Smith, Teleporter and Rare Goods cards (services not built), and a "Shopping as" picker beside the Shops header (today a "Shop as" button on each city row). [src/ui/City.tsx](src/ui/City.tsx)
 - [ ] **P3** — Shop: effect line per row (potion heal, weapon damage), "Bag after" and a "Fill to restock targets" button, and the Buyback tab (L14). [src/ui/Shop.tsx](src/ui/Shop.tsx)
 - [ ] **P3** — Warehouse: side-by-side layout with → and ← on desktop, drag and drop, partial-quantity transfer, a status line under the buttons saying what moved (refusals show as the top notice), and extra tabs (L13). Only tab 1 shows. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)

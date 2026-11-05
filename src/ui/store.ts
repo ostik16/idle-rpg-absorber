@@ -12,13 +12,22 @@ import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
 import { derivedStats, type DerivedStats } from '../state/selectors';
-import type { CharacterState, ItemStack, OfflineSummary, Phase, WarehouseTab } from '../state/types';
+import type {
+  CharacterState,
+  CityHealingMode,
+  ItemRuleSet,
+  ItemStack,
+  OfflineSummary,
+  Phase,
+  RestockEntry,
+  WarehouseTab,
+} from '../state/types';
 import { formatGold } from './format';
 import { iconBodies, type IconName } from './icons';
 import { DEFAULT_ROUTE, watchHash, type Route } from './router';
 
 /** Re-export so UI sources that cannot reach into `state/` can still name a phase. */
-export type { Phase } from '../state/types';
+export type { CityHealingMode, ItemRule, ItemRuleSet, Phase, RestockEntry } from '../state/types';
 
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
@@ -72,6 +81,14 @@ export interface CharacterView {
   readonly phaseTotalMs: ReadonlySignal<number | null>;
   /** Newest first, at most `LOOT_LIMIT` lines. */
   readonly loot: ReadonlySignal<readonly LootEntry[]>;
+  /** Per-character settings (design 3.2, 2.3), changed with the `set…` commands. */
+  readonly returnHealthThreshold: ReadonlySignal<number>;
+  readonly cityHealing: ReadonlySignal<CityHealingMode>;
+  readonly restockList: ReadonlySignal<readonly RestockEntry[]>;
+  /** Item id to auto-use fraction. An item not listed uses its own default. */
+  readonly potionThresholds: ReadonlySignal<Readonly<Record<string, number>>>;
+  readonly lootFilter: ReadonlySignal<ItemRuleSet>;
+  readonly autoSell: ReadonlySignal<ItemRuleSet>;
 }
 
 export type LootKind = 'kill' | 'xp' | 'gold' | 'item' | 'levelUp' | 'death' | 'xpLost' | 'bagFull';
@@ -101,6 +118,7 @@ const pendingDeleteIdSignal = signal<string | null>(null);
 const viewedIdSignal = signal<string | null>(null);
 const openAreaIdSignal = signal<string | null>(null);
 const openShopIdSignal = signal<string | null>(null);
+const settingsIdSignal = signal<string | null>(null);
 const warehouseOpenSignal = signal(false);
 /** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
 let gameData: GameData | null = null;
@@ -120,6 +138,8 @@ export const openAreaId: ReadonlySignal<string | null> = openAreaIdSignal;
 
 /** The shop whose screen is pushed over the City, or null. */
 export const openShopId: ReadonlySignal<string | null> = openShopIdSignal;
+/** The character whose settings screen is pushed over the current screen, or null. */
+export const settingsCharacterId: ReadonlySignal<string | null> = settingsIdSignal;
 /** True while the warehouse screen is pushed over the City. */
 export const warehouseOpen: ReadonlySignal<boolean> = warehouseOpenSignal;
 
@@ -224,6 +244,16 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const phaseElapsedMs = signal(0);
   const phaseTotalMs = signal<number | null>(null);
   const loot = signal<readonly LootEntry[]>([]);
+  const returnHealthThreshold = signal(first.settings.returnHealthThreshold);
+  const cityHealing = signal<CityHealingMode>(first.settings.cityHealing);
+  const restockList = signal<readonly RestockEntry[]>([]);
+  const potionThresholds = signal<Readonly<Record<string, number>>>({});
+  const lootFilter = signal<ItemRuleSet>({ enabled: false, rules: [] });
+  const autoSell = signal<ItemRuleSet>({ enabled: false, rules: [] });
+  const copyRestockList = copyInto(restockList);
+  const copyPotionThresholds = copyInto(potionThresholds);
+  const copyLootFilter = copyInto(lootFilter);
+  const copyAutoSell = copyInto(autoSell);
   const copyBag = copyInto(bag);
   const copyEquipment = copyInto(equipment);
   const itemOf = itemRowOf(data);
@@ -260,6 +290,12 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       phaseElapsedMs,
       phaseTotalMs,
       loot,
+      returnHealthThreshold,
+      cityHealing,
+      restockList,
+      potionThresholds,
+      lootFilter,
+      autoSell,
     },
     addLoot(entry) {
       lootCounter += 1;
@@ -290,6 +326,12 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       copyAttributes(character.attributes);
       copyDerived(stats);
       copyProficiency(character.proficiency);
+      returnHealthThreshold.value = character.settings.returnHealthThreshold;
+      cityHealing.value = character.settings.cityHealing;
+      copyRestockList(character.settings.restockList);
+      copyPotionThresholds(character.settings.potionThresholds);
+      copyLootFilter(character.settings.lootFilter);
+      copyAutoSell(character.settings.autoSell);
     },
   };
   binding.refresh(first);
@@ -383,6 +425,7 @@ export function connectEngine(
       pendingDeleteIdSignal.value = null;
     }
     if (viewedIdSignal.value !== null && !ids.includes(viewedIdSignal.value)) viewedIdSignal.value = null;
+    if (settingsIdSignal.value !== null && !ids.includes(settingsIdSignal.value)) settingsIdSignal.value = null;
   }
 
   function refreshWarehouse(): void {
@@ -432,6 +475,7 @@ export function connectEngine(
   viewedIdSignal.value = null;
   openAreaIdSignal.value = null;
   openShopIdSignal.value = null;
+  settingsIdSignal.value = null;
   warehouseOpenSignal.value = false;
   maxSlotsSignal.value = constantSection(data, 'characters').maxSlots;
   gameData = data;
@@ -498,6 +542,15 @@ export function openShop(shopId: string): void {
 
 export function closeShop(): void {
   openShopIdSignal.value = null;
+}
+
+/** Pushes a character's settings screen (design 3.2, 2.3). */
+export function openSettings(characterId: string): void {
+  settingsIdSignal.value = characterId;
+}
+
+export function closeSettings(): void {
+  settingsIdSignal.value = null;
 }
 
 export function openWarehouse(): void {
@@ -660,6 +713,8 @@ export interface ItemInfo {
   readonly equipmentType: string | null;
   readonly sellPrice: number;
   readonly buyPrice: number | null;
+  /** Health fraction a potion drinks at unless the player sets one (design 2.6), or null for items that are not auto-used. */
+  readonly autoUseDefaultThreshold: number | null;
 }
 
 interface ItemRow {
@@ -673,13 +728,14 @@ interface ItemRow {
   equipmentType?: string;
   sellPrice: number;
   buyPrice?: number | null;
+  autoUseDefaultThreshold?: number;
 }
 
 /** Name, icon, size and prices for an item id, from data. A missing row falls back to the id so a screen never throws. */
 export function itemInfo(itemId: string): ItemInfo {
   const row = requireGameData().items.find((entry) => entry.id === itemId) as unknown as ItemRow | undefined;
   if (row === undefined) {
-    return { id: itemId, name: itemId, icon: 'bag', category: 'unknown', size: 1, stackable: false, requiredLevel: null, equipmentType: null, sellPrice: 0, buyPrice: null };
+    return { id: itemId, name: itemId, icon: 'bag', category: 'unknown', size: 1, stackable: false, requiredLevel: null, equipmentType: null, sellPrice: 0, buyPrice: null, autoUseDefaultThreshold: null };
   }
   return {
     id: row.id,
@@ -692,7 +748,32 @@ export function itemInfo(itemId: string): ItemInfo {
     equipmentType: row.equipmentType ?? null,
     sellPrice: row.sellPrice,
     buyPrice: row.buyPrice ?? null,
+    autoUseDefaultThreshold: row.autoUseDefaultThreshold ?? null,
   };
+}
+
+/** Every consumable in data order: the rows of the restock and drink-at lists (the engine accepts any consumable). */
+export function restockablePotions(): readonly ItemInfo[] {
+  return (requireGameData().items as unknown as readonly ItemRow[]).filter((row) => row.category === 'consumable').map((row) => itemInfo(row.id));
+}
+
+export interface RuleCategory {
+  readonly id: string;
+  readonly label: string;
+  readonly sub: string;
+  /** True for the category whose rule carries a minimum required level. */
+  readonly hasMinLevel: boolean;
+}
+
+/** The item categories a loot-filter or auto-sell rule can name, in display order (Loot-Filter sketch, plus Valuables: decisions R12). */
+export function ruleCategories(): readonly RuleCategory[] {
+  return [
+    { id: 'equipment', label: 'Equipment', sub: 'Required level at or above this', hasMinLevel: true },
+    { id: 'material', label: 'Materials', sub: 'Upgrade materials', hasMinLevel: false },
+    { id: 'rare', label: 'Rare items', sub: 'Dropped by bosses and cursed objects', hasMinLevel: false },
+    { id: 'consumable', label: 'Consumables', sub: 'Potions and boosts', hasMinLevel: false },
+    { id: 'valuable', label: 'Valuables', sub: 'Silver and gold bars', hasMinLevel: false },
+  ];
 }
 
 export interface ShopInfo {

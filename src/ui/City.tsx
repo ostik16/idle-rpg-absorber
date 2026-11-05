@@ -6,6 +6,7 @@ import {
   formatDuration,
   itemInfo,
   listShops,
+  openSettings,
   openShop,
   openWarehouse,
   roster,
@@ -22,6 +23,12 @@ function stateLine(view: CharacterView): string {
     return `Fell. Back on its feet in ${formatDuration(left)}.`;
   }
   return phase === 'restocking' ? 'Restocking.' : 'In the city.';
+}
+
+/** "Minor health potion to 10, Swift draught to 2." or "Nothing." for the character's restock list. */
+function restockLine(view: CharacterView): string {
+  const lines = view.restockList.value.filter((entry) => entry.quantity > 0).map((entry) => `${itemInfo(entry.itemId).name} to ${entry.quantity}`);
+  return lines.length === 0 ? 'Nothing.' : `${lines.join(', ')}.`;
 }
 
 function CityRow({ view }: { view: CharacterView }) {
@@ -74,6 +81,15 @@ export function City() {
           <span class="app__field-help ab-c-muted">{shop.purpose}</span>
         </button>
       ))}
+      {shopper !== undefined && (
+        <div class="ab-card app__field-head">
+          <span class="app__target-body app__grow">
+            <span class="ab-label">Restock on return</span>
+            <span class="app__field-help ab-c-muted">{restockLine(shopper)}</span>
+          </span>
+          <button type="button" class="ab-btn ab-btn--sm" onClick={() => openSettings(shopper.id)}>Edit</button>
+        </div>
+      )}
       <button type="button" class="ab-card app__area" onClick={openWarehouse}>
         <span class="app__area-top">
           <Icon name="warehouse" />

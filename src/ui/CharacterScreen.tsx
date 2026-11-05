@@ -16,6 +16,7 @@ import {
   formatDuration,
   itemInfo,
   listAreas,
+  openSettings,
   requireGameData,
   roster,
   send,
@@ -338,6 +339,9 @@ function Gear({ view }: { view: CharacterView }) {
   return (
     <>
       {!here && <p class="app__field-help ab-c-warning">{view.name} has to be in the city to change gear.</p>}
+      <button type="button" class="ab-btn ab-btn--block" onClick={() => openSettings(view.id)}>
+        <Icon name="lootFilter" /> Loot filter
+      </button>
       <section class="ab-card app__stack" aria-labelledby="eq-h">
         <h2 id="eq-h" class="ab-label">Equipped</h2>
         <div class="app__paper">

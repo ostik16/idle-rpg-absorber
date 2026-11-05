@@ -7,6 +7,7 @@ import { formatGold } from './format';
 import { Icon } from './Icon';
 import { Notice } from './Notice';
 import { Roster } from './Roster';
+import { Settings } from './Settings';
 import { Shop } from './Shop';
 import { Warehouse } from './Warehouse';
 import { World } from './World';
@@ -14,6 +15,7 @@ import { hrefFor, ROUTES, type Route } from './router';
 import {
   closeCharacter,
   closeCreation,
+  closeSettings,
   closeShop,
   closeWarehouse,
   creationOpen,
@@ -22,6 +24,7 @@ import {
   roster,
   route,
   selectedCharacter,
+  settingsCharacterId,
   viewedCharacterId,
   warehouseOpen,
 } from './store';
@@ -70,12 +73,14 @@ export function App() {
   const viewedId = viewedCharacterId.value;
   const viewedName = viewedId === null ? undefined : roster.value.find((v) => v.id === viewedId)?.name;
   const shopName = openShopId.value === null ? undefined : listShops().find((s) => s.id === openShopId.value)?.name;
+  const settingsName = settingsCharacterId.value === null ? undefined : roster.value.find((v) => v.id === settingsCharacterId.value)?.name;
+  const configuring = settingsName !== undefined;
   const shopping = shopName !== undefined;
   const storing = warehouseOpen.value;
   const viewing = !creating && viewedName !== undefined;
-  const pushed = creating || viewing || shopping || storing;
-  const title = shopping ? shopName : storing ? 'Warehouse' : creating ? 'New character' : viewing ? viewedName : screen.label;
-  const back = shopping ? closeShop : storing ? closeWarehouse : creating ? closeCreation : closeCharacter;
+  const pushed = creating || viewing || shopping || storing || configuring;
+  const title = configuring ? `${settingsName} · settings` : shopping ? shopName : storing ? 'Warehouse' : creating ? 'New character' : viewing ? viewedName : screen.label;
+  const back = configuring ? closeSettings : shopping ? closeShop : storing ? closeWarehouse : creating ? closeCreation : closeCharacter;
 
   return (
     <div class="app">
@@ -109,7 +114,9 @@ export function App() {
         <main class="app__main">
           <div class="app__content">
             <Notice />
-            {shopping ? (
+            {configuring ? (
+              <Settings />
+            ) : shopping ? (
               <Shop />
             ) : storing ? (
               <Warehouse />

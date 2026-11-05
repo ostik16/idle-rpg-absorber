@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadGameData } from '../src/data/game-data';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterState } from '../src/state/types';
-import { connectEngine, equipmentSlots, itemInfo, listShops, roster, shopItems, type CharacterView } from '../src/ui/store';
+import { connectEngine, equipmentSlots, itemInfo, listShops, restockablePotions, roster, ruleCategories, shopItems, type CharacterView } from '../src/ui/store';
 
 const data = loadGameData();
 
@@ -31,6 +31,31 @@ describe('item and shop selectors', () => {
   it('falls back to the id for an unknown item', () => {
     connect();
     expect(itemInfo('no-such-item')).toMatchObject({ name: 'no-such-item', icon: 'bag' });
+  });
+
+  it('lists the consumables for the restock rows and the rule categories for the editors', () => {
+    connect();
+    const ids = restockablePotions().map((item) => item.id);
+    expect(ids).toContain('minor-health-potion');
+    expect(ids).not.toContain('rusty-sword');
+    expect(itemInfo('minor-health-potion').autoUseDefaultThreshold).toBe(0.4);
+    const categories = ruleCategories();
+    expect(categories).toHaveLength(5);
+    expect(categories[0]).toMatchObject({ id: 'equipment', hasMinLevel: true });
+    expect(categories.filter((c) => c.hasMinLevel)).toHaveLength(1);
+  });
+
+  it('publishes the per-character settings and keeps them in step with state', () => {
+    const { refresh, character } = connect();
+    const view = roster.value[0] as CharacterView;
+    expect(view.returnHealthThreshold.value).toBe(character.settings.returnHealthThreshold);
+    expect(view.cityHealing.value).toBe('balanced');
+    expect(view.restockList.value).toEqual(character.settings.restockList);
+    character.settings.lootFilter = { enabled: true, rules: [{ category: 'rare' }] };
+    character.settings.potionThresholds = { 'minor-health-potion': 0.5 };
+    refresh();
+    expect(view.lootFilter.value).toEqual({ enabled: true, rules: [{ category: 'rare' }] });
+    expect(view.potionThresholds.value).toEqual({ 'minor-health-potion': 0.5 });
   });
 
   it('gives every item in data a known icon', () => {
