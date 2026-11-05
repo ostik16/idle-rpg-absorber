@@ -4,7 +4,7 @@
  * passes the time (`main.tsx` will pass `Date.now()`, tests and tools pass synthetic times).
  * Drops and the real offline estimate come later.
  */
-import { requireNumberConstant, type GameData } from '../data/game-data';
+import { constantSection, requireNumberConstant, type GameData } from '../data/game-data';
 import type { CharacterState, GameState } from '../state/types';
 import { compareCharacterIds, stepCharacter, type StepContext } from './character';
 import { applyCommand, type Command } from './commands';
@@ -114,13 +114,21 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     for (const { character, streams } of runners) character.rng = readStreamStates(streams);
   }
 
-  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): a kill counts for its character, and may reveal. */
+  const chars = constantSection(data, 'characters');
+
+  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): kills reveal in the bestiary; the
+   * first time any character reaches slotTicketLevel its ticket unlocks one more slot, once (design 4.1). */
   function applyShared(event: EngineEvent): void {
-    if (event.type !== 'enemyKilled') return;
-    const kills = (state.bestiary.kills[event.characterId] ??= {});
-    const count = (kills[event.enemyId] = (kills[event.enemyId] ?? 0) + 1);
-    const tier = bestiaryTier(count, data.bestiaryThresholds as unknown as { kills: number }[]);
-    state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
+    if (event.type === 'enemyKilled') {
+      const kills = (state.bestiary.kills[event.characterId] ??= {});
+      const count = (kills[event.enemyId] = (kills[event.enemyId] ?? 0) + 1);
+      const tier = bestiaryTier(count, data.bestiaryThresholds as unknown as { kills: number }[]);
+      state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
+      return;
+    }
+    if (event.type === 'levelUp' && event.level === chars.slotTicketLevel) {
+      state.account.unlockedSlots = Math.min(chars.maxSlots, state.account.unlockedSlots + chars.slotTicketsPerCharacter);
+    }
   }
 
   function applyPendingCommands(): void {
