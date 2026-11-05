@@ -289,14 +289,13 @@ describe('roster and character creation (design 4.1)', () => {
     return { engine, refresh };
   }
 
-  it('shows a locked slot for every slot above unlockedSlots, with the ticket copy', () => {
+  it('shows a locked slot for every slot above unlockedSlots', () => {
     const state = gameWith('Ysolde');
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
     render(<App />, host);
     const locked = [...host.querySelectorAll('.ab-char--locked')];
     expect(locked).toHaveLength(constants.characters.maxSlots - state.account.unlockedSlots);
-    expect(locked[0]?.textContent).toContain('slot ticket');
-    expect(locked[0]?.textContent).toContain('Lv 20');
+    expect(locked[0]?.textContent).toContain('Locked.');
   });
 
   it('shows an area name and level range on a character that farms somewhere', () => {
@@ -312,13 +311,13 @@ describe('roster and character creation (design 4.1)', () => {
     expect(host.querySelector('.ab-status')?.textContent).toContain('Farming');
   });
 
-  it('disables the Create button when every unlocked slot is taken, with a hint about slot tickets', () => {
+  it('disables the Create button when every unlocked slot is taken, and shows no hardcoded ticket hint', () => {
     const state = gameWith('Ysolde');
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
     render(<App />, host);
     const button = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Create character');
     expect(button?.hasAttribute('disabled')).toBe(true);
-    expect(host.querySelector('.app__stack [role="status"]')?.textContent).toContain('slot ticket');
+    expect(host.querySelector('.app__stack [role="status"]')).toBeNull();
   });
 
   it('openCreation refuses to open when no slot is free, so a later caller cannot land on an unsubmittable form', () => {

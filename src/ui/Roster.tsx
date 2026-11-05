@@ -83,9 +83,7 @@ function LockedSlot({ index }: { index: number }) {
         <div class="ab-char__top">
           <span class="ab-char__name">Slot {index}</span>
         </div>
-        <div class="ab-char__where">
-          Locked. Needs a slot ticket, earned when a character first reaches Lv 20.
-        </div>
+        <div class="ab-char__where">Locked.</div>
       </div>
     </div>
   );
@@ -97,11 +95,7 @@ export function Roster() {
   const max = maxSlots.value;
   const lockedCount = Math.max(0, max - unlocked);
   const canCreate = views.length < unlocked;
-  const hint = canCreate
-    ? null
-    : views.length < max
-      ? 'No free slot. A character earns a slot ticket at Lv 20.'
-      : 'Every slot is taken.';
+  const hint = canCreate || views.length < max ? null : 'Every slot is taken.';
 
   return (
     <section class="app__stack">
