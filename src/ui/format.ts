@@ -24,6 +24,7 @@ export function phaseDescriptor(phase: Phase): PhaseDescriptor {
     case 'travelling':
       return { icon: 'travelling', label: 'Travelling', modifier: 'travel' };
     case 'fleeing':
+      return { icon: 'travelling', label: 'Fleeing', modifier: 'travel' };
     case 'returning':
       return { icon: 'travelling', label: 'Returning', modifier: 'travel' };
     case 'dead':

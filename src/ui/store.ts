@@ -4,10 +4,15 @@ import { constantSection, type GameData } from '../data/game-data';
 import type { Command } from '../engine/commands';
 import type { Engine } from '../engine/engine';
 import type { EngineEvent } from '../engine/events';
+import { baseMovementSeconds, targetingMultiplier } from '../game/farming';
+import type { ProficiencyId } from '../game/proficiency';
+import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
 import { derivedStats, type DerivedStats } from '../state/selectors';
 import type { CharacterState, ItemStack, OfflineSummary, Phase, WarehouseTab } from '../state/types';
+import { formatGold } from './format';
+import type { IconName } from './icons';
 import { DEFAULT_ROUTE, watchHash, type Route } from './router';
 
 /** Re-export so UI sources that cannot reach into `state/` can still name a phase. */
@@ -47,7 +52,33 @@ export interface CharacterView {
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
   /** The area the character farms, or null when it has none (design 3.2). */
   readonly areaId: ReadonlySignal<string | null>;
+  /** The enemy type it targets, or null when it fights whatever it finds (design 3.3). */
+  readonly targetEnemyId: ReadonlySignal<string | null>;
+  readonly attributes: ReadonlySignal<Attributes>;
+  readonly derived: ReadonlySignal<DerivedStats>;
+  readonly unspentPoints: ReadonlySignal<number>;
+  /** Hidden numbers (design 4.6): screens show titles only. */
+  readonly proficiency: ReadonlySignal<Record<ProficiencyId, number>>;
+  readonly phaseElapsedMs: ReadonlySignal<number>;
+  /** Length of the current phase when it is known (a dead character's respawn wait), else null. */
+  readonly phaseTotalMs: ReadonlySignal<number | null>;
+  /** Newest first, at most `LOOT_LIMIT` lines. */
+  readonly loot: ReadonlySignal<readonly LootEntry[]>;
 }
+
+export type LootKind = 'kill' | 'xp' | 'gold' | 'item' | 'levelUp' | 'death' | 'xpLost' | 'bagFull';
+
+/** One line of the loot feed (design system "LootFeed"). `amount` is already formatted. */
+export interface LootEntry {
+  readonly id: number;
+  readonly kind: LootKind;
+  readonly icon: IconName;
+  readonly text: string;
+  readonly amount: string | null;
+}
+
+const LOOT_LIMIT = 20;
+let lootCounter = 0;
 
 const rosterSignal = signal<readonly CharacterView[]>([]);
 const warehouseTabsSignal = signal<readonly ReadonlySignal<WarehouseTab>[]>([]);
@@ -59,6 +90,8 @@ const maxSlotsSignal = signal(0);
 const selectedIdSignal = signal<string | null>(null);
 const creationOpenSignal = signal(false);
 const pendingDeleteIdSignal = signal<string | null>(null);
+const viewedIdSignal = signal<string | null>(null);
+const openAreaIdSignal = signal<string | null>(null);
 /** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
 let gameData: GameData | null = null;
 
@@ -70,6 +103,11 @@ export const warehouseTabs: ReadonlySignal<readonly ReadonlySignal<WarehouseTab>
 export const pendingSummary: ReadonlySignal<OfflineSummary | null> = pendingSummarySignal;
 /** The latest answer from the engine: a refused command or a clock rewind. The next command clears it. */
 export const notice: ReadonlySignal<string | null> = noticeSignal;
+/** The character whose detail screen is pushed over the current screen, or null. */
+export const viewedCharacterId: ReadonlySignal<string | null> = viewedIdSignal;
+/** The area whose send sheet is open on the World screen, or null. */
+export const openAreaId: ReadonlySignal<string | null> = openAreaIdSignal;
+
 /** Lines that stay on screen until the page reloads: what the save load found, or that the game stopped. */
 export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesSignal;
 /** How many of the 4 slots are unlocked. Design 4.1, decisions L17. */
@@ -108,7 +146,8 @@ export function send(command: Command, options: SendOptions = {}): void {
   dispatchCommand(command, options);
 }
 
-function formatDuration(ms: number): string {
+/** `12s`, `3m 12s`, `7h 42m`: the design system's duration format. */
+export function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / MS_PER_SECOND);
   const totalMinutes = Math.floor(totalSeconds / SECONDS_PER_MINUTE);
   const seconds = totalSeconds % SECONDS_PER_MINUTE;
@@ -134,6 +173,7 @@ function copyInto<T>(target: Signal<T>): (source: T) => void {
 
 interface CharacterBinding {
   readonly view: CharacterView;
+  addLoot(entry: Omit<LootEntry, 'id'>): void;
   refresh(character: CharacterState): void;
 }
 
@@ -149,7 +189,19 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const timeInActivity = signal('');
   const bag = signal<readonly ItemStack[]>([]);
   const areaId = signal<string | null>(first.areaId);
+  const targetEnemyId = signal<string | null>(first.targetEnemyId);
+  const attributes = signal<Attributes>(first.attributes);
+  const derived = signal<DerivedStats>(derivedStats(first, data));
+  const unspentPoints = signal(0);
+  const proficiency = signal(first.proficiency);
+  const phaseElapsedMs = signal(0);
+  const phaseTotalMs = signal<number | null>(null);
+  const loot = signal<readonly LootEntry[]>([]);
   const copyBag = copyInto(bag);
+  const copyAttributes = copyInto(attributes);
+  const copyDerived = copyInto(derived);
+  const copyProficiency = copyInto(proficiency);
+  const death = constantSection(data, 'death');
 
   const binding: CharacterBinding = {
     view: {
@@ -166,6 +218,18 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       timeInActivity,
       bag,
       areaId,
+      targetEnemyId,
+      attributes,
+      derived,
+      unspentPoints,
+      proficiency,
+      phaseElapsedMs,
+      phaseTotalMs,
+      loot,
+    },
+    addLoot(entry) {
+      lootCounter += 1;
+      loot.value = [{ id: lootCounter, ...entry }, ...loot.value].slice(0, LOOT_LIMIT);
     },
     refresh(character) {
       const stats = derivedStats(character, data);
@@ -179,7 +243,14 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       activity.value = character.phase;
       timeInActivity.value = formatDuration(character.timeInPhaseMs);
       areaId.value = character.areaId;
+      targetEnemyId.value = character.targetEnemyId;
+      unspentPoints.value = character.points.characterUnspent;
+      phaseElapsedMs.value = character.timeInPhaseMs;
+      phaseTotalMs.value = character.phase === 'dead' ? respawnSeconds(character.level, death) * MS_PER_SECOND : null;
       copyBag(character.bag);
+      copyAttributes(character.attributes);
+      copyDerived(stats);
+      copyProficiency(character.proficiency);
     },
   };
   binding.refresh(first);
@@ -192,6 +263,45 @@ function noticeFor(event: EngineEvent): string | null {
       return event.reason;
     case 'clockRewind':
       return 'Clock moved back. No time was added.';
+    default:
+      return null;
+  }
+}
+
+function nameIn(data: GameData, table: 'enemies' | 'items' | 'traits', id: string): string {
+  const row = data[table].find((entry) => entry.id === id);
+  return typeof row?.name === 'string' ? row.name : id;
+}
+
+/** The loot feed line for an event, or null when the event is not loot. */
+function lootFor(event: EngineEvent, data: GameData): Omit<LootEntry, 'id'> | null {
+  switch (event.type) {
+    case 'enemyKilled':
+      return { kind: 'kill', icon: 'farming', text: `${nameIn(data, 'enemies', event.enemyId)} slain`, amount: null };
+    case 'xpGained':
+      return { kind: 'xp', icon: 'absorption', text: 'XP', amount: `+${event.amount}` };
+    case 'goldGained':
+      return { kind: 'gold', icon: 'gold', text: 'Gold', amount: `+${formatGold(event.amount)}` };
+    case 'itemPickedUp':
+      return {
+        kind: 'item',
+        icon: 'rareItem',
+        text: nameIn(data, 'items', event.itemId),
+        amount: event.qty > 1 ? `×${event.qty}` : null,
+      };
+    case 'levelUp':
+      return { kind: 'levelUp', icon: 'upgrade', text: `Reached Lv ${event.level}`, amount: null };
+    case 'characterDied':
+      return { kind: 'death', icon: 'dead', text: `Fell to ${nameIn(data, 'enemies', event.enemyId)}`, amount: null };
+    case 'xpLost':
+      return { kind: 'xpLost', icon: 'dead', text: 'XP lost', amount: `−${event.amount}` };
+    case 'bagFull':
+      return {
+        kind: 'bagFull',
+        icon: 'bag',
+        text: `Bag full — left ${event.qty} ${nameIn(data, 'items', event.itemId)}`,
+        amount: null,
+      };
     default:
       return null;
   }
@@ -233,6 +343,7 @@ export function connectEngine(
     if (pendingDeleteIdSignal.value !== null && !ids.includes(pendingDeleteIdSignal.value)) {
       pendingDeleteIdSignal.value = null;
     }
+    if (viewedIdSignal.value !== null && !ids.includes(viewedIdSignal.value)) viewedIdSignal.value = null;
   }
 
   function refreshWarehouse(): void {
@@ -264,6 +375,8 @@ export function connectEngine(
       for (const event of engine.drainEvents()) {
         const message = noticeFor(event);
         if (message !== null) noticeSignal.value = message;
+        const line = 'characterId' in event ? lootFor(event, data) : null;
+        if (line !== null) bindings.get((event as { characterId: string }).characterId)?.addLoot(line);
       }
     });
     if (applied && saveWanted) {
@@ -277,6 +390,8 @@ export function connectEngine(
   selectedIdSignal.value = null;
   creationOpenSignal.value = false;
   pendingDeleteIdSignal.value = null;
+  viewedIdSignal.value = null;
+  openAreaIdSignal.value = null;
   maxSlotsSignal.value = constantSection(data, 'characters').maxSlots;
   gameData = data;
   dispatchCommand = (command, options) => {
@@ -316,6 +431,24 @@ export function closeDeleteConfirm(): void {
 /** Points the app bar at a character (decisions L18). Null is only valid for an empty roster. */
 export function selectCharacter(characterId: string): void {
   selectedIdSignal.value = characterId;
+}
+
+/** Pushes a character's detail screen (design system "Mobile and layout"). */
+export function openCharacter(characterId: string): void {
+  viewedIdSignal.value = characterId;
+}
+
+export function closeCharacter(): void {
+  viewedIdSignal.value = null;
+}
+
+/** Opens the send sheet for an area on the World screen. */
+export function openArea(areaId: string): void {
+  openAreaIdSignal.value = areaId;
+}
+
+export function closeArea(): void {
+  openAreaIdSignal.value = null;
 }
 
 export interface AreaSummary {
@@ -376,3 +509,84 @@ export function creationNameError(name: string): string | null {
   return nameErrorFn(name, existing, creation);
 }
 
+
+export interface AreaListEntry extends AreaSummary {
+  readonly distanceFromCity: number;
+  /** Seconds of movement between fights before targeting (design 3.3). */
+  readonly searchSeconds: number;
+}
+
+interface AreaRow {
+  id: string;
+  name: string;
+  levelRange: { min: number; max: number };
+  distanceFromCity: number;
+  movementSecondsBetweenEnemies?: number;
+  enemies: readonly { enemyId: string }[];
+}
+
+function areaRows(): readonly AreaRow[] {
+  return requireGameData().areas as unknown as readonly AreaRow[];
+}
+
+/** Every area in data order, for the World screen. */
+export function listAreas(): readonly AreaListEntry[] {
+  return areaRows().map((area) => ({
+    id: area.id,
+    name: area.name,
+    levelMin: area.levelRange.min,
+    levelMax: area.levelRange.max,
+    distanceFromCity: area.distanceFromCity,
+    searchSeconds: baseMovementSeconds(area),
+  }));
+}
+
+export interface AreaEnemyView {
+  readonly id: string;
+  readonly name: string;
+  readonly level: number;
+  readonly type: string;
+  readonly targetingMultiplier: number;
+  readonly traits: readonly { name: string; value: number; magical: boolean }[];
+  /** The highest base chance in the enemy's drop table, 0 to 1; 0 without a table. Multiply by the level modifier. */
+  readonly topDropChanceBase: number;
+}
+
+interface EnemyRow {
+  id: string;
+  name: string;
+  level: number;
+  type: string;
+  targetingMultiplier?: number;
+  traits: readonly { id: string; value: number; magical: boolean }[];
+  dropTableId?: string;
+}
+
+/** The enemies listed in an area's spawn table (mini-boss and boss rows come later). */
+export function areaEnemies(areaId: string): readonly AreaEnemyView[] {
+  const data = requireGameData();
+  const area = areaRows().find((row) => row.id === areaId);
+  if (area === undefined) return [];
+  return area.enemies.flatMap(({ enemyId }) => {
+    const enemy = data.enemies.find((row) => row.id === enemyId) as unknown as EnemyRow | undefined;
+    if (enemy === undefined) return [];
+    const table = data.dropTables.find((row) => row.id === enemy.dropTableId) as unknown as
+      | { entries: readonly { baseChance: number }[] }
+      | undefined;
+    return [
+      {
+        id: enemy.id,
+        name: enemy.name,
+        level: enemy.level,
+        type: enemy.type,
+        targetingMultiplier: targetingMultiplier(enemy),
+        traits: enemy.traits.map((trait) => ({
+          name: nameIn(data, 'traits', trait.id),
+          value: trait.value,
+          magical: trait.magical,
+        })),
+        topDropChanceBase: Math.max(0, ...(table?.entries.map((entry) => entry.baseChance) ?? [])),
+      },
+    ];
+  });
+}
