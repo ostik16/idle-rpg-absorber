@@ -20,6 +20,7 @@ const MINOR = 'minor-health-potion';
 
 const PLAIN = {
   id: 'plain',
+  levelRange: { min: 1, max: 1 },
   distanceFromCity: 2,
   movementSecondsBetweenEnemies: 1,
   enemies: [{ enemyId: 'wall', spawnWeight: 1 }],
@@ -41,7 +42,11 @@ function fixture(regen = true): GameData {
     ...(regen ? {} : { healthRegen: { fractionOfMaxPerSecond: 0 } }),
   };
   return createGameData({
-    constants: { ...constants, stats },
+    constants: {
+      ...constants,
+      stats,
+      proficiency: { ...constants.proficiency, gainPerAction: { unarmed: 0, 'one-handed': 0, 'two-handed': 0, toughness: 0, speed: 0, combat: 0 } },
+    },
     items: itemsJson,
     enemies: [WALL, SOFT, RAT, GIANT],
     areas: [PLAIN],
@@ -626,10 +631,13 @@ describe('determinism (ADR 0002)', () => {
     expect(whole.state.roster[0]).toMatchObject({ phase: 'idle', health: 70 });
   });
 
-  /** A character farming the real first area: it dies, heals and walks back over and over. */
+  /** A character farming the real first area: it dies, heals and walks back over and over. The auto-return
+   * trigger is turned off (threshold 0) so the test still exercises the death cycle it was written for. */
   function farmingState(data: GameData): GameState {
     const state = createGameState(7, T0, data);
-    state.roster.push(createCharacterState('c1', 'Ysolde', data));
+    const character = createCharacterState('c1', 'Ysolde', data);
+    character.settings.returnHealthThreshold = 0;
+    state.roster.push(character);
     return state;
   }
 

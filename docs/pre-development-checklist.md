@@ -165,3 +165,14 @@ Still open:
 - [x] **`noDropEnemyLevelsAbove`.** The 3.8 level modifier is unchanged: 0 from 10 levels above (falloff 0.1 per level), and 0 for an enemy 20 or more levels above the character.
 - [x] **Loot filter and guaranteed pools.** The engine applies an enabled loot filter to pool items too, so a filter can leave behind the one item T3 says every kill yields. L8 does not exempt pool items. The owner can keep this or exempt pools. Decided (R10).
 - [x] **Level used for drops.** The drop roll uses the character's level when the kill landed, before that kill's XP can level it up.
+
+## 8. Choices made while building proficiency, absorption and the bestiary (#25)
+
+- [x] **Level of an area for speed training.** Design 4.6 says "the level of the area" and areas only have `levelRange`. The engine uses `levelRange.max`.
+- [x] **What counts as moving.** Speed trains on `travelling`, `searching` and `returning` steps, by the seconds the step covers. Fleeing does not train it.
+- [x] **Absorption level.** The character's level at the end of the fight, before the kill's XP.
+- [x] **Regeneration trait.** Heals the absorbed percent of maximum health every `constants.traits.regenerationIntervalSeconds` (10), counted in `traitRegenMs` on the character. Life steal heals the percent of the damage each hit dealt, capped at maximum health.
+- [x] **Bestiary kills.** Every kill counts, mini-bosses and bosses too. A deleted character's kill counts may go; `revealed` stays.
+- [x] **Order inside a fight step.** The hits land, then proficiency training, then life steal (only if the character is still alive after the enemy's blow), then, on a kill, absorption, XP and loot.
+- [x] **Offline proficiency.** #29 counts a kill's proficiency once, after the kill, with `killProficiencyGain` (hits times the gain at the points held before the kill), then applies `offline.proficiencyRate`. Not built until #29. The gain falls as the skill rises, so counting once is not lower than hit by hit; the slower offline pace comes from the rate.
+- [x] **Trait and slot ids.** `constants.traits.lifeStealId` and `regenerationId` name the traits the engine acts on, and the weapon slot is the one whose row has `trainsProficiency`.

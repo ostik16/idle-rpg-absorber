@@ -42,12 +42,13 @@ export function proficiencyGain(
   return c.gainPerAction[skill] * ratio ** c.diminishing.exponent;
 }
 
-/** Adds a gain and keeps the total inside 0..maxPoints. */
+/** Adds a gain and keeps the total inside 0..maxPoints. A gain that is not a number (bad data) adds nothing. */
 export function addProficiency(
   currentPoints: number,
   gain: number,
   c: ProficiencyConstants = constants.proficiency,
 ): number {
+  if (!Number.isFinite(gain)) return currentPoints;
   return Math.min(c.maxPoints, Math.max(0, currentPoints + gain));
 }
 

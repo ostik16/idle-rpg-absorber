@@ -18,3 +18,13 @@ Browser idle RPG. TypeScript, Vite, Vitest, Preact. Early development: the desig
 - **UI follows the design system** in `design/ui/design-system/` (read its `README.md`). Use the `ab-` classes from `components/bundle.css` and the tokens in `tokens.css`. Do not introduce colours, fonts or spacing outside the tokens. Do not edit `src/styles/tokens.css` by hand.
 - Screen sketches in `design/ui/screens/*.dc.html` are references to look at, not code to ship. They need the claude.ai Design runtime (`support.js`) to render, so open the artifact link instead.
 - Copy follows the voice rules in the design system README: lead with the number, sentence case, no exclamation marks, no emoji.
+
+## Working principles
+
+- **Smallest change that fully solves the task.** No features, options or abstractions nobody asked for. Reuse what exists before adding anything. Work with `/ponytail:ponytail` active.
+- **Read before writing.** Check the design doc for the system, the callers and the tests your change touches.
+- **Low confidence: ask me for the decision. Missing information: interview me for the missing points** before building. Do not guess. Record the answer in `docs/decisions.md` or `docs/pre-development-checklist.md`.
+- **Every behaviour change gets a test**, and `npm run check` passes before you commit.
+- **Review every change before it is committed.** Run `/ponytail:ponytail-review` (or `/code-review`) on the diff and fix or answer each finding. Run `/ponytail:ponytail-audit` before a milestone and `/ponytail:ponytail-debt` to list the `shortcut:` comments still open.
+- **One concern per commit and PR.** Do not mix refactors with features.
+- **Say what you skipped or did not verify** at the end of your reply.

@@ -159,6 +159,8 @@ const character = shape<CharacterState>({
   timeInPhaseMs: num,
   settings: characterSettings,
   absorption: record(num),
+  traitRegenMs: optional(num),
+  blockBagFullReturn: optional(bool),
   rng: optional(shape({ combat: streamState, drops: streamState, search: streamState, death: streamState })),
 });
 

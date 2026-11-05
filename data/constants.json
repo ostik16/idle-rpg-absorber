@@ -20,6 +20,11 @@
     "enemyAboveCharacterModifier": 1,
     "cursedObjectDefendersAbsorbable": true
   },
+  "traits": {
+    "lifeStealId": "life-steal",
+    "regenerationId": "regeneration",
+    "regenerationIntervalSeconds": 10
+  },
   "upgrade": {
     "maxLevel": 9,
     "startChance": 0.9,

@@ -8,6 +8,7 @@ import { requireNumberConstant, type GameData } from '../data/game-data';
 import type { CharacterState, GameState } from '../state/types';
 import { compareCharacterIds, stepCharacter, type StepContext } from './character';
 import { applyCommand, type Command } from './commands';
+import { bestiaryTier } from '../game/formulas';
 import { publishStepEvents, type EngineEvent } from './events';
 import { mergeSummaries, stubEstimateOffline, type EstimateOffline } from './offline';
 import { createCharacterStreams, readStreamStates, type CharacterStreams } from './streams';
@@ -113,6 +114,15 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     for (const { character, streams } of runners) character.rng = readStreamStates(streams);
   }
 
+  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): a kill counts for its character, and may reveal. */
+  function applyShared(event: EngineEvent): void {
+    if (event.type !== 'enemyKilled') return;
+    const kills = (state.bestiary.kills[event.characterId] ??= {});
+    const count = (kills[event.enemyId] = (kills[event.enemyId] ?? 0) + 1);
+    const tier = bestiaryTier(count, data.bestiaryThresholds as unknown as { kills: number }[]);
+    state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
+  }
+
   function applyPendingCommands(): void {
     if (pendingCommands.length === 0) return;
     const contextOf = (characterId: string): StepContext | undefined =>
@@ -120,7 +130,7 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     for (const command of pendingCommands.splice(0)) {
       const rosterSize = state.roster.length;
       const event = applyCommand(state, command, data, contextOf);
-      publishStepEvents(stepEvents, outbox);
+      publishStepEvents(stepEvents, outbox, applyShared);
       if (event) outbox.push(event);
       if (state.roster.length !== rosterSize) {
         saveStreams();
@@ -134,7 +144,7 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     for (let i = 0; i < count; i++) {
       applyPendingCommands();
       for (const { character, ctx } of runners) stepCharacter(character, ctx);
-      publishStepEvents(stepEvents, outbox);
+      publishStepEvents(stepEvents, outbox, applyShared);
       state.clock.lastSimulatedAt += config.tickMs;
     }
   }

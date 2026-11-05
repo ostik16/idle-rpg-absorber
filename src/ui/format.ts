@@ -1,0 +1,35 @@
+// Formatting shared by roster, app bar and character creation. Fixed formats from the design system README.
+import type { IconName } from './icons';
+import type { Phase } from './store';
+
+/** Gold with thousands separators (`48,210`), the design system's fixed format. */
+export function formatGold(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
+/** The icon and word that stand in for a character's phase (design system README, Colour table). */
+export interface PhaseDescriptor {
+  readonly icon: IconName;
+  readonly label: string;
+  /** The `ab-status` modifier that paints the colour (farming, travel, city, dead). */
+  readonly modifier: 'farming' | 'travel' | 'city' | 'dead';
+}
+
+export function phaseDescriptor(phase: Phase): PhaseDescriptor {
+  switch (phase) {
+    case 'searching':
+    case 'fighting':
+    case 'looting':
+      return { icon: 'farming', label: 'Farming', modifier: 'farming' };
+    case 'travelling':
+      return { icon: 'travelling', label: 'Travelling', modifier: 'travel' };
+    case 'fleeing':
+    case 'returning':
+      return { icon: 'travelling', label: 'Returning', modifier: 'travel' };
+    case 'dead':
+      return { icon: 'dead', label: 'Fell', modifier: 'dead' };
+    case 'restocking':
+    case 'idle':
+      return { icon: 'inCity', label: 'In city', modifier: 'city' };
+  }
+}

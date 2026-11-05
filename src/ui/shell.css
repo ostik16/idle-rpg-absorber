@@ -11,9 +11,34 @@
 .app__stack { display: grid; gap: var(--space-3); }
 .app__notices { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); margin-bottom: var(--space-3); }
 .app__notices .ab-notice { height: auto; padding-top: var(--space-2); padding-bottom: var(--space-2); border-radius: var(--radius-md); }
-.app__form { display: flex; gap: var(--space-2); }
-.app__input { flex: 1; min-width: 0; box-sizing: border-box; min-height: var(--size-tap); padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); font: inherit; }
+.app__input { box-sizing: border-box; min-height: var(--size-tap); padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 600; }
 .app__input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.app__input--ok { border-color: var(--gold); }
+.app__input--bad { border-color: var(--danger); }
+
+/* Roster row with a trailing delete button. ab-char is a grid of two columns; the row adds a third for the button. */
+.app__row { grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; }
+.app__row-body { display: flex; flex-direction: column; min-width: 0; }
+.app__row-del { flex: none; color: var(--ink-muted); }
+.app__row-del:hover { color: var(--danger); }
+
+/* Section heading with a diamond ornament, label and a trailing count (design system README "Space, shape and depth"). */
+.app__section-head { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
+.app__section-title { margin: 0; flex: 1; }
+.app__section-count { color: var(--ink-muted); text-transform: none; letter-spacing: 0; }
+
+/* Character creation screen. */
+.app__card { display: grid; gap: var(--space-2); }
+.app__field-head { display: flex; align-items: baseline; gap: var(--space-2); }
+.app__field-head label { flex: 1; }
+.app__field-count { font-size: 13px; }
+.app__field-help { margin: 0; font-size: 13px; line-height: 18px; }
+.app__actions { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* Delete confirm sheet sits on top of the app, inside the body of `.app`. */
+.app__scrim { position: fixed; inset: 0; z-index: 10; }
+.app__sheet { max-width: var(--size-content); width: 100%; margin: 0 auto; }
+.app__sheet-title { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 700; letter-spacing: .02em; }
 
 /* bp-desktop (900px, tokens.json): the tab bar becomes a left rail. Media queries cannot read custom properties. */
 @media (min-width: 900px) {
@@ -21,4 +46,6 @@
   .app__rail { display: flex; }
   .app__tabbar { display: none; }
   .app__main { padding: var(--space-6); }
+  .app__scrim { align-items: center; justify-content: center; }
+  .app__sheet { max-width: 420px; border-radius: var(--radius-lg); border-top: 1px solid var(--line-strong); }
 }

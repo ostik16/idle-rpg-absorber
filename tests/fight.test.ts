@@ -26,8 +26,8 @@ const MINOR = 'minor-health-potion';
 const LESSER = 'lesser-health-potion';
 
 const DUMMY = { id: 'dummy', level: 1, health: 24, damage: 5, attackSpeed: 1, defence: 0 };
-const WALL = { id: 'wall', health: 1_000_000, damage: 5, attackSpeed: 1, defence: 0 };
-const HARMLESS = { id: 'harmless', health: 1_000_000, damage: 0, attackSpeed: 0.01, defence: 1_000_000 };
+const WALL = { id: 'wall', level: 1, health: 1_000_000, damage: 5, attackSpeed: 1, defence: 0 };
+const HARMLESS = { id: 'harmless', level: 1, health: 1_000_000, damage: 0, attackSpeed: 0.01, defence: 1_000_000 };
 
 /** The real constants and items with made-up enemies. `crit` and `regen` off make the numbers exact. */
 function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
@@ -37,7 +37,11 @@ function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
     ...(o.regen === false ? { healthRegen: { fractionOfMaxPerSecond: 0 } } : {}),
   };
   return createGameData({
-    constants: { ...constants, stats },
+    constants: {
+      ...constants,
+      stats,
+      proficiency: { ...constants.proficiency, gainPerAction: { unarmed: 0, 'one-handed': 0, 'two-handed': 0, toughness: 0, speed: 0, combat: 0 } },
+    },
     items: itemsJson,
     dropTables: dropTablesJson,
     enemies: [DUMMY, WALL, HARMLESS, ...enemiesJson],

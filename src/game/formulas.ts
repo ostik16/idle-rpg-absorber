@@ -3,6 +3,7 @@
  * Constants come from data/constants.json (design 5.1), never hard-coded here.
  */
 import constants from '../../data/constants.json';
+import { proficiencyGain, type ProficiencyId } from './proficiency';
 
 type DropConstants = typeof constants.drops;
 type AbsorptionConstants = typeof constants.absorption;
@@ -86,4 +87,28 @@ export function chanceToMaxWithoutFailure(c: UpgradeConstants = constants.upgrad
   let p = 1;
   for (let level = 0; level < c.maxLevel; level++) p *= upgradeSuccessChance(level, c);
   return p;
+}
+
+/** Health a hit heals with `percent` life steal: that share of the damage it dealt (decisions L12). */
+export function lifeStealHeal(damageDealt: number, percent: number): number {
+  return (Math.max(0, damageDealt) * Math.max(0, percent)) / 100;
+}
+
+/** Health one regeneration pulse restores with `percent` regeneration: that share of maximum health (L12). */
+export function regenerationHeal(maxHealth: number, percent: number): number {
+  return (maxHealth * Math.max(0, percent)) / 100;
+}
+
+/** Bestiary tiers a kill count has reached (design 4.8): 0 before the first threshold. Rows run lowest first. */
+export function bestiaryTier(kills: number, thresholds: readonly { kills: number }[]): number {
+  return thresholds.filter((threshold) => kills >= threshold.kills).length;
+}
+
+/**
+ * Proficiency from one kill when the estimator counts it once, after the kill, and not per hit (design 3.4):
+ * `hits` times the gain at the points held before the kill. Less than hit by hit, because the skill does not grow
+ * between the hits. The caller applies `offline.proficiencyRate`.
+ */
+export function killProficiencyGain(skill: ProficiencyId, currentPoints: number, enemyLevel: number, hits: number): number {
+  return Math.max(0, hits) * proficiencyGain(skill, currentPoints, enemyLevel);
 }

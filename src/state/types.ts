@@ -148,6 +148,11 @@ export interface CharacterState {
   settings: CharacterSettings;
   /** Absorbed value by trait id (design 4.7). */
   absorption: Record<string, number>;
+  /** Time since the regeneration trait last healed, in ms. Absent until the character has the trait. */
+  traitRegenMs?: number;
+  /** While true the full-bag trigger stays off (design 2.3 L2): set on leaving the city with a still-full bag,
+   * cleared the moment the bag has a free cell. Absent counts as false. */
+  blockBagFullReturn?: boolean;
   /** Stream states. Absent on a new character: the engine derives them from `clock.masterSeed` and the id. */
   rng?: CharacterRngState;
 }
