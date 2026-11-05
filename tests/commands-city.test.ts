@@ -286,3 +286,59 @@ describe('setAutoSell (design 2.3 L6)', () => {
     expect(reason).toMatch(/No character/);
   });
 });
+
+describe('per-character settings commands (issue #34)', () => {
+  const settingsOf = (state: GameState): CharacterState['settings'] => (state.roster[0] as CharacterState).settings;
+
+  it('setReturnHealthThreshold sticks, and 0 or above 1 is rejected', () => {
+    const state = makeState();
+    apply(state, { type: 'setReturnHealthThreshold', characterId: 'a', threshold: 0.3 });
+    expect(settingsOf(state).returnHealthThreshold).toBe(0.3);
+    for (const threshold of [0, 1.5]) {
+      expect(reject(state, { type: 'setReturnHealthThreshold', characterId: 'a', threshold })).toMatch(/between 1% and 100%/);
+    }
+    expect(settingsOf(state).returnHealthThreshold).toBe(0.3);
+  });
+
+  it('setCityHealing sticks, and an unknown mode is rejected', () => {
+    const state = makeState();
+    apply(state, { type: 'setCityHealing', characterId: 'a', mode: 'fast' });
+    expect(settingsOf(state).cityHealing).toBe('fast');
+    const reason = reject(state, { type: 'setCityHealing', characterId: 'a', mode: 'turbo' as never });
+    expect(reason).toMatch(/turbo/);
+    expect(settingsOf(state).cityHealing).toBe('fast');
+  });
+
+  it('setPotionThreshold sets, removes with null, and rejects an unknown potion or bad fraction', () => {
+    const state = makeState();
+    apply(state, { type: 'setPotionThreshold', characterId: 'a', itemId: 'minor-health-potion', threshold: 0.5 });
+    expect(settingsOf(state).potionThresholds['minor-health-potion']).toBe(0.5);
+    expect(reject(state, { type: 'setPotionThreshold', characterId: 'a', itemId: 'nope', threshold: 0.5 })).toMatch(/No potion called nope/);
+    expect(reject(state, { type: 'setPotionThreshold', characterId: 'a', itemId: 'rusty-sword', threshold: 0.5 })).toMatch(/No potion/);
+    expect(reject(state, { type: 'setPotionThreshold', characterId: 'a', itemId: 'minor-health-potion', threshold: 2 })).toMatch(/between 1% and 100%/);
+    expect(settingsOf(state).potionThresholds['minor-health-potion']).toBe(0.5);
+    apply(state, { type: 'setPotionThreshold', characterId: 'a', itemId: 'minor-health-potion', threshold: null });
+    expect(settingsOf(state).potionThresholds).not.toHaveProperty('minor-health-potion');
+  });
+
+  it('setRestockList sticks, and rejects a non-potion or a bad quantity', () => {
+    const state = makeState();
+    apply(state, { type: 'setRestockList', characterId: 'a', list: [{ itemId: 'minor-health-potion', quantity: 5 }] });
+    expect(settingsOf(state).restockList).toEqual([{ itemId: 'minor-health-potion', quantity: 5 }]);
+    const bad = (itemId: string, quantity: number): string =>
+      reject(state, { type: 'setRestockList', characterId: 'a', list: [{ itemId, quantity }] });
+    expect(bad('rusty-sword', 1)).toMatch(/No potion called rusty-sword/);
+    expect(bad('minor-health-potion', -1)).toMatch(/whole quantity/);
+    expect(bad('minor-health-potion', 1.5)).toMatch(/whole quantity/);
+    expect(settingsOf(state).restockList).toEqual([{ itemId: 'minor-health-potion', quantity: 5 }]);
+  });
+
+  it('setLootFilter stores a copy of the rules', () => {
+    const state = makeState();
+    const lootFilter = { enabled: true, rules: [{ category: 'material' }] };
+    apply(state, { type: 'setLootFilter', characterId: 'a', lootFilter });
+    expect(settingsOf(state).lootFilter).toEqual(lootFilter);
+    expect(settingsOf(state).lootFilter.rules[0]).not.toBe(lootFilter.rules[0]);
+    expect(reject(state, { type: 'setLootFilter', characterId: 'missing', lootFilter })).toMatch(/No character/);
+  });
+});

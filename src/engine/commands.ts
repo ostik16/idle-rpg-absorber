@@ -16,7 +16,14 @@ import { firstSlotTicketLevel, type LevelUpRewardRow } from '../game/progression
 import { characterNameError, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
 import { derivedStats } from '../state/selectors';
-import type { CharacterState, GameState, ItemRuleSet, ItemStack } from '../state/types';
+import type {
+  CharacterState,
+  CityHealingMode,
+  GameState,
+  ItemRuleSet,
+  ItemStack,
+  RestockEntry,
+} from '../state/types';
 import type { EngineEvent } from './events';
 import type { StepContext } from './step-context';
 import { returnToCity, sendToArea, type AreaRow } from './travel';
@@ -49,7 +56,29 @@ export type Command =
   /** Moves `qty` from the warehouse stack to the bag, split to fit the bag's max stack (design 2.3, 2.4). */
   | { type: 'warehouseWithdraw'; characterId: string; tabIndex: number; stackIndex: number; qty: number }
   /** Replaces the auto-sell rule set (design 2.3 L6). */
-  | { type: 'setAutoSell'; characterId: string; autoSell: ItemRuleSet };
+  | { type: 'setAutoSell'; characterId: string; autoSell: ItemRuleSet }
+  /** Sets the health fraction at which the character heads home (design 3.2). */
+  | { type: 'setReturnHealthThreshold'; characterId: string; threshold: number }
+  /** Picks how fast the city heals the character (design 2.6, L10). */
+  | { type: 'setCityHealing'; characterId: string; mode: CityHealingMode }
+  /** Sets the health fraction at which a potion is drunk; null removes it (design 2.6). */
+  | { type: 'setPotionThreshold'; characterId: string; itemId: string; threshold: number | null }
+  /** Replaces the list of potions to buy back up to before setting out (L4). */
+  | { type: 'setRestockList'; characterId: string; list: RestockEntry[] }
+  /** Replaces the loot filter rule set (L8). */
+  | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet };
+
+const CITY_HEALING_MODES: readonly CityHealingMode[] = ['fast', 'balanced', 'slow'];
+const THRESHOLD_ERROR = 'Set a threshold between 1% and 100%.';
+
+function validThreshold(value: number): boolean {
+  return Number.isFinite(value) && value > 0 && value <= 1;
+}
+
+/** Potions are the consumables in the item data (L4: only health and mana potions restock). */
+function isPotion(data: GameData, itemId: string): boolean {
+  return data.items.some((row) => row.id === itemId && row.category === 'consumable');
+}
 
 /** Why a character cannot be created, in the design system's voice, or null when it can. */
 function createCharacterError(state: GameState, name: string, data: GameData): string | null {
@@ -465,6 +494,53 @@ export function applyCommand(
         enabled: command.autoSell.enabled,
         rules: command.autoSell.rules.map((rule) => ({ ...rule })),
       };
+      return null;
+    }
+    case 'setLootFilter': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      character.settings.lootFilter = {
+        enabled: command.lootFilter.enabled,
+        rules: command.lootFilter.rules.map((rule) => ({ ...rule })),
+      };
+      return null;
+    }
+    case 'setReturnHealthThreshold': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      if (!validThreshold(command.threshold)) return rejected(THRESHOLD_ERROR);
+      character.settings.returnHealthThreshold = command.threshold;
+      return null;
+    }
+    case 'setCityHealing': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      if (!CITY_HEALING_MODES.includes(command.mode)) return rejected(`No healing mode called ${command.mode}.`);
+      character.settings.cityHealing = command.mode;
+      return null;
+    }
+    case 'setPotionThreshold': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      if (!isPotion(data, command.itemId)) return rejected(`No potion called ${command.itemId}.`);
+      const thresholds = { ...character.settings.potionThresholds };
+      if (command.threshold === null) {
+        delete thresholds[command.itemId];
+      } else {
+        if (!validThreshold(command.threshold)) return rejected(THRESHOLD_ERROR);
+        thresholds[command.itemId] = command.threshold;
+      }
+      character.settings.potionThresholds = thresholds;
+      return null;
+    }
+    case 'setRestockList': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      for (const entry of command.list) {
+        if (!isPotion(data, entry.itemId)) return rejected(`No potion called ${entry.itemId}.`);
+        if (!Number.isInteger(entry.quantity) || entry.quantity < 0) return rejected('Set a whole quantity of 0 or more.');
+      }
+      character.settings.restockList = command.list.map(({ itemId, quantity }) => ({ itemId, quantity }));
       return null;
     }
   }
