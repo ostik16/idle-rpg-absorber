@@ -5,7 +5,8 @@
 import { constantSection, requireNumberConstant, requireRow, type GameData } from '../data/game-data';
 import { rollDrops, type BonusPoolEntry, type DropTableLike } from '../game/drops';
 import { enemyMoneyRange, type MoneyRange } from '../game/enemies';
-import { addToBag, bagCells, bagMaxStack, matchesLootFilter, type BagItemLike } from '../game/inventory';
+import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
+import { addToBag, matchesLootFilter, type BagItemLike } from '../game/inventory';
 import { gainXp, killXp, type XpTable } from '../game/progression';
 import type { CharacterState } from '../state/types';
 import type { StepContext } from './step-context';
@@ -35,26 +36,13 @@ export function grantKillXp(character: CharacterState, enemyId: string, ctx: Ste
   }
 }
 
-interface ItemRow extends BagItemLike {
+interface ItemRow extends BagItemLike, EquipmentItemRow {
   id: string;
   bonusAttributePool?: readonly BonusPoolEntry[];
-  bagCells?: number;
-  maxStack?: number;
 }
 
 function itemRow(data: GameData, itemId: string): ItemRow {
   return requireRow(data, 'items', itemId) as unknown as ItemRow;
-}
-
-/** Bag capacity and stack size from the equipped backpack, or the base values without one (design 2.3). */
-function bagLimits(character: CharacterState, data: GameData): { capacity: number; maxStack: number } {
-  const stack = character.equipment['backpack'];
-  const pack = stack === undefined ? null : (itemRow(data, stack.itemId) as Required<Pick<ItemRow, 'bagCells' | 'maxStack'>>);
-  if (stack !== undefined && pack !== null && !(pack.bagCells > 0 && pack.maxStack > 0)) {
-    throw new Error(`Item "${stack.itemId}" in the backpack slot has no bagCells or maxStack.`);
-  }
-  const inventory = constantSection(data, 'inventory');
-  return { capacity: bagCells(pack, inventory), maxStack: bagMaxStack(pack, inventory) };
 }
 
 /**
@@ -89,8 +77,8 @@ export function grantKillLoot(
     maxBonusAttributes: requireNumberConstant(ctx.data, 'items.maxBonusAttributes'),
   });
 
-  const limits = bagLimits(character, ctx.data);
   const itemOf = (itemId: string): ItemRow => itemRow(ctx.data, itemId);
+  const limits = bagLimitsFor(character.equipment, itemOf, constantSection(ctx.data, 'inventory'));
   for (const drop of drops) {
     const item = itemOf(drop.itemId);
     if (!matchesLootFilter(character.settings.lootFilter, item, drop.bonuses)) continue;
