@@ -5,6 +5,7 @@
 import { constantSection, requireRow } from '../data/game-data';
 import { baseMovementSeconds, rollSpawn, targetingMultiplier, type SpawnTable } from '../game/farming';
 import type { CharacterState } from '../state/types';
+import { arriveInCity } from './city';
 import { startFight, startFleeing } from './fight';
 import { trainOnMove } from './growth';
 import { enterPhase, movementDurationMs, type StepContext } from './step-context';
@@ -84,8 +85,22 @@ export function stepLooting(character: CharacterState, ctx: StepContext): void {
   character.timeInPhaseMs = ctx.tickMs;
 }
 
-/** Home: the character stops farming and waits for the player. The city routine comes with #27. */
+/** Home: runs the city routine on arrival (design 3.2). */
 export function stepReturning(character: CharacterState, ctx: StepContext): void {
   trainOnMove(character, ctx);
-  if (character.timeInPhaseMs >= travelDurationMs(character, ctx)) settleInCity(character, ctx);
+  if (character.timeInPhaseMs >= travelDurationMs(character, ctx)) arriveInCity(character, ctx);
+}
+
+/**
+ * Health or full-bag trigger (design 3.2 L2, L5): heads home without marking a permanent stop. In a fight, it has
+ * to flee first. On the way out, it turns round, so the way back takes as long as it has walked so far.
+ */
+export function autoReturnToCity(character: CharacterState, ctx: StepContext): void {
+  if (character.phase === 'fighting') {
+    startFleeing(character, ctx);
+    return;
+  }
+  const notWalked = character.phase === 'travelling' ? travelDurationMs(character, ctx) - character.timeInPhaseMs : 0;
+  enterPhase(character, 'returning', ctx);
+  character.timeInPhaseMs = notWalked;
 }

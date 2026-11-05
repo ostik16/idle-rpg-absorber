@@ -7,8 +7,9 @@ import { quantiseToSteps } from '../game/formulas';
 import { respawnHealth, respawnSeconds, xpAfterDeath, xpLossFractionFromRoll, xpToNextLevel } from '../game/progression';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState } from '../state/types';
+import { arriveInCity } from './city';
 import { xpTableOf } from './rewards';
-import { enterPhase, type StepContext } from './step-context';
+import { type StepContext } from './step-context';
 
 const MS_PER_SECOND = 1000;
 
@@ -33,5 +34,5 @@ export function stepDead(character: CharacterState, ctx: StepContext): void {
   if (character.timeInPhaseMs < respawnDurationMs(character, ctx)) return;
   const { maxHealth } = derivedStats(character, ctx.data);
   character.health = respawnHealth(maxHealth, constantSection(ctx.data, 'death'));
-  enterPhase(character, 'restocking', ctx);
+  arriveInCity(character, ctx);
 }
