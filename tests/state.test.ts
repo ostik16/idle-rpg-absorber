@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import equipmentSlots from '../data/equipment-slots.json';
+import items from '../data/items.json';
 import { constantSection, createGameData, loadGameData, type GameData } from '../src/data/game-data';
 import { createEngine, type Engine } from '../src/engine/engine';
 import { createCharacterState, createGameState } from '../src/state/factory';
@@ -251,6 +253,8 @@ describe('the state is plain data (ADR 0003)', () => {
 
 describe('starting values come from the data (design 5.1)', () => {
   const changed = createGameData({
+    items,
+    equipmentSlots,
     constants: {
       ...constants,
       creation: {
