@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import xpTableJson from '../data/xp-table.json';
 import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
 import { stepCharacter, enterPhase, type StepContext } from '../src/engine/character';
 import { createEngine, type AdvanceMode, type Engine } from '../src/engine/engine';
@@ -94,6 +95,17 @@ describe('steps (ADR 0002 "One engine, driven by timestamps")', () => {
 
     expect(parts.state).toEqual(whole.state);
     expect(find(whole.state, 'b').timeInPhaseMs).toBe(10_000);
+  });
+
+  it('gives identical state with 4 characters whichever way the frames split (ADR 0002 "Multiple characters")', () => {
+    const data = loadGameData();
+    const whole = createEngine({ data, state: makeState(['a', 'b', 'c', 'd']) });
+    const parts = createEngine({ data, state: makeState(['a', 'b', 'c', 'd']) });
+
+    whole.advanceTo(T0 + 10_000);
+    for (const t of [37, 250, 251, 999, 1000, 4321, 7777, 10_000]) parts.advanceTo(T0 + t);
+
+    expect(parts.state).toEqual(whole.state);
   });
 
   it('carries the sub-step remainder to the next call', () => {
@@ -292,7 +304,12 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
     engine.state.bestiary.kills['a'] = { 'glade-rat': 5 };
     engine.state.bestiary.kills['b'] = { 'glade-rat': 3 };
     engine.state.bestiary.revealed = { 'glade-rat': 2 };
-    const otherWarehouse = engine.state.account.warehouse.tabs[0]?.items;
+    const warehouseTabs = engine.state.account.warehouse.tabs.map((t) => t.items);
+    const deleted = find(engine.state, 'a');
+    deleted.gold = 500;
+    deleted.bag = [{ itemId: 'rusty-sword', bonuses: [], upgradeLevel: 0, qty: 1 }];
+    deleted.equipment = { 'main-hand': { itemId: 'rusty-sword', bonuses: [], upgradeLevel: 0, qty: 1 } };
+    const otherGold = find(engine.state, 'b').gold;
 
     engine.dispatch({ type: 'deleteCharacter', characterId: 'a' });
     engine.advanceTo(T0 + TICK);
@@ -300,8 +317,22 @@ describe('commands (ADR 0002, architecture "Data flow")', () => {
     expect(engine.state.roster.map((c) => c.id)).toEqual(['b']);
     expect(engine.state.bestiary.kills).toEqual({ b: { 'glade-rat': 3 } });
     expect(engine.state.bestiary.revealed).toEqual({ 'glade-rat': 2 });
-    expect(engine.state.account.warehouse.tabs[0]?.items).toBe(otherWarehouse);
+    expect(engine.state.account.warehouse.tabs.map((t) => t.items)).toEqual(warehouseTabs);
+    expect(find(engine.state, 'b').gold).toBe(otherGold);
     expect(engine.drainEvents()).toEqual([{ type: 'characterDeleted', characterId: 'a' }]);
+  });
+
+  it("a command for one character does not reshuffle another character's rolls (ADR 0002 \"RNG\")", () => {
+    const quiet = makeEngine(['a', 'b']);
+    const busy = makeEngine(['a', 'b']);
+    busy.dispatch({ type: 'setTarget', characterId: 'a', enemyId: null });
+    busy.dispatch({ type: 'createCharacter', name: 'Zed' });
+    busy.dispatch({ type: 'deleteCharacter', characterId: 'c1' });
+
+    quiet.advanceTo(T0 + 5 * TICK);
+    busy.advanceTo(T0 + 5 * TICK);
+
+    expect(find(busy.state, 'b').rng).toEqual(find(quiet.state, 'b').rng);
   });
 
   it('deleteCharacter rejects an unknown id without changing the roster', () => {
@@ -689,5 +720,75 @@ describe('end of a step (ADR 0002 "Multiple characters")', () => {
     publishStepEvents(stepEvents, outbox);
     expect(outbox).toEqual([earlier, first, second]);
     expect(stepEvents).toEqual([]);
+  });
+});
+
+describe('slot ticket (design 4.1, decisions L15)', () => {
+  const XP_TO_LEVEL_20 = 46000; // data/xp-table.json level 19
+
+  function setupAtLevel19(engine: Engine, id: string): CharacterState {
+    const character = find(engine.state, id);
+    character.level = 19;
+    character.xpInLevel = XP_TO_LEVEL_20 - 1;
+    character.areaId = 'mossfang-glade';
+    character.phase = 'fighting';
+    character.fight = { enemyId: 'glade-rat', enemyHp: 1, ticks: 0 };
+    return character;
+  }
+
+  function runUntilIdle(engine: Engine, character: CharacterState, cap = 200): void {
+    for (let i = 0; i < cap && (character.phase === 'fighting' || character.phase === 'looting'); i++) {
+      engine.advanceTo(engine.state.clock.lastSimulatedAt + TICK);
+    }
+  }
+
+  it('crossing level 20 unlocks one slot, once', () => {
+    const state = createGameState(SEED, T0, loadGameData());
+    state.account.unlockedSlots = constants.characters.startingUnlockedSlots; // 1
+    state.roster.push(newCharacter('a', 'Ada'));
+    const engine = createEngine({ data: loadGameData(), state });
+    const character = setupAtLevel19(engine, 'a');
+
+    runUntilIdle(engine, character);
+
+    expect(character.level).toBe(20);
+    expect(state.account.unlockedSlots).toBe(constants.characters.startingUnlockedSlots + 1);
+
+    // A later level-up (20 → 21) must not bump again.
+    character.phase = 'fighting';
+    character.xpInLevel = (xpTableJson as { level: number; xpToNext: number }[]).find((r) => r.level === 20)!.xpToNext - 1;
+    character.fight = { enemyId: 'glade-rat', enemyHp: 1, ticks: 0 };
+    runUntilIdle(engine, character);
+    expect(character.level).toBe(21);
+    expect(state.account.unlockedSlots).toBe(constants.characters.startingUnlockedSlots + 1);
+  });
+
+  it('caps unlocked slots at maxSlots when a character crosses level 20 with all slots already open', () => {
+    const state = createGameState(SEED, T0, loadGameData());
+    state.account.unlockedSlots = constants.characters.maxSlots;
+    state.roster.push(newCharacter('a', 'Ada'));
+    const engine = createEngine({ data: loadGameData(), state });
+    const character = setupAtLevel19(engine, 'a');
+
+    runUntilIdle(engine, character);
+
+    expect(character.level).toBe(20);
+    expect(state.account.unlockedSlots).toBe(constants.characters.maxSlots);
+  });
+});
+
+describe('four-character workload (issue #28)', () => {
+  it('runs a 300 s catch-up for 4 characters farming real data without crashing', () => {
+    const state = createGameState(SEED, T0, loadGameData());
+    state.account.unlockedSlots = constants.characters.maxSlots;
+    for (const id of ['a', 'b', 'c', 'd']) state.roster.push(newCharacter(id, `Name ${id}`));
+    const engine = createEngine({ data: loadGameData(), state });
+    for (const id of ['a', 'b', 'c', 'd']) {
+      engine.dispatch({ type: 'sendToArea', characterId: id, areaId: 'mossfang-glade' });
+    }
+
+    engine.advanceTo(T0 + 300_000); // catch-up mode: 300 s of real steps
+
+    expect(engine.state.clock.lastSimulatedAt).toBe(T0 + 300_000);
   });
 });

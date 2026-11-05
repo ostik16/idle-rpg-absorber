@@ -219,17 +219,37 @@ export function respawnHealth(maxHealth: number, c: typeof constants.death = con
   return Math.max(1, Math.ceil(maxHealth * c.respawnHealthFraction - 1e-9));
 }
 
+/** What crossing INTO a given level grants. Extend this shape as new per-level rewards land. */
+export interface LevelReward {
+  /** Character-slot tickets, each one unlocks one locked slot (design 4.1). */
+  slotTickets: number;
+}
+
+/** One row of `data/level-up-rewards.json`: what crossing INTO `level` pays out. */
+export interface LevelUpRewardRow {
+  readonly id: string;
+  readonly level: number;
+  readonly slotTickets?: number;
+}
+
 /**
- * Character slot tickets earned by a level change (design 4.1): a character that first reaches
- * constants.characters.slotTicketLevel (20) receives slotTicketsPerCharacter (1) ticket, once.
- * 0 or slotTicketsPerCharacter, never more in total, because only crossing the level from below counts.
+ * Rewards a character gets when it crosses INTO `level`, summed across every matching row in
+ * `data/level-up-rewards.json`. The engine calls this once per levelUp event, so a kill that jumps
+ * several levels still pays each level's reward exactly once. New rewards are added to the data file.
  */
-export function slotTicketsEarned(
-  previousLevel: number,
-  newLevel: number,
-  c: typeof constants.characters = constants.characters,
-): number {
-  return previousLevel < c.slotTicketLevel && newLevel >= c.slotTicketLevel ? c.slotTicketsPerCharacter : 0;
+export function levelUpReward(level: number, rows: readonly LevelUpRewardRow[]): LevelReward {
+  let slotTickets = 0;
+  for (const row of rows) if (row.level === level) slotTickets += row.slotTickets ?? 0;
+  return { slotTickets };
+}
+
+/** Lowest level that pays a slot ticket, or null when none does. Used by the UI to word the hint. */
+export function firstSlotTicketLevel(rows: readonly LevelUpRewardRow[]): number | null {
+  let lowest: number | null = null;
+  for (const row of rows) {
+    if ((row.slotTickets ?? 0) > 0 && (lowest === null || row.level < lowest)) lowest = row.level;
+  }
+  return lowest;
 }
 
 /** Skill points earned (design 4.5): skillPointsPerLevel for every level gained after level 1. */

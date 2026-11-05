@@ -4,11 +4,12 @@
  * passes the time (`main.tsx` will pass `Date.now()`, tests and tools pass synthetic times).
  * Drops and the real offline estimate come later.
  */
-import { requireNumberConstant, type GameData } from '../data/game-data';
+import { constantSection, requireNumberConstant, type GameData } from '../data/game-data';
 import type { CharacterState, GameState } from '../state/types';
 import { compareCharacterIds, stepCharacter, type StepContext } from './character';
 import { applyCommand, type Command } from './commands';
 import { bestiaryTier } from '../game/formulas';
+import { levelUpReward, type LevelUpRewardRow } from '../game/progression';
 import { publishStepEvents, type EngineEvent } from './events';
 import { mergeSummaries, stubEstimateOffline, type EstimateOffline } from './offline';
 import { createCharacterStreams, readStreamStates, type CharacterStreams } from './streams';
@@ -114,13 +115,25 @@ export function createEngine({ data, state, estimateOffline = stubEstimateOfflin
     for (const { character, streams } of runners) character.rng = readStreamStates(streams);
   }
 
-  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): a kill counts for its character, and may reveal. */
+  const maxSlots = constantSection(data, 'characters').maxSlots;
+  const rewards = data.levelUpRewards as unknown as readonly LevelUpRewardRow[];
+
+  /** Shared effects of a step's events (ADR 0002 "Multiple characters"): kills reveal in the bestiary; a
+   * levelUp pays out whatever `data/level-up-rewards.json` lists for that level (design 4.1). */
   function applyShared(event: EngineEvent): void {
-    if (event.type !== 'enemyKilled') return;
-    const kills = (state.bestiary.kills[event.characterId] ??= {});
-    const count = (kills[event.enemyId] = (kills[event.enemyId] ?? 0) + 1);
-    const tier = bestiaryTier(count, data.bestiaryThresholds as unknown as { kills: number }[]);
-    state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
+    if (event.type === 'enemyKilled') {
+      const kills = (state.bestiary.kills[event.characterId] ??= {});
+      const count = (kills[event.enemyId] = (kills[event.enemyId] ?? 0) + 1);
+      const tier = bestiaryTier(count, data.bestiaryThresholds as unknown as { kills: number }[]);
+      state.bestiary.revealed[event.enemyId] = Math.max(state.bestiary.revealed[event.enemyId] ?? 0, tier);
+      return;
+    }
+    if (event.type === 'levelUp') {
+      const reward = levelUpReward(event.level, rewards);
+      if (reward.slotTickets > 0) {
+        state.account.unlockedSlots = Math.min(maxSlots, state.account.unlockedSlots + reward.slotTickets);
+      }
+    }
   }
 
   function applyPendingCommands(): void {
