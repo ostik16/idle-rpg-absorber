@@ -1,10 +1,14 @@
+import { useComputed } from '@preact/signals';
+import { CharacterCreate } from './CharacterCreate';
+import { DeleteConfirm } from './DeleteConfirm';
+import { formatGold } from './format';
 import { Icon } from './Icon';
-import { LiveRoster } from './LiveRoster';
 import { Notice } from './Notice';
+import { Roster } from './Roster';
 import { hrefFor, ROUTES, type Route } from './router';
-import { route } from './store';
+import { closeCreation, creationOpen, route, selectedCharacter } from './store';
 
-// Placeholder content: none of these screens exist yet, so each says so and nothing more.
+// Placeholder content for the screens not built yet.
 const SCREENS: Record<Route, { label: string; empty: string }> = {
   roster: { label: 'Roster', empty: 'No characters yet.' },
   world: { label: 'World', empty: 'No areas to show yet.' },
@@ -26,9 +30,26 @@ function Tabs({ current }: { current: Route }) {
   );
 }
 
+/** The app bar's gold pill reads the selected character (decisions L18). Null for an empty roster. */
+function GoldPill() {
+  const text = useComputed(() => {
+    const view = selectedCharacter.value;
+    return view === null ? null : formatGold(view.gold.value);
+  });
+  if (text.value === null) return null;
+  return (
+    <span class="ab-gold" aria-label="Gold">
+      <Icon name="gold" size={16} />
+      {text}
+    </span>
+  );
+}
+
 export function App() {
   const current = route.value;
+  const creating = creationOpen.value;
   const screen = SCREENS[current];
+  const title = creating ? 'New character' : screen.label;
 
   return (
     <div class="app">
@@ -36,14 +57,36 @@ export function App() {
         <Tabs current={current} />
       </nav>
       <div class="app__col">
-        <header class="ab-appbar">
-          <h1 class="ab-appbar__title">{screen.label}</h1>
+        <header class={`ab-appbar${creating ? ' ab-appbar--pushed' : ''}`}>
+          {creating && (
+            <button
+              type="button"
+              class="ab-btn ab-btn--ghost ab-btn--icon"
+              aria-label="Back to roster"
+              onClick={closeCreation}
+            >
+              <svg class="ab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="m15 18-6-6 6-6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+          <h1 class="ab-appbar__title">{title}</h1>
+          {!creating && <GoldPill />}
         </header>
         <main class="app__main">
           <div class="app__content">
             <Notice />
-            {current === 'roster' ? (
-              <LiveRoster />
+            {creating ? (
+              <CharacterCreate />
+            ) : current === 'roster' ? (
+              <Roster />
             ) : (
               <section class="ab-card">
                 <div class="ab-card__head">
@@ -55,10 +98,13 @@ export function App() {
             )}
           </div>
         </main>
-        <nav class="ab-tabbar app__tabbar" aria-label="Main">
-          <Tabs current={current} />
-        </nav>
+        {!creating && (
+          <nav class="ab-tabbar app__tabbar" aria-label="Main">
+            <Tabs current={current} />
+          </nav>
+        )}
       </div>
+      <DeleteConfirm />
     </div>
   );
 }

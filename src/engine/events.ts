@@ -13,6 +13,7 @@ export type EngineEvent =
   /** An offline summary was added to `state.pendingSummary`. */
   | { type: 'summaryReady' }
   | { type: 'characterCreated'; characterId: string }
+  | { type: 'characterDeleted'; characterId: string }
   /** A character won a fight. XP, drops and absorption hang off this. */
   | { type: 'enemyKilled'; characterId: string; enemyId: string }
   /** Gold from one kill. Arrives with a full bag. */
