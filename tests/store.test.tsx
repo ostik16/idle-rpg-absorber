@@ -321,6 +321,13 @@ describe('roster and character creation (design 4.1)', () => {
     expect(host.querySelector('.app__stack [role="status"]')?.textContent).toContain('slot ticket');
   });
 
+  it('openCreation refuses to open when no slot is free, so a later caller cannot land on an unsubmittable form', () => {
+    const state = gameWith('Ysolde');
+    connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
+    openCreation();
+    expect(creationOpen.value).toBe(false);
+  });
+
   it('opens creation, types, submits a valid name, and closes', async () => {
     const { engine, refresh } = connected(gameWith());
     render(<App />, host);
@@ -345,6 +352,7 @@ describe('roster and character creation (design 4.1)', () => {
 
   it('keeps Create disabled and reports why for a duplicate name, without sending anything', async () => {
     const state = gameWith('Ysolde');
+    state.account.unlockedSlots = constants.characters.maxSlots;
     const dispatch = vi.fn();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
     openCreation();

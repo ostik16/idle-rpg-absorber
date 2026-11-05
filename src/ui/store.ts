@@ -293,8 +293,9 @@ export function requireGameData(): GameData {
   return gameData;
 }
 
-/** Opens the character creation screen (design 4.1). */
+/** Opens the character creation screen (design 4.1). No-op when no slot is free. */
 export function openCreation(): void {
+  if (rosterSignal.value.length >= unlockedSlotsSignal.value) return;
   creationOpenSignal.value = true;
 }
 
