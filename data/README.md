@@ -17,6 +17,7 @@ Rules: every table except `constants.json` is an array of entries with a unique 
 | `drop-tables.json` | 3.8 | id, entries (itemId, baseChance 0..1, minQuantity, maxQuantity), optional guaranteedPools (id, entries of itemId, weight, minQuantity, maxQuantity): every kill yields exactly one entry from each pool, chosen by weight, not level modified | slice filled (Mossfang Glade) |
 | `attributes.json` | [4.2](../design/04-characters-and-progression.md) | id, name, feeds. Derived stat coefficients are in `constants.stats` | four decided attributes |
 | `xp-table.json` | 4.3 | id, level, xpToNext (XP to go from that level to the next), levels 1 to 30 | default values filled |
+| `level-up-rewards.json` | 4.1 | id, level, slotTickets (optional, 0 or more): what crossing INTO that level pays out. Extend the shape as new per-level rewards land | one row: a slot ticket at level 20 |
 | `spells.json` | 4.5 | id, kind, requiredLevel, manaCost, cooldown, effectPerRank, maxRank, rareItemPerRankAbove10 | slice filled (Mossfang Glade) |
 | `proficiencies.json` | 4.6 | id, name, trainedBy. Gain per action, the diminishing curve, effect per point and title thresholds are in `constants.proficiency` | six skills named, each with a training action |
 | `traits.json` | 4.7 | id, name, effect, magical | slice filled (Mossfang Glade) |

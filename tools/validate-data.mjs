@@ -401,6 +401,16 @@ for (const m of upgradeMats) {
   else if (isFinite(lowMax) && !src.some((e) => e.level <= lowMax)) errors.push(`balance: upgrade material "${m}" has no drop source from an enemy of level ${lowMax} or lower`);
 }
 
+// Level-up rewards (design 4.1): one row per payout. level is a whole number within [1, levelCap];
+// slotTickets, if given, is a non-negative whole number.
+const levelCap = C.levelCap;
+for (const r of tables['level-up-rewards'] ?? []) {
+  const from = `level-up-rewards.${r.id}`;
+  if (!isInt(r.level, 1)) errors.push(`${from}: level must be a whole number of 1 or more`);
+  else if (isFinite(levelCap) && r.level > levelCap) errors.push(`${from}: level ${r.level} is above the level cap ${levelCap}`);
+  if (r.slotTickets !== undefined && !isInt(r.slotTickets, 0)) errors.push(`${from}: slotTickets must be a whole number of 0 or more`);
+}
+
 // Undecided constants.
 const undecided = [];
 const walk = (obj, path) => {

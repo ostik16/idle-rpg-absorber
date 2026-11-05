@@ -11,6 +11,7 @@ import dropTablesJson from '../../data/drop-tables.json';
 import enemiesJson from '../../data/enemies.json';
 import equipmentSlotsJson from '../../data/equipment-slots.json';
 import itemsJson from '../../data/items.json';
+import levelUpRewardsJson from '../../data/level-up-rewards.json';
 import proficienciesJson from '../../data/proficiencies.json';
 import shopsJson from '../../data/shops.json';
 import spellsJson from '../../data/spells.json';
@@ -50,6 +51,7 @@ export type TableName =
   | 'enemies'
   | 'equipmentSlots'
   | 'items'
+  | 'levelUpRewards'
   | 'proficiencies'
   | 'shops'
   | 'spells'
@@ -69,6 +71,7 @@ const TABLE_NAMES: readonly TableName[] = [
   'enemies',
   'equipmentSlots',
   'items',
+  'levelUpRewards',
   'proficiencies',
   'shops',
   'spells',
@@ -111,6 +114,7 @@ export function loadGameData(): GameData {
     enemies: enemiesJson,
     equipmentSlots: equipmentSlotsJson,
     items: itemsJson,
+    levelUpRewards: levelUpRewardsJson,
     proficiencies: proficienciesJson,
     shops: shopsJson,
     spells: spellsJson,

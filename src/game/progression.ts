@@ -225,16 +225,31 @@ export interface LevelReward {
   slotTickets: number;
 }
 
+/** One row of `data/level-up-rewards.json`: what crossing INTO `level` pays out. */
+export interface LevelUpRewardRow {
+  readonly id: string;
+  readonly level: number;
+  readonly slotTickets?: number;
+}
+
 /**
- * Rewards a character gets when it crosses INTO `level`. The engine calls this once per levelUp event,
- * so a kill that jumps several levels still pays each level's reward exactly once. Today only
- * `constants.characters.slotTicketLevel` (20) pays anything; add further cases here as design 4 expands.
+ * Rewards a character gets when it crosses INTO `level`, summed across every matching row in
+ * `data/level-up-rewards.json`. The engine calls this once per levelUp event, so a kill that jumps
+ * several levels still pays each level's reward exactly once. New rewards are added to the data file.
  */
-export function levelUpReward(
-  level: number,
-  c: typeof constants.characters = constants.characters,
-): LevelReward {
-  return { slotTickets: level === c.slotTicketLevel ? c.slotTicketsPerCharacter : 0 };
+export function levelUpReward(level: number, rows: readonly LevelUpRewardRow[]): LevelReward {
+  let slotTickets = 0;
+  for (const row of rows) if (row.level === level) slotTickets += row.slotTickets ?? 0;
+  return { slotTickets };
+}
+
+/** Lowest level that pays a slot ticket, or null when none does. Used by the UI to word the hint. */
+export function firstSlotTicketLevel(rows: readonly LevelUpRewardRow[]): number | null {
+  let lowest: number | null = null;
+  for (const row of rows) {
+    if ((row.slotTickets ?? 0) > 0 && (lowest === null || row.level < lowest)) lowest = row.level;
+  }
+  return lowest;
 }
 
 /** Skill points earned (design 4.5): skillPointsPerLevel for every level gained after level 1. */

@@ -95,8 +95,6 @@
     "stepSimMaxSeconds": 300
   },
   "characters": {
-    "slotTicketLevel": 20,
-    "slotTicketsPerCharacter": 1,
     "maxSlots": 4,
     "startingUnlockedSlots": 1
   },

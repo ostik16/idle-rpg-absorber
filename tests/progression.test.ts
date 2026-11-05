@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import levelUpRewardsJson from '../data/level-up-rewards.json';
 import xpTable from '../data/xp-table.json';
 import {
   characterPointsEarned,
+  firstSlotTicketLevel,
   gainXp,
   killsToClearLevel,
   killXp,
@@ -22,7 +24,10 @@ import {
   totalXpForLevel,
   xpReward,
   xpToNextLevel,
+  type LevelUpRewardRow,
 } from '../src/game/progression';
+
+const LEVEL_UP_REWARDS = levelUpRewardsJson as readonly LevelUpRewardRow[];
 
 // The table is 100 x L^1.5 x 1.1^(L-1), rounded to 3 significant figures (design 4.3).
 describe('XP table (design 4.3)', () => {
@@ -244,18 +249,50 @@ describe('respawn time (design 3.7)', () => {
   });
 });
 
-describe('level-up rewards (design 4.1)', () => {
-  it('pays 1 slot ticket at level 20, nothing at any other level', () => {
-    expect(levelUpReward(20).slotTickets).toBe(1);
-    for (const level of [2, 5, 19, 21, 25, 30]) {
-      expect(levelUpReward(level).slotTickets).toBe(0);
+describe('level-up rewards (design 4.1, data/level-up-rewards.json)', () => {
+  it('real data lists exactly one slot ticket at level 20', () => {
+    expect(LEVEL_UP_REWARDS).toEqual([{ id: 'level-20', level: 20, slotTickets: 1 }]);
+  });
+
+  it('pays what the rows list for a level, and nothing elsewhere', () => {
+    expect(levelUpReward(20, LEVEL_UP_REWARDS).slotTickets).toBe(1);
+    for (const level of [1, 2, 19, 21, 30]) {
+      expect(levelUpReward(level, LEVEL_UP_REWARDS).slotTickets).toBe(0);
     }
   });
 
-  it('pays 1 slot ticket in total over a whole career', () => {
+  it('sums every matching row for the same level, missing fields counted as zero', () => {
+    const rows: readonly LevelUpRewardRow[] = [
+      { id: 'a', level: 10, slotTickets: 1 },
+      { id: 'b', level: 10, slotTickets: 2 },
+      { id: 'c', level: 10 }, // no slotTickets field is 0, not a crash
+      { id: 'd', level: 11, slotTickets: 5 },
+    ];
+    expect(levelUpReward(10, rows).slotTickets).toBe(3);
+    expect(levelUpReward(11, rows).slotTickets).toBe(5);
+    expect(levelUpReward(9, rows).slotTickets).toBe(0);
+  });
+
+  it('pays 1 slot ticket in total over a whole career with the real data', () => {
     let total = 0;
-    for (let level = 2; level <= 30; level++) total += levelUpReward(level).slotTickets;
+    for (let level = 2; level <= constants.levelCap; level++) total += levelUpReward(level, LEVEL_UP_REWARDS).slotTickets;
     expect(total).toBe(1);
+  });
+
+  it('returns zero slot tickets when the rows are empty', () => {
+    expect(levelUpReward(20, []).slotTickets).toBe(0);
+  });
+
+  it('firstSlotTicketLevel finds the lowest level that pays a ticket, or null when none does', () => {
+    expect(firstSlotTicketLevel(LEVEL_UP_REWARDS)).toBe(20);
+    expect(firstSlotTicketLevel([])).toBeNull();
+    expect(
+      firstSlotTicketLevel([
+        { id: 'a', level: 25, slotTickets: 1 },
+        { id: 'b', level: 15, slotTickets: 1 },
+        { id: 'c', level: 10, slotTickets: 0 },
+      ]),
+    ).toBe(15);
   });
 });
 

@@ -12,6 +12,7 @@ import {
 } from '../game/equipment';
 import { spawnsInArea } from '../game/farming';
 import { addToBag, warehouseStackLimit, type BagStackLike } from '../game/inventory';
+import { firstSlotTicketLevel, type LevelUpRewardRow } from '../game/progression';
 import { characterNameError, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
 import { derivedStats } from '../state/selectors';
@@ -53,8 +54,10 @@ export type Command =
 /** Why a character cannot be created, in the design system's voice, or null when it can. */
 function createCharacterError(state: GameState, name: string, data: GameData): string | null {
   if (state.roster.length >= state.account.unlockedSlots) {
-    const { slotTicketLevel } = constantSection(data, 'characters');
-    return `No free slot. A character earns a slot ticket at Lv ${slotTicketLevel}.`;
+    const level = firstSlotTicketLevel(data.levelUpRewards as unknown as readonly LevelUpRewardRow[]);
+    return level === null
+      ? 'No free slot.'
+      : `No free slot. A character earns a slot ticket at Lv ${level}.`;
   }
   const names = state.roster.map((character) => character.name);
   return characterNameError(name, names, constantSection(data, 'creation'));
