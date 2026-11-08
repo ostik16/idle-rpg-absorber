@@ -498,14 +498,17 @@ describe('offline estimate (ADR 0002 "Offline estimator")', () => {
     expect(engine.advanceTo(T0 + 60_057 + TICK)).toEqual({ mode: 'step', steps: 1 });
   });
 
-  it('default estimator is a stub: zero yields for every character in id order, nothing else changes', () => {
+  it('default estimator is the real one: idle characters with no target yield nothing in id order', () => {
     const engine = makeEngine(['b', 'a']);
     engine.advanceTo(T0 + HOUR_MS);
 
     expect(engine.state.pendingSummary).toEqual({
       seconds: 3600,
       discardedSeconds: 0,
-      characters: [emptyCharacterSummary('a'), emptyCharacterSummary('b')],
+      characters: [
+        { ...emptyCharacterSummary('a'), deaths: 0 },
+        { ...emptyCharacterSummary('b'), deaths: 0 },
+      ],
     });
     expect(engine.state.roster.map((c) => c.timeInPhaseMs)).toEqual([0, 0]);
   });

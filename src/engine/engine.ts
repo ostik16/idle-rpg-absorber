@@ -11,7 +11,7 @@ import { applyCommand, type Command } from './commands';
 import { bestiaryTier } from '../game/formulas';
 import { levelUpReward, type LevelUpRewardRow } from '../game/progression';
 import { publishStepEvents, type EngineEvent } from './events';
-import { mergeSummaries, stubEstimateOffline, type EstimateOffline } from './offline';
+import { mergeSummaries, estimateOffline as defaultEstimateOffline, type EstimateOffline } from './offline';
 import { createCharacterStreams, readStreamStates, type CharacterStreams } from './streams';
 
 const MS_PER_SECOND = 1000;
@@ -89,7 +89,7 @@ function readConfig(data: GameData): EngineConfig {
 }
 
 /** Builds the engine. Throws when a constant it needs is `null` (undecided), for example `combat.tickMs` (ADR 0002). */
-export function createEngine({ data, state, estimateOffline = stubEstimateOffline }: EngineOptions): Engine {
+export function createEngine({ data, state, estimateOffline = defaultEstimateOffline }: EngineOptions): Engine {
   const config = readConfig(data);
   const pendingCommands: Command[] = [];
   const outbox: EngineEvent[] = [];
