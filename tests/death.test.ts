@@ -135,11 +135,18 @@ describe('XP from a kill (3.5, 4.3)', () => {
     expect(character.points).toMatchObject({ characterUnspent: 3, skillUnspent: 1 });
   });
 
+  it('each level gained adds the base stats from constants.progression.attributesPerLevel (4.3)', () => {
+    const { character, kill } = harness();
+    kill('soft', 10); // level 2
+    expect(character.attributes).toEqual({ strength: 6, dexterity: 6, vitality: 6, intelligence: 6 });
+  });
+
   it('one kill can pass several levels, with an event for each', () => {
     const { character, events, kill } = harness();
     kill('giant'); // 100 + 311 + 89 into level 3
     expect(character).toMatchObject({ level: 3, xpInLevel: 89 });
     expect(character.points.skillUnspent).toBe(2);
+    expect(character.attributes).toEqual({ strength: 7, dexterity: 7, vitality: 7, intelligence: 7 });
     expect(events.filter((e) => e.type === 'levelUp').map((e) => (e as { level: number }).level)).toEqual([2, 3]);
   });
 

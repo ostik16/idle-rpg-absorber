@@ -31,7 +31,12 @@ const [AREA_ROW] = areasJson;
 /** Real data with the area changed, and health back in a second, so nobody dies during a measurement. */
 function fixture(area: Record<string, unknown> = {}): GameData {
   return createGameData({
-    constants: { ...constants, stats: { ...constants.stats, healthRegen: { fractionOfMaxPerSecond: 1 } } },
+    constants: {
+      ...constants,
+      stats: { ...constants.stats, healthRegen: { fractionOfMaxPerSecond: 1 } },
+      // The balance tool prices a fixed build, so levelling must not change the attributes during the run.
+      progression: { ...constants.progression, attributesPerLevel: { strength: 0, dexterity: 0, vitality: 0, intelligence: 0 } },
+    },
     items: itemsJson,
     dropTables: dropTablesJson,
     enemies: enemiesJson,

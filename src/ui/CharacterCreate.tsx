@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   closeCreation,
   creationNameError,
@@ -17,6 +17,10 @@ export function CharacterCreate() {
   const roundTo = (n: number, digits: number) => Number(n.toFixed(digits));
 
   const [name, setName] = useState('');
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
   const trimmed = name.trim();
   const error = creationNameError(name);
   const over = trimmed.length > maxLength;
@@ -51,6 +55,7 @@ export function CharacterCreate() {
         </div>
         <input
           id="char-name"
+          ref={nameRef}
           class={`app__input${canCreate ? ' app__input--ok' : empty ? '' : ' app__input--bad'}`}
           type="text"
           autocomplete="off"

@@ -13,7 +13,7 @@ type CreationConstants = typeof constants.creation;
 export type AttributeId = 'strength' | 'dexterity' | 'vitality' | 'intelligence';
 export type Attributes = Record<AttributeId, number>;
 
-const ATTRIBUTE_IDS: readonly AttributeId[] = ['strength', 'dexterity', 'vitality', 'intelligence'];
+export const ATTRIBUTE_IDS: readonly AttributeId[] = ['strength', 'dexterity', 'vitality', 'intelligence'];
 
 /**
  * Unarmed damage (design 4.2): the weapon damage used when no weapon is equipped, constants.stats.unarmedDamage.

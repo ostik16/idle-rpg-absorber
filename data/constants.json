@@ -188,6 +188,12 @@
     }
   },
   "progression": {
+    "attributesPerLevel": {
+      "strength": 1,
+      "dexterity": 1,
+      "vitality": 1,
+      "intelligence": 1
+    },
     "xpReward": {
       "base": 10,
       "growthPerLevel": 1.1

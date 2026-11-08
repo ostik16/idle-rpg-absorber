@@ -47,11 +47,18 @@ export interface PlayerBuild {
   combatProficiency: number;
 }
 
-/** Creation attributes (5/5/5/5), unarmed, no armour, no proficiency. */
+/** Creation attributes plus the automatic gain per level (4.3), no points spent, unarmed, no armour, no proficiency. */
 export function defaultBuild(level = 1): PlayerBuild {
+  const base = constants.creation.baseAttributes;
+  const perLevel = constants.progression.attributesPerLevel;
   return {
     level,
-    attributes: { ...constants.creation.baseAttributes },
+    attributes: {
+      strength: base.strength + perLevel.strength * (level - 1),
+      dexterity: base.dexterity + perLevel.dexterity * (level - 1),
+      vitality: base.vitality + perLevel.vitality * (level - 1),
+      intelligence: base.intelligence + perLevel.intelligence * (level - 1),
+    },
     weaponDamage: null,
     weaponScaling: [],
     armourDefence: 0,

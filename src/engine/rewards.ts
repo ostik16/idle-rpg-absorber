@@ -8,6 +8,7 @@ import { enemyMoneyRange, type MoneyRange } from '../game/enemies';
 import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
 import { addToBag, matchesLootFilter, type BagItemLike } from '../game/inventory';
 import { gainXp, killXp, type XpTable } from '../game/progression';
+import { ATTRIBUTE_IDS } from '../game/stats';
 import type { CharacterState } from '../state/types';
 import type { StepContext } from './step-context';
 
@@ -29,6 +30,10 @@ export function grantKillXp(character: CharacterState, enemyId: string, ctx: Ste
   character.highestMarkReached = gain.highestMarkReached;
   character.points.characterUnspent += gain.characterPoints;
   character.points.skillUnspent += gain.skillPoints;
+
+  // Automatic base-stat growth per level gained (design 4.3), on top of the manual character points.
+  const perLevel = constantSection(ctx.data, 'progression').attributesPerLevel;
+  for (const id of ATTRIBUTE_IDS) character.attributes[id] += perLevel[id] * (gain.level - previousLevel);
 
   ctx.emit({ type: 'xpGained', characterId: character.id, amount: gain.xpGained });
   for (let level = previousLevel + 1; level <= gain.level; level++) {

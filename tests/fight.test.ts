@@ -40,6 +40,7 @@ function fixture(o: { crit?: boolean; regen?: boolean } = {}): GameData {
     constants: {
       ...constants,
       stats,
+      progression: { ...constants.progression, attributesPerLevel: { strength: 0, dexterity: 0, vitality: 0, intelligence: 0 } },
       proficiency: { ...constants.proficiency, gainPerAction: { unarmed: 0, 'one-handed': 0, 'two-handed': 0, toughness: 0, speed: 0, combat: 0 } },
     },
     items: itemsJson,
