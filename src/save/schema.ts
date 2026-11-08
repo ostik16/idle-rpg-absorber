@@ -184,7 +184,7 @@ const clock = shape<ClockState>({
   diagnostics: shape({ clockRewind: num }),
 });
 
-const characterSummary = shape<CharacterSummary>({ characterId: str, kills: num, xp: num, gold: num, items: record(num) });
+const characterSummary = shape<CharacterSummary>({ characterId: str, kills: num, xp: num, gold: num, items: record(num), deaths: optional(num) });
 
 const offlineSummary = shape<OfflineSummary>({ seconds: num, discardedSeconds: num, characters: list(characterSummary) });
 

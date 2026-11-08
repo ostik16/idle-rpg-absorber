@@ -211,6 +211,8 @@ export interface CharacterSummary {
   gold: number;
   /** Item id to quantity. */
   items: Record<string, number>;
+  /** How often the character died while away (3.7). The estimator writes it, so a death offline is never silent. */
+  deaths?: number;
 }
 
 /** The Welcome back screen's data (design 3.4, 6), kept until the player has seen it. */

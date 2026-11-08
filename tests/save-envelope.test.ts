@@ -81,6 +81,15 @@ describe('the schema (ADR 0003)', () => {
     expect(validatePayload(state)).toBeNull();
   });
 
+  it('accepts a pending summary with deaths and refuses deaths that is not a number', () => {
+    const state = newState();
+    const summary = { characterId: 'c1', kills: 1, xp: 1, gold: 1, items: {}, deaths: 2 };
+    state.pendingSummary = { seconds: 1, discardedSeconds: 0, characters: [summary] };
+    expect(validatePayload(state)).toBeNull();
+    state.pendingSummary = { seconds: 1, discardedSeconds: 0, characters: [{ ...summary, deaths: 'two' as never }] };
+    expect(validatePayload(state)).toContain('deaths');
+  });
+
   it.each<[string, (state: ReturnType<typeof newState>) => void, string]>([
     ['a missing section', (s) => void delete (s as Partial<typeof s>).bestiary, 'payload.bestiary'],
     ['a number that is a string', (s) => void ((s.roster[0] as { gold: unknown }).gold = '5'), 'payload.roster[0].gold'],
