@@ -76,6 +76,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Rules.**
 - Characters gain XP from kills.
 - Each level grants 1 skill point and 3 character points (4.4).
+- Each level also raises base attributes automatically, with no choice: +1 Strength and +1 Vitality (`constants.progression.attributesPerLevel`). Gained on every level crossed, so a kill that jumps two levels pays twice. Default chosen by the lead, to tune (decisions N13).
 - Level cap 30. It will rise with new content.
 - No XP penalty for level gap. Rising XP requirements already push characters to higher-level enemies: a low-level enemy's XP becomes too small to progress at a normal rate.
 - XP to go from level L to L + 1 is about 100 × L^1.5 × 1.1^(L−1), rounded to 3 significant figures, and stored as a table in `data/xp-table.json`. It is built so a level takes about 10 kills of a same-level enemy at level 1, 110 at level 5, 310 at level 10, 900 at level 20 and 1,560 at level 29.
@@ -94,7 +95,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - Area 1 (levels 1-5, an average kill gives about 12 XP) is outgrown at about level 6 to 8, where a level takes 40 to 70 minutes there. At level 20, a level 3 enemy needs 4,559 kills for a level, five times the kills of a level 20 enemy.
 - Level cap is 30. The table has a level 30 row for when the cap is raised.
 
-**Data.** XP required per level (`data/xp-table.json`), XP reward base and growth (`constants.progression`).
+**Data.** XP required per level (`data/xp-table.json`), XP reward base and growth, attributes gained per level (`constants.progression`).
 
 ---
 
@@ -106,7 +107,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - 3 character points per level, awarded at 25%, 50% and 75% of the level.
 - The points are awarded while progressing through a level: one point each when XP first reaches 25%, 50% and 75% of that level's XP, so a level 1 character has 3 points before level 2 and 87 by level 30.
 - A point is never awarded twice. XP lost on death cannot fall below the highest mark already passed in the level (3.7).
-- Characters start with no free points; attributes start at 5 (4.1).
+- Characters start with no free points; attributes start at 5 (4.1). Level-ups add base attributes on their own (4.3), so the 87 manual points by level 30 are on top of the automatic ones.
 - Spent on attributes (4.2). A character can be balanced or specialise in one attribute.
 - Respec only with a rare item (2.8).
 
