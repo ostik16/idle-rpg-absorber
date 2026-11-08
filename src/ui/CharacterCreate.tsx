@@ -4,7 +4,6 @@ import {
   creationNameError,
   creationNameLimits,
   send,
-  startingPreview,
 } from './store';
 
 /**
@@ -13,8 +12,6 @@ import {
  */
 export function CharacterCreate() {
   const { minLength, maxLength } = creationNameLimits();
-  const preview = startingPreview();
-  const roundTo = (n: number, digits: number) => Number(n.toFixed(digits));
 
   const [name, setName] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
@@ -70,38 +67,6 @@ export function CharacterCreate() {
         </p>
         <p class="app__text ab-c-muted">
           {minLength} to {maxLength} characters. Each name is unique in your roster, whatever the case.
-        </p>
-      </section>
-
-      <section class="ab-card app__card">
-        <div class="ab-card__head">
-          <span class="ab-ornament" aria-hidden="true" />
-          <span class="ab-label">Starting character</span>
-        </div>
-        <dl class="ab-dl">
-          <dt>Strength</dt>
-          <dd>{preview.attributes.strength}</dd>
-          <dt>Dexterity</dt>
-          <dd>{preview.attributes.dexterity}</dd>
-          <dt>Vitality</dt>
-          <dd>{preview.attributes.vitality}</dd>
-          <dt>Intelligence</dt>
-          <dd>{preview.attributes.intelligence}</dd>
-          <dt>Health</dt>
-          <dd>{Math.round(preview.stats.maxHealth)}</dd>
-          <dt>Mana</dt>
-          <dd>{Math.round(preview.stats.maxMana)}</dd>
-          <dt>Unarmed damage</dt>
-          <dd>{roundTo(preview.stats.damage, 1)}</dd>
-          <dt>Attacks per second</dt>
-          <dd>{roundTo(preview.stats.attacksPerSecond, 2)}</dd>
-          <dt>Level</dt>
-          <dd>Lv {preview.level}</dd>
-          <dt>Gold</dt>
-          <dd>{preview.gold}</dd>
-        </dl>
-        <p class="app__text ab-c-muted">
-          No class, race or weapon to choose. Starts with 10 minor health potions. Everything else is farmed.
         </p>
       </section>
 

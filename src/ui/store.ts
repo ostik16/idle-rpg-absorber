@@ -10,7 +10,6 @@ import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
 import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
-import { createCharacterState } from '../state/factory';
 import { derivedStats, type DerivedStats } from '../state/selectors';
 import type {
   CharacterState,
@@ -575,28 +574,6 @@ export function areaOf(areaId: string): AreaSummary | null {
   if (row === undefined) return null;
   const area = row as unknown as { id: string; name: string; levelRange: { min: number; max: number } };
   return { id: area.id, name: area.name, levelMin: area.levelRange.min, levelMax: area.levelRange.max };
-}
-
-export interface StartingPreview {
-  readonly attributes: Attributes;
-  readonly stats: DerivedStats;
-  readonly level: number;
-  readonly gold: number;
-  readonly startingItems: readonly { itemId: string; quantity: number }[];
-}
-
-/** What the character creation screen shows so the player sees what they are starting with (design 4.1). */
-export function startingPreview(): StartingPreview {
-  const data = requireGameData();
-  const creation = constantSection(data, 'creation');
-  const template = createCharacterState('__preview', 'Preview', data);
-  return {
-    attributes: template.attributes,
-    stats: derivedStats(template, data),
-    level: template.level,
-    gold: template.gold,
-    startingItems: creation.startingItems,
-  };
 }
 
 /** Rules behind a character name, so the creation screen stays in step with the engine (design 4.1). */
