@@ -11,7 +11,7 @@ import { levelUpReward, respawnHealth, type LevelUpRewardRow } from '../game/pro
 import { rollSpawn } from '../game/farming';
 import { healthRegenPerSecond, type PotionTier } from '../game/stats';
 import { derivedStats } from '../state/selectors';
-import type { CharacterState, CharacterSummary, GameState, OfflineSummary, Phase } from '../state/types';
+import type { CharacterRngState, CharacterState, CharacterSummary, GameState, OfflineSummary, Phase } from '../state/types';
 import { compareCharacterIds } from './character';
 import { arriveInCity, isBagFull } from './city';
 import { loseXpOnDeath, respawnDurationMs } from './death';
@@ -26,11 +26,6 @@ const MS_PER_SECOND = 1000;
 
 /** What an estimator returns. The engine adds the seconds covered and the seconds discarded. */
 export type OfflineEstimate = Pick<OfflineSummary, 'characters'>;
-
-/** A character's summary plus how often it died (3.7), so a death offline is never silent. */
-export interface EstimatedSummary extends CharacterSummary {
-  deaths: number;
-}
 
 /**
  * Estimates `seconds` of farming for every character and applies the result to `state` (XP, items, ...).
@@ -144,8 +139,8 @@ function estimateCharacter(
   budgetMs: number,
   proficiencyRate: number,
   data: GameData,
-): EstimatedSummary {
-  const summary: EstimatedSummary = { ...emptyCharacterSummary(character.id), deaths: 0 };
+): CharacterSummary {
+  const summary = { ...emptyCharacterSummary(character.id), deaths: 0 };
   if (character.areaId === null || character.stayInCity) return summary;
 
   const tickMs = requireNumberConstant(data, 'combat.tickMs');
@@ -174,6 +169,7 @@ function estimateCharacter(
   const area = requireRow(data, 'areas', character.areaId) as unknown as AreaRow & { levelRange: { max: number } };
   const goldAtStart = character.gold;
   let elapsed = 0;
+  let unfinished: Partial<CharacterRngState> = {};
 
   const vitals = () => {
     const stats = derivedStats(character, data);
@@ -301,9 +297,13 @@ function estimateCharacter(
     if (elapsed + searchMs > budgetMs) return null;
     walk(searchMs);
     const enemyId = character.targetEnemyId ?? rollSpawn(area, streams.search);
+    const combatBefore = streams.combat.getState();
     const fight = runFight(enemyId);
     const fightMs = fight.ticks * tickMs;
-    if (elapsed + fightMs > budgetMs) return null;
+    if (elapsed + fightMs > budgetMs) {
+      unfinished = { combat: combatBefore }; // the fight is discarded, so are its draws (saved as the stream state)
+      return null;
+    }
     elapsed += fightMs;
     character.health = fight.health;
     queue = fight.queue;
@@ -333,8 +333,16 @@ function estimateCharacter(
     return { itemId, amount: tier.amount, durationMs, remainingMs: durationMs - (i === 0 ? character.potions.ticksDone * potionTickMs : 0) };
   });
 
-  let leg: Leg = character.phase === 'restocking' || character.phase === 'dead' ? 'heal' : character.phase === 'returning' ? 'back' : 'out';
-  if (character.phase === 'dead') character.health = respawnHealth(vitals().max, constantSection(data, 'death'));
+  let leg: Leg = character.phase === 'restocking' ? 'heal' : character.phase === 'returning' ? 'back' : 'out';
+  if (character.phase === 'dead') {
+    // As stepDead: wait out the rest of the respawn timer, then arrive in the city (sell, restock) at respawn health.
+    elapsed = Math.max(0, respawnDurationMs(character, ctx) - character.timeInPhaseMs);
+    if (elapsed > budgetMs) leg = 'dead';
+    else {
+      character.health = respawnHealth(vitals().max, constantSection(data, 'death'));
+      leg = arrive();
+    }
+  }
   while (leg !== 'dead') {
     let next: Leg | null;
     if (leg === 'field') next = fieldStep();
@@ -365,7 +373,7 @@ function estimateCharacter(
   character.phase = PHASE_OF_LEG[leg];
   character.timeInPhaseMs = 0;
   character.fight = null;
-  character.rng = readStreamStates(streams);
+  character.rng = { ...readStreamStates(streams), ...unfinished };
   summary.gold = character.gold - goldAtStart;
   return summary;
 }
@@ -387,8 +395,6 @@ export const estimateOffline: EstimateOffline = (state, seconds, data) => {
   };
 };
 
-const deathsOf = (summary: CharacterSummary): number => (summary as Partial<EstimatedSummary>).deaths ?? 0;
-
 function addItems(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
   const total = { ...a };
   for (const [itemId, quantity] of Object.entries(b)) total[itemId] = (total[itemId] ?? 0) + quantity;
@@ -404,6 +410,7 @@ export function mergeSummaries(pending: OfflineSummary | null, next: OfflineSumm
   const byId = new Map<string, CharacterSummary>();
   for (const summary of [...pending.characters, ...next.characters]) {
     const earlier = byId.get(summary.characterId);
+    const deaths = (earlier?.deaths ?? 0) + (summary.deaths ?? 0);
     byId.set(
       summary.characterId,
       earlier
@@ -413,7 +420,7 @@ export function mergeSummaries(pending: OfflineSummary | null, next: OfflineSumm
             xp: earlier.xp + summary.xp,
             gold: earlier.gold + summary.gold,
             items: addItems(earlier.items, summary.items),
-            ...(deathsOf(earlier) + deathsOf(summary) > 0 && { deaths: deathsOf(earlier) + deathsOf(summary) }),
+            ...(deaths > 0 && { deaths }),
           }
         : { ...summary, items: { ...summary.items } },
     );
