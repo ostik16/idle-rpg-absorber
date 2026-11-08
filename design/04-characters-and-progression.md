@@ -76,7 +76,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Rules.**
 - Characters gain XP from kills.
 - Each level grants 1 skill point and 3 character points (4.4).
-- Each level also raises base attributes automatically, with no choice: +1 Strength and +1 Vitality (`constants.progression.attributesPerLevel`). Gained on every level crossed, so a kill that jumps two levels pays twice. Default chosen by the lead, to tune (decisions N13).
+- Each level also raises base attributes automatically, with no choice: +1 to every attribute, so all builds benefit (`constants.progression.attributesPerLevel`). Gained on every level crossed, so a kill that jumps two levels pays twice. Default chosen by the lead, to tune (decisions N13).
 - Level cap 30. It will rise with new content.
 - No XP penalty for level gap. Rising XP requirements already push characters to higher-level enemies: a low-level enemy's XP becomes too small to progress at a normal rate.
 - XP to go from level L to L + 1 is about 100 × L^1.5 × 1.1^(L−1), rounded to 3 significant figures, and stored as a table in `data/xp-table.json`. It is built so a level takes about 10 kills of a same-level enemy at level 1, 110 at level 5, 310 at level 10, 900 at level 20 and 1,560 at level 29.

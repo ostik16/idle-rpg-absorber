@@ -18,7 +18,9 @@ export function CharacterCreate() {
 
   const [name, setName] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
-  useEffect(() => nameRef.current?.focus(), []);
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
   const trimmed = name.trim();
   const error = creationNameError(name);
   const over = trimmed.length > maxLength;

@@ -190,9 +190,9 @@
   "progression": {
     "attributesPerLevel": {
       "strength": 1,
-      "dexterity": 0,
+      "dexterity": 1,
       "vitality": 1,
-      "intelligence": 0
+      "intelligence": 1
     },
     "xpReward": {
       "base": 10,

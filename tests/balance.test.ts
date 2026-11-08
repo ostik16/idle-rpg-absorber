@@ -513,3 +513,11 @@ describe('items a character cannot farm (3.8)', () => {
     expect(unfarmableItems(areaReport(data, 'a1', 5, pace))).toEqual([]);
   });
 });
+
+describe('defaultBuild attributes by level (4.3)', () => {
+  it('adds the per-level gain for every level above 1', async () => {
+    const { defaultBuild } = await import('../tools/balance/combat');
+    expect(defaultBuild(1).attributes).toEqual({ strength: 5, dexterity: 5, vitality: 5, intelligence: 5 });
+    expect(defaultBuild(11).attributes).toEqual({ strength: 15, dexterity: 15, vitality: 15, intelligence: 15 });
+  });
+});
