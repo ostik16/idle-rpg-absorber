@@ -95,12 +95,34 @@ function LockedSlot({ index }: { index: number }) {
   );
 }
 
+function EmptySlot({ index }: { index: number }) {
+  return (
+    <div class="ab-char ab-char--locked">
+      <span class="ab-char__avatar" aria-hidden="true">
+        +
+      </span>
+      <button
+        type="button"
+        class="app__row-body app__row-open"
+        aria-label={`Slot ${index} empty, create character`}
+        onClick={openCreation}
+      >
+        <div class="ab-char__top">
+          <span class="ab-char__name">Slot {index}</span>
+        </div>
+        <div class="ab-char__where">Empty. Tap to create a character.</div>
+      </button>
+    </div>
+  );
+}
+
 export function Roster() {
   const views = roster.value;
   const unlocked = unlockedSlots.value;
   const max = maxSlots.value;
   const lockedCount = Math.max(0, max - unlocked);
-  const canCreate = views.length < unlocked;
+  const emptyCount = Math.max(0, unlocked - views.length);
+  const canCreate = emptyCount > 0;
   const hint = canCreate || views.length < max ? null : 'Every slot is taken.';
 
   return (
@@ -114,6 +136,9 @@ export function Roster() {
       </header>
       {views.map((view) => (
         <CharacterRow key={view.id} view={view} />
+      ))}
+      {Array.from({ length: emptyCount }, (_, i) => (
+        <EmptySlot key={`empty-${i}`} index={views.length + i + 1} />
       ))}
       {Array.from({ length: lockedCount }, (_, i) => (
         <LockedSlot key={`locked-${i}`} index={unlocked + i + 1} />

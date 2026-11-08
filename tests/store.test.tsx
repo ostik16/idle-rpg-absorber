@@ -387,6 +387,12 @@ describe('roster and character creation (design 4.1)', () => {
     expect(text).toContain('warehouse');
 
     const confirm = [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete') as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    const input = dialog.querySelector('#delete-name') as HTMLInputElement;
+    input.value = 'ysolde';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(confirm.disabled).toBe(false);
     confirm.click();
     step(engine, refresh);
     await new Promise((resolve) => setTimeout(resolve));

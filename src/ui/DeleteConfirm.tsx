@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { closeDeleteConfirm, pendingDeleteId, roster, send } from './store';
 
 /**
@@ -8,6 +8,9 @@ import { closeDeleteConfirm, pendingDeleteId, roster, send } from './store';
 export function DeleteConfirm() {
   const id = pendingDeleteId.value;
   const cancelRef = useRef<HTMLButtonElement>(null);
+  // Keyed by character id so a stale entry never arms a different character.
+  const [entry, setEntry] = useState<{ id: string | null; text: string }>({ id: null, text: '' });
+  const typed = entry.id === id ? entry.text : '';
   useEffect(() => {
     if (id !== null) cancelRef.current?.focus();
   }, [id]);
@@ -15,7 +18,9 @@ export function DeleteConfirm() {
   const view = roster.value.find((v) => v.id === id);
   if (view === undefined) return null;
 
+  const armed = typed.trim().toLowerCase() === view.name.toLowerCase();
   const confirm = () => {
+    if (!armed) return;
     send({ type: 'deleteCharacter', characterId: id }, { saveAfter: true });
     closeDeleteConfirm();
   };
@@ -34,7 +39,7 @@ export function DeleteConfirm() {
       }}
       onKeyDown={onKeyDown}
     >
-      <section class="ab-sheet app__sheet">
+      <section class="ab-sheet app__sheet app__sheet--tall">
         <span class="ab-sheet__grip" aria-hidden="true" />
         <h2 id="delete-title" class="app__sheet-title">
           Delete {view.name}?
@@ -43,6 +48,18 @@ export function DeleteConfirm() {
           {view.name} loses all items, equipment and gold. Nothing moves to the warehouse. Move what
           you want to keep to the warehouse first.
         </p>
+        <label class="ab-label" htmlFor="delete-name">
+          Type {view.name} to confirm
+        </label>
+        <input
+          id="delete-name"
+          class="app__input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="off"
+          value={typed}
+          onInput={(event) => setEntry({ id, text: event.currentTarget.value })}
+        />
         <div class="ab-sheet__actions">
           <button
             ref={cancelRef}
@@ -52,7 +69,7 @@ export function DeleteConfirm() {
           >
             Keep
           </button>
-          <button type="button" class="ab-btn ab-btn--danger ab-btn--block" onClick={confirm}>
+          <button type="button" class="ab-btn ab-btn--danger ab-btn--block" disabled={!armed} onClick={confirm}>
             Delete
           </button>
         </div>
