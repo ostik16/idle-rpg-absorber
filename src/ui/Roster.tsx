@@ -104,13 +104,12 @@ function EmptySlot({ index }: { index: number }) {
       <button
         type="button"
         class="app__row-body app__row-open"
-        aria-label={`Slot ${index} empty, create character`}
         onClick={openCreation}
       >
         <div class="ab-char__top">
           <span class="ab-char__name">Slot {index}</span>
         </div>
-        <div class="ab-char__where">Empty. Tap to create a character.</div>
+        <div class="ab-char__where">Empty. Create a character.</div>
       </button>
     </div>
   );

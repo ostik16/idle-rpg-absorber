@@ -7,18 +7,18 @@ import { closeDeleteConfirm, pendingDeleteId, roster, send } from './store';
  */
 export function DeleteConfirm() {
   const id = pendingDeleteId.value;
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  // Keyed by character id so a stale entry never arms a different character.
-  const [entry, setEntry] = useState<{ id: string | null; text: string }>({ id: null, text: '' });
-  const typed = entry.id === id ? entry.text : '';
-  useEffect(() => {
-    if (id !== null) cancelRef.current?.focus();
-  }, [id]);
   if (id === null) return null;
   const view = roster.value.find((v) => v.id === id);
-  if (view === undefined) return null;
+  // The sheet unmounts on close, so the typed text never survives a cancel and reopen.
+  return view === undefined ? null : <DeleteSheet id={id} name={view.name} />;
+}
 
-  const armed = typed.trim().toLowerCase() === view.name.toLowerCase();
+function DeleteSheet({ id, name }: { id: string; name: string }) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const [typed, setTyped] = useState('');
+  useEffect(() => cancelRef.current?.focus(), []);
+
+  const armed = typed.trim().toLowerCase() === name.toLowerCase();
   const confirm = () => {
     if (!armed) return;
     send({ type: 'deleteCharacter', characterId: id }, { saveAfter: true });
@@ -42,14 +42,14 @@ export function DeleteConfirm() {
       <section class="ab-sheet app__sheet app__sheet--tall">
         <span class="ab-sheet__grip" aria-hidden="true" />
         <h2 id="delete-title" class="app__sheet-title">
-          Delete {view.name}?
+          Delete {name}?
         </h2>
         <p class="app__text">
-          {view.name} loses all items, equipment and gold. Nothing moves to the warehouse. Move what
+          {name} loses all items, equipment and gold. Nothing moves to the warehouse. Move what
           you want to keep to the warehouse first.
         </p>
-        <label class="ab-label" htmlFor="delete-name">
-          Type {view.name} to confirm
+        <label class="app__text ab-c-muted" htmlFor="delete-name">
+          Type {name} to confirm
         </label>
         <input
           id="delete-name"
@@ -58,7 +58,7 @@ export function DeleteConfirm() {
           autocomplete="off"
           autocapitalize="off"
           value={typed}
-          onInput={(event) => setEntry({ id, text: event.currentTarget.value })}
+          onInput={(event) => setTyped(event.currentTarget.value)}
         />
         <div class="ab-sheet__actions">
           <button

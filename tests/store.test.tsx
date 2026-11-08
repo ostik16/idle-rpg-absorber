@@ -298,6 +298,20 @@ describe('roster and character creation (design 4.1)', () => {
     expect(locked[0]?.textContent).toContain('Locked.');
   });
 
+  it('shows one empty row per unlocked free slot, and clicking one opens creation', () => {
+    const state = gameWith('Ysolde');
+    state.account.unlockedSlots = 3;
+    connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
+    render(<Roster />, host);
+
+    const empty = [...host.querySelectorAll('button')].filter((b) => b.textContent?.includes('Empty. Create a character.'));
+    expect(empty).toHaveLength(2);
+    expect(empty[0]?.textContent).toContain('Slot 2');
+    empty[0]?.click();
+    expect(creationOpen.value).toBe(true);
+    closeCreation();
+  });
+
   it('shows an area name and level range on a character that farms somewhere', () => {
     const state = gameWith('Ysolde');
     (state.roster[0] as CharacterState).phase = 'searching';
@@ -399,6 +413,45 @@ describe('roster and character creation (design 4.1)', () => {
 
     expect(engine.state.roster).toHaveLength(0);
     expect(host.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('keeps Delete disabled for a wrong name', async () => {
+    connected(gameWith('Ysolde'));
+    render(<App />, host);
+    openDeleteConfirm('c1');
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const dialog = host.querySelector('[role="dialog"]') as HTMLElement;
+    const input = dialog.querySelector('#delete-name') as HTMLInputElement;
+    input.value = 'Ysold';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const confirm = [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete') as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    closeDeleteConfirm();
+  });
+
+  it('reopening delete for the same character starts empty and disarmed', async () => {
+    connected(gameWith('Ysolde'));
+    render(<App />, host);
+    openDeleteConfirm('c1');
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const first = host.querySelector('#delete-name') as HTMLInputElement;
+    first.value = 'Ysolde';
+    first.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve));
+    closeDeleteConfirm();
+    await new Promise((resolve) => setTimeout(resolve));
+    openDeleteConfirm('c1');
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const dialog = host.querySelector('[role="dialog"]') as HTMLElement;
+    expect((dialog.querySelector('#delete-name') as HTMLInputElement).value).toBe('');
+    const confirm = [...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete') as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    closeDeleteConfirm();
   });
 
   it('cancel on the delete confirm leaves the character in place', async () => {
