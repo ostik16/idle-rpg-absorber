@@ -37,6 +37,8 @@ export const route = signal<Route>(DEFAULT_ROUTE);
 /** Keeps `route` in step with the URL hash. Call once at startup. */
 export function startRouteSync(): () => void {
   return watchHash((next) => {
+    // A new tab shows its root, whatever moved the hash: a tab, an in-content link or the browser's back button.
+    closePushed();
     route.value = next;
   });
 }
@@ -148,9 +150,9 @@ export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesS
 export const unlockedSlots: ReadonlySignal<number> = unlockedSlotsSignal;
 /** The maximum roster size (design 4.1, `constants.characters.maxSlots`). */
 export const maxSlots: ReadonlySignal<number> = maxSlotsSignal;
-/** The character whose numbers feed the app bar (decisions L18). Null before the roster has anyone. */
+/** The character the app bar names and the Farm, City and Character tabs act for. Null before the roster has anyone. */
 export const selectedCharacterId: ReadonlySignal<string | null> = selectedIdSignal;
-/** The character behind the app bar's gold pill, or null. */
+/** The selected character's view, or null. */
 export const selectedCharacter: ReadonlySignal<CharacterView | null> = computed(() => {
   const id = selectedIdSignal.value;
   if (id === null) return null;
@@ -511,8 +513,9 @@ export function closeDeleteConfirm(): void {
   pendingDeleteIdSignal.value = null;
 }
 
-/** Points the app bar at a character (decisions L18). Null is only valid for an empty roster. */
+/** Points the app bar and the tabs at a character. Another character starts with an empty shopping list. */
 export function selectCharacter(characterId: string): void {
+  if (selectedIdSignal.value !== characterId) shoppingListSignal.value = {};
   selectedIdSignal.value = characterId;
 }
 

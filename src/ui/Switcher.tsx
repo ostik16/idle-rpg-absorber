@@ -54,6 +54,7 @@ function Row({ view, onPick }: { view: CharacterView; onPick: () => void }) {
 export function Switcher() {
   const [open, setOpen] = useState(false);
   const sheetRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   // Focus moves into the sheet so Escape works from the keyboard.
   useEffect(() => {
     if (open) sheetRef.current?.focus();
@@ -62,11 +63,30 @@ export function Switcher() {
   const selected = selectedCharacter.value;
   const unlocked = unlockedSlots.value;
   const max = maxSlots.value;
-  const close = () => setOpen(false);
+  const close = () => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+  // Tab wraps inside the sheet, as a modal dialog's should.
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close();
+    if (event.key !== 'Tab') return;
+    const items = [...(sheetRef.current?.querySelectorAll<HTMLElement>('button') ?? [])];
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (first === undefined || last === undefined) return;
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === sheetRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <>
-      <button type="button" class="app__who" aria-haspopup="dialog" aria-label="Choose character" onClick={() => setOpen(true)}>
+      <button ref={triggerRef} type="button" class="app__who" aria-haspopup="dialog" aria-label="Choose character" onClick={() => setOpen(true)}>
         <span class="ab-char__avatar app__who-avatar" aria-hidden="true">
           {selected === null ? '+' : Array.from(selected.name)[0]}
         </span>
@@ -82,9 +102,7 @@ export function Switcher() {
           onClick={(event) => {
             if (event.target === event.currentTarget) close();
           }}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') close();
-          }}
+          onKeyDown={onKeyDown}
         >
           <section ref={sheetRef} tabIndex={-1} class="ab-sheet app__sheet app__sheet--tall" role="dialog" aria-modal="true" aria-labelledby="switcher-title">
             <span class="ab-sheet__grip" aria-hidden="true" />

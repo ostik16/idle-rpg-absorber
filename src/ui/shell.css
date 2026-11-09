@@ -19,10 +19,10 @@
 /* App bar switcher: the selected character's avatar, name and location, opening the character list. */
 .app__who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-tap); padding: 0 var(--space-2) 0 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .app__who:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.app__who-avatar { width: 32px; height: 32px; font-size: 15px; border-color: var(--gold-deep); }
+.app__who-avatar { width: var(--space-8); height: var(--space-8); border-color: var(--gold-deep); }
 .app__who-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .app__who-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app__who-text .ab-char__where { margin-top: 0; line-height: 16px; }
+.app__who-text .ab-char__where { margin-top: 0; }
 
 /* A character or empty slot in the switcher sheet. */
 .app__pick { width: 100%; font: inherit; text-align: left; cursor: pointer; }
@@ -74,7 +74,6 @@
 
 /* World and character screens. */
 .app__grow { flex: 1; min-width: 0; }
-.app__row-open { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .app__area { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .app__area-top { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .app__area-top .ab-title { flex: 1; }
@@ -101,3 +100,5 @@
 .app__gear-slot { display: grid; grid-template-columns: var(--size-slot) minmax(0, 1fr); align-items: center; gap: var(--space-2); min-width: 0; }
 .app__transfer { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 .app__pushed-title { margin-bottom: var(--space-3); }
+/* Visible to screen readers only: the page's h1, since the app bar shows the character, not a title. */
+.app__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

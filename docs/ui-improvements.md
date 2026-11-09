@@ -60,7 +60,7 @@ Still deferred:
 - [ ] **P3** — Warehouse: side-by-side layout with → and ← on desktop, drag and drop, partial-quantity transfer, a status line under the buttons saying what moved (refusals show as the top notice), and extra tabs (L13). Only tab 1 shows. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)
 - [ ] **P3** — Bag grids: tallest-first ordering, an item sheet instead of the inline Equip button, and required-attribute and damage-penalty lines on the equipped weapon. [src/ui/ItemSlot.tsx](src/ui/ItemSlot.tsx)
 - [ ] **P3** — Item grids use as many 44px cells as fit (6 across on a 390px phone), not the sketch's 7, because the card padding leaves 326px. [src/ui/shell.css](src/ui/shell.css)
-- [ ] **P3** — Opening a shop or the warehouse stays pushed when a tab-bar destination is tapped; same as the character detail screen. [src/ui/App.tsx](src/ui/App.tsx)
+- [x] **P3** — Opening a shop or the warehouse stays pushed when a tab-bar destination is tapped (fixed in #64); same as the character detail screen. [src/ui/App.tsx](src/ui/App.tsx)
 
 Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is correct; these are layout/copy):
 
@@ -76,3 +76,5 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 - [ ] **P3** — The switcher list is a bottom sheet on phones and desktop alike; the design system asks for a centred dialog at `bp-desktop`. The delete sheet shares this. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
 - [ ] **P3** — Gold left the app bar. The Character screen header still shows it; the roster summary (gold per hour, warehouse) from the Roster sketch has no home yet.
 - [ ] **P3** — A pushed screen forgets which Character segment (Farm, Stats, Gear) was open when it closes.
+- [ ] **P3** — `design/ui/design-system/components/Navigation/preview.html` still shows the Roster/World tabs and the gold pill. Redraw it.
+- [ ] **P3** — Switcher layout checked against the Character switcher in `Comp-Navigation.dc.html` and the Character screens at 390 px (browser). Not compared at desktop width; the sketch has no Character screen with the Delete button, so its place at the bottom of the screen is unverified against a sketch.

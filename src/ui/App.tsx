@@ -68,6 +68,7 @@ export function App() {
       </nav>
       <div class="app__col">
         <header class="ab-appbar">
+          <h1 class="app__sr">{LABELS[current]}</h1>
           <Switcher />
         </header>
         <main class="app__main">
