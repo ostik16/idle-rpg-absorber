@@ -110,7 +110,7 @@ Small things that will cause arguments during implementation. All eight are sett
   - The player's return command ends farming, and the character stays in the city. `stayInCity` keeps this through a death while fleeing, and a return also works while dead or healing.
   - Turning back on the way out takes as long as it has walked.
   - A character changes area only from the city.
-  - A character needs full health to be sent out, following 3.2.
+  - A character needs full health to be sent out, following 3.2. Replaced by A2: it can be sent at any health.
 - [x] **Owner question from the #22 review.** Answered in S2: the first area has no mini-boss or boss, and a cursed object is the only special it can have.
 - [ ] **Model bosses in `balance:drops`.** The tool leaves out the boss and mini-boss. Area 1 now has neither (S2), so this waits for the first area that does. The tool will need a rule for a boss the build cannot beat, and `--target` will need to accept the boss and mini-boss, as the engine does.
 - [ ] **A source for rare items.** Every rare item that drops lists only Mossfang Matriarch as its source, and she is in no area now (S2). No rare item can drop until a cursed object or a later area exists. Cursed objects are outside the first playable batch (#9). Decide where Old Mossfang and Mossfang Matriarch go.

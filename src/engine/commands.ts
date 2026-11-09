@@ -15,7 +15,7 @@ import { addToBag, warehouseStackLimit, type BagStackLike } from '../game/invent
 import { firstSlotTicketLevel, type LevelUpRewardRow } from '../game/progression';
 import { characterNameError, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
-import { derivedStats } from '../state/selectors';
+import { sendRefusal } from '../state/selectors';
 import type {
   CharacterState,
   CityHealingMode,
@@ -118,18 +118,7 @@ function findArea(areaId: string, data: GameData): AreaRow | undefined {
 }
 
 function sendToAreaError(character: CharacterState, areaId: string, data: GameData): string | null {
-  if (findArea(areaId, data) === undefined) return `No area "${areaId}".`;
-  switch (character.phase) {
-    case 'idle':
-      break;
-    case 'dead':
-      return `${character.name} is dead.`;
-    case 'restocking':
-      return `${character.name} is busy in the city.`;
-    default:
-      return `${character.name} has to be in the city first.`;
-  }
-  return character.health < derivedStats(character, data).maxHealth ? `${character.name} needs full health to set out.` : null;
+  return findArea(areaId, data) === undefined ? `No area "${areaId}".` : sendRefusal(character);
 }
 
 function setTargetError(character: CharacterState, enemyId: string | null, data: GameData): string | null {

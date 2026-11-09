@@ -87,3 +87,17 @@ export function outOfPotions(character: CharacterState, data: GameData): boolean
     return stack.qty > 0 && row.effect?.type === 'heal-over-time';
   });
 }
+
+/** Why a character cannot be sent to farm, or null when it can (design 3.2, decisions A2). Any health will do. */
+export function sendRefusal(character: CharacterState): string | null {
+  switch (character.phase) {
+    case 'idle':
+      return null;
+    case 'dead':
+      return `${character.name} is dead.`;
+    case 'restocking':
+      return `${character.name} is busy in the city.`;
+    default:
+      return `${character.name} has to be in the city first.`;
+  }
+}

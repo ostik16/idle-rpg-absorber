@@ -74,3 +74,7 @@ Automation off (#66, decisions A1):
 - [ ] **P2** — Copy and controls that describe automation still show while `automation.enabled` is false: City "Restock on return" card and "Restocking." state, Settings return threshold, restock quantities ("Restocked in the city before heading out"), city healing choice, loot filter and auto-sell editors. Hide or mark them inactive. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
 - [ ] **P3** — Character-Fell: the heal card reads "Then it waits in the city" instead of the sketch's "Then it heals before farming", because a respawned character no longer heals and leaves on its own. Update the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Farm, in the city: health bar and one Drink row per health potion held (no sketch has them), so the player can heal by hand. The "no potions" alert (`CharacterView.noPotions`) is for the Farm screen rebuild (#64). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+
+Send to farm (#65, decisions A2):
+
+- [ ] **P3** — World-Area: the send sheet no longer has the sketch's Target list; "Send" goes straight to the area and the target is set from the Farm screen's "Target enemy". The line under the button is the engine's refusal reason when a send is refused. Update the sketch. [src/ui/World.tsx](src/ui/World.tsx)

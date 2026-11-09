@@ -36,7 +36,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 - A teleporter in the city moves the character to far areas for a fee.
 - A character returns to the city on its own when its health falls below a threshold, default 20% (`constants.returnTriggers.healthThreshold`, the player can change it per character), or when its bag is full (2.3). Running out of potions is not a trigger.
 - A character can leave a fight at any moment, through the health trigger or the player's return command, but fleeing takes 1 second (`constants.combat.fleeSeconds`), shortened by movement speed like travel (4.2). It stops attacking, the enemy keeps attacking, and potions and regeneration keep ticking. Dying while fleeing is a normal death (3.7). An abandoned fight gives no reward.
-- In the city the character does the automatic things in order: sell by the auto-sell rules (2.3), restock, heal. Assumed: this order, so sales can pay for the restock. It goes back to the same area only at full health, healing the way the player chose (2.6).
+- In the city the character does the automatic things in order: sell by the auto-sell rules (2.3), restock, heal. Assumed: this order, so sales can pay for the restock. It goes back to the same area on its own only at full health, healing the way the player chose (2.6). The player can send a character out at any health (decisions A2).
 - While automation is off (`constants.automation.enabled`, decisions A1), the return triggers, the automatic city actions, restocking and the loot filter do not run. A character comes home only when recalled or when it dies, stays in the city, and heals by regeneration; the player can drink a potion by hand. Automatic potion drinking in a fight still works.
 - Restocking covers only health and mana potions. The player sets which potions and how many per character, default 10 minor health potions (`constants.restock.defaultList`). The character tops up to that quantity at the shop price. With too little gold it buys as many as it can, in list order, health first.
 
@@ -133,7 +133,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 
 **Rules.**
 - The character returns to the city and is back on its feet after 4 seconds per level (`constants.death.respawnSecondsPerLevel`). Level 30 waits 120 seconds, 2 minutes.
-- It respawns with 10% of its health (`constants.death.respawnHealthFraction`) and must heal to full before it farms again (`constants.death.mustHealToFullBeforeFarming`). It heals with potions or with natural regeneration (4.2): from 10%, regeneration alone takes 180 seconds at the default 0.5% per second.
+- It respawns with 10% of its health (`constants.death.respawnHealthFraction`) and the city routine heals it to full before it goes back on its own (`constants.death.mustHealToFullBeforeFarming`); the player can send it out sooner (decisions A2). It heals with potions or with natural regeneration (4.2): from 10%, regeneration alone takes 180 seconds at the default 0.5% per second.
 - It keeps its inventory and equipment. Nothing is lost except XP.
 - XP loss is random, up to 25% of the XP the current level requires.
 - XP can never fall below the highest point mark already passed in the current level (25%, 50% or 75% of the level's XP, 4.4). This stops a character from earning the same character point twice. Loss = random amount up to 25% of the level's XP requirement, limited so XP stays at or above that floor.

@@ -29,20 +29,40 @@ afterEach(() => {
 });
 
 describe('world screens', () => {
-  it('sends a character to an area with the chosen target and shows the multiplier', async () => {
+  it('sends a character straight to the area, with no target picker (#65)', () => {
     const dispatch = setup();
     route.value = 'world';
     openArea('mossfang-glade');
     render(<App />, host);
-    expect(host.textContent).toContain('Targeting ×2');
-    const radios = host.querySelectorAll<HTMLInputElement>('input[type=radio]');
-    radios[1]?.click();
-    await new Promise((resolve) => setTimeout(resolve));
+    expect(host.querySelectorAll('input[type=radio]')).toHaveLength(0);
     [...host.querySelectorAll('button')].find((b) => b.textContent === 'Send Kaela')?.click();
-    expect(dispatch.mock.calls.map(([c]) => c)).toEqual([
-      { type: 'sendToArea', characterId: 'c1', areaId: 'mossfang-glade' },
-      { type: 'setTarget', characterId: 'c1', enemyId: 'glade-rat' },
-    ]);
+    expect(dispatch.mock.calls.map(([c]) => c)).toEqual([{ type: 'sendToArea', characterId: 'c1', areaId: 'mossfang-glade' }]);
+  });
+
+  it('sets a target afterwards from the Farm screen, with the multiplier shown', async () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'searching';
+    state.roster.push(character);
+    const dispatch = vi.fn<(command: Command) => void>();
+    connectEngine({ state, dispatch, drainEvents: () => [] }, data);
+    openCharacter('c1');
+    render(<App />, host);
+    [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Target enemy'))?.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(host.textContent).toContain('Targeting ×2');
+    host.querySelectorAll<HTMLInputElement>('input[type=radio]')[1]?.click();
+    expect(dispatch.mock.calls.map(([c]) => c)).toEqual([{ type: 'setTarget', characterId: 'c1', enemyId: 'glade-rat' }]);
+  });
+
+  it('shows the exact reason a send is refused next to the button (#65)', () => {
+    setup('dead');
+    route.value = 'world';
+    openArea('mossfang-glade');
+    render(<App />, host);
+    expect([...host.querySelectorAll('button')].find((b) => b.textContent === 'Send Kaela')?.disabled).toBe(true);
+    expect(host.textContent).toContain('Kaela is dead.');
   });
 
   it('drinks a potion by hand in the city, only when health is short (decisions A1)', async () => {

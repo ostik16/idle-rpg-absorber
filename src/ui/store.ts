@@ -10,7 +10,7 @@ import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
 import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
-import { derivedStats, outOfPotions, type DerivedStats } from '../state/selectors';
+import { derivedStats, outOfPotions, sendRefusal, type DerivedStats } from '../state/selectors';
 import type {
   CharacterState,
   CityHealingMode,
@@ -57,6 +57,8 @@ export interface CharacterView {
   readonly xpInLevel: ReadonlySignal<number>;
   readonly gold: ReadonlySignal<number>;
   readonly activity: ReadonlySignal<Phase>;
+  /** Why "Send" is refused now, the engine's own words, or null when it can go (decisions A2). */
+  readonly sendRefusal: ReadonlySignal<string | null>;
   /** Time in the current phase, in the design system's formats: `12s`, `3m 12s`, `7h 42m`. */
   readonly timeInActivity: ReadonlySignal<string>;
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
@@ -230,6 +232,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const xpInLevel = signal(0);
   const gold = signal(0);
   const activity = signal(first.phase);
+  const refusal = signal<string | null>(null);
   const timeInActivity = signal('');
   const bag = signal<readonly ItemStack[]>([]);
   const noPotions = signal(false);
@@ -277,6 +280,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       xpInLevel,
       gold,
       activity,
+      sendRefusal: refusal,
       timeInActivity,
       bag,
       noPotions,
@@ -314,6 +318,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       xpInLevel.value = Math.ceil(character.xpInLevel);
       gold.value = character.gold;
       activity.value = character.phase;
+      refusal.value = sendRefusal(character);
       timeInActivity.value = formatDuration(character.timeInPhaseMs);
       areaId.value = character.areaId;
       targetEnemyId.value = character.targetEnemyId;
