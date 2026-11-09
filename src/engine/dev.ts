@@ -58,6 +58,7 @@ export function applyDevAction(
     }
     case 'giveXp':
       if (!wholeAbove(action.amount, 1)) return 'Give at least 1 whole XP.';
+      if (character.level >= requireNumberConstant(data, 'levelCap')) return 'Already at the level cap.';
       grantXp(character, action.amount, ctx);
       return null;
     case 'giveGold':

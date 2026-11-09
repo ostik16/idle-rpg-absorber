@@ -63,6 +63,13 @@ describe('dev actions', () => {
     expect(dev(state, { kind: 'giveXp', characterId: 'a', amount: 1.5 })).toMatch(/at least 1/);
   });
 
+  it('giveXp says so at the level cap, and changes nothing', () => {
+    const state = makeState();
+    character(state).level = constants.levelCap;
+    expect(dev(state, { kind: 'giveXp', characterId: 'a', amount: 10 })).toBe('Already at the level cap.');
+    expect(character(state).xpInLevel).toBe(0);
+  });
+
   it('giveItem stacks into the bag, and removeItem empties every stack of it', () => {
     const state = makeState();
     const held = () => character(state).bag.filter((s) => s.itemId === potion).reduce((n, s) => n + s.qty, 0);

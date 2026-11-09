@@ -20,10 +20,16 @@ const MS_PER_SECOND = 1000;
 const REFRESH_MS = 500;
 const DEFAULT_KILLS = 50;
 
+/** An engine event with a running number, so the list can key on it while it shifts. */
+export interface LoggedEvent {
+  id: number;
+  event: EngineEvent;
+}
+
 interface Props {
   engine: Engine;
   data: GameData;
-  events: readonly EngineEvent[];
+  events: readonly LoggedEvent[];
 }
 
 function Section({ title, children }: { title: string; children: ComponentChildren }) {
@@ -195,8 +201,8 @@ export function DevPanel({ engine, data, events }: Props) {
         )}
         <span class="ab-label">Last events</span>
         <ol class="dev__events">
-          {events.slice(-10).reverse().map((event, i) => (
-            <li key={i} class="dev__mono">{JSON.stringify(event)}</li>
+          {events.slice(-10).reverse().map(({ id, event }) => (
+            <li key={id} class="dev__mono">{JSON.stringify(event)}</li>
           ))}
         </ol>
       </Section>
