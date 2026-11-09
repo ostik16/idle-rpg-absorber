@@ -1,86 +1,65 @@
-import { useComputed } from '@preact/signals';
 import { CharacterCreate } from './CharacterCreate';
 import { CharacterScreen } from './CharacterScreen';
 import { City } from './City';
 import { DeleteConfirm } from './DeleteConfirm';
-import { formatGold } from './format';
+import { Farm } from './Farm';
 import { Icon } from './Icon';
 import { Notice } from './Notice';
-import { Roster } from './Roster';
 import { Settings } from './Settings';
 import { Shop } from './Shop';
+import { Switcher } from './Switcher';
 import { Warehouse } from './Warehouse';
-import { World } from './World';
 import { hrefFor, ROUTES, type Route } from './router';
 import {
-  closeCharacter,
-  closeCreation,
-  closeSettings,
-  closeShop,
-  closeWarehouse,
+  closePushed,
   creationOpen,
   listShops,
+  openCreation,
   openShopId,
   roster,
   route,
   selectedCharacter,
   settingsCharacterId,
-  viewedCharacterId,
   warehouseOpen,
 } from './store';
 
-// Placeholder content for the screens not built yet.
-const SCREENS: Record<Route, { label: string; empty: string }> = {
-  roster: { label: 'Roster', empty: 'No characters yet.' },
-  world: { label: 'World', empty: 'No areas to show yet.' },
-  city: { label: 'City', empty: 'Nothing in the city yet.' },
-  bestiary: { label: 'Bestiary', empty: 'No enemies recorded yet.' },
-};
+const LABELS: Record<Route, string> = { farm: 'Farm', city: 'City', character: 'Character', bestiary: 'Bestiary' };
 
-/** The four destinations. Used by both the phone tab bar and the desktop rail; CSS shows one of them. */
+/** The destinations. Used by both the phone tab bar and the desktop rail; CSS shows one of them. A tap always closes pushed screens. */
 function Tabs({ current }: { current: Route }) {
   return (
     <>
       {ROUTES.map((r) => (
-        <a key={r} class="ab-tab" href={hrefFor(r)} aria-current={r === current ? 'page' : undefined}>
+        <a key={r} class="ab-tab" href={hrefFor(r)} aria-current={r === current ? 'page' : undefined} onClick={closePushed}>
           <Icon name={r} />
-          {SCREENS[r].label}
+          {LABELS[r]}
         </a>
       ))}
     </>
   );
 }
 
-/** The app bar's gold pill reads the selected character (decisions L18). Null for an empty roster. */
-function GoldPill() {
-  const text = useComputed(() => {
-    const view = selectedCharacter.value;
-    return view === null ? null : formatGold(view.gold.value);
-  });
-  if (text.value === null) return null;
+function NoCharacter() {
   return (
-    <span class="ab-gold" aria-label="Gold">
-      <Icon name="gold" size={16} />
-      {text}
-    </span>
+    <section class="ab-card app__stack">
+      <p class="app__text">No characters yet.</p>
+      <button type="button" class="ab-btn ab-btn--primary ab-btn--block" onClick={openCreation}>
+        Create character
+      </button>
+    </section>
   );
 }
 
 export function App() {
   const current = route.value;
-  const creating = creationOpen.value;
-  const screen = SCREENS[current];
-  const viewedId = viewedCharacterId.value;
-  const viewedName = viewedId === null ? undefined : roster.value.find((v) => v.id === viewedId)?.name;
   const shopName = openShopId.value === null ? undefined : listShops().find((s) => s.id === openShopId.value)?.name;
   const settingsName = settingsCharacterId.value === null ? undefined : roster.value.find((v) => v.id === settingsCharacterId.value)?.name;
-  const configuring = settingsName !== undefined;
-  const shopping = shopName !== undefined;
+  const creating = creationOpen.value;
   const storing = warehouseOpen.value;
-  const viewing = !creating && viewedName !== undefined;
-  const pushed = creating || viewing || shopping || storing || configuring;
-  const title = configuring ? `${settingsName} · settings` : shopping ? shopName : storing ? 'Warehouse' : creating ? 'New character' : viewing ? viewedName : screen.label;
-  const back = configuring ? closeSettings : shopping ? closeShop : storing ? closeWarehouse : creating ? closeCreation : closeCharacter;
+  // The most specific pushed screen wins, as before. Tabs close all of them.
+  const pushedTitle =
+    settingsName !== undefined ? `${settingsName} · settings` : shopName !== undefined ? shopName : storing ? 'Warehouse' : creating ? 'New character' : null;
+  const hasCharacter = selectedCharacter.value !== null;
 
   return (
     <div class="app">
@@ -88,64 +67,41 @@ export function App() {
         <Tabs current={current} />
       </nav>
       <div class="app__col">
-        <header class={`ab-appbar${pushed ? ' ab-appbar--pushed' : ''}`}>
-          {pushed && (
-            <button
-              type="button"
-              class="ab-btn ab-btn--ghost ab-btn--icon"
-              aria-label="Back"
-              onClick={back}
-            >
-              <svg class="ab-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="m15 18-6-6 6-6"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          )}
-          <h1 class="ab-appbar__title">{title}</h1>
-          {!pushed && <GoldPill />}
+        <header class="ab-appbar">
+          <Switcher />
         </header>
         <main class="app__main">
           <div class="app__content">
             <Notice />
-            {configuring ? (
+            {pushedTitle !== null && <h2 class="ab-title app__text app__pushed-title">{pushedTitle}</h2>}
+            {settingsName !== undefined ? (
               <Settings />
-            ) : shopping ? (
+            ) : shopName !== undefined ? (
               <Shop />
             ) : storing ? (
               <Warehouse />
             ) : creating ? (
               <CharacterCreate />
-            ) : viewing ? (
-              <CharacterScreen />
-            ) : current === 'roster' ? (
-              <Roster />
-            ) : current === 'world' ? (
-              <World />
+            ) : current === 'farm' ? (
+              <Farm />
             ) : current === 'city' ? (
               <City />
+            ) : current === 'character' ? (
+              hasCharacter ? <CharacterScreen /> : <NoCharacter />
             ) : (
               <section class="ab-card">
                 <div class="ab-card__head">
-                  <span class="ab-label">{screen.label}</span>
+                  <span class="ab-label">{LABELS[current]}</span>
                 </div>
-                <p class="app__text">{screen.empty}</p>
+                <p class="app__text">No enemies recorded yet.</p>
                 <p class="app__text ab-c-muted">This screen is not built yet.</p>
               </section>
             )}
           </div>
         </main>
-        {!creating && (
-          <nav class="ab-tabbar app__tabbar" aria-label="Main">
-            <Tabs current={current} />
-          </nav>
-        )}
+        <nav class="ab-tabbar app__tabbar" aria-label="Main">
+          <Tabs current={current} />
+        </nav>
       </div>
       <DeleteConfirm />
     </div>

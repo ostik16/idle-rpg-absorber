@@ -5,7 +5,7 @@ import { loadGameData } from '../src/data/game-data';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { Command } from '../src/engine/commands';
 import { App } from '../src/ui/App';
-import { closeArea, closeCharacter, connectEngine, openArea, openCharacter, route } from '../src/ui/store';
+import { closeArea, connectEngine, openArea, route } from '../src/ui/store';
 
 const data = loadGameData();
 const host = document.createElement('div');
@@ -24,14 +24,13 @@ function setup(phase?: 'dead' | 'fleeing') {
 afterEach(() => {
   render(null, host);
   closeArea();
-  closeCharacter();
-  route.value = 'roster';
+  route.value = 'farm';
 });
 
-describe('world screens', () => {
+describe('farm screens', () => {
   it('sends a character to an area with the chosen target and shows the multiplier', async () => {
     const dispatch = setup();
-    route.value = 'world';
+    route.value = 'farm';
     openArea('mossfang-glade');
     render(<App />, host);
     expect(host.textContent).toContain('Targeting ×2');
@@ -47,7 +46,7 @@ describe('world screens', () => {
 
   it('shows the respawn health from data on a fallen character', () => {
     setup('dead');
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('Respawns with10%');
     expect(host.textContent).toContain('heals to full before farming');
@@ -55,7 +54,7 @@ describe('world screens', () => {
 
   it('shows a fleeing character as Fleeing', () => {
     setup('fleeing');
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('Fleeing');
   });
@@ -67,7 +66,7 @@ describe('world screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     const tick = () => new Promise((resolve) => setTimeout(resolve));
     [...host.querySelectorAll('button')].find((b) => b.textContent?.startsWith('Stats'))?.click();

@@ -6,10 +6,10 @@ Priority: **P1** blocks a screen or breaks the voice / design rules, **P2** noti
 
 Every UI change here is checked against the screen sketches in `design/ui/screens/*.dc.html` before it ships.
 
-## Roster
+## Roster (tab removed in #64; the switcher in the app bar replaced it)
 
-- [x] **P2** — Empty unlocked slots are invisible. Show every unlocked slot (filled or empty); tapping an empty slot opens the create flow, same as the Create character button. Today only locked slots show; empty unlocked slots are hidden. [src/ui/Roster.tsx](src/ui/Roster.tsx)
-- [ ] **P3** — Empty unlocked slot reuses the dashed locked style (no new CSS allowed in this pass). Not compared in a browser at 390px. [src/ui/Roster.tsx](src/ui/Roster.tsx)
+- [x] **P2** — Empty unlocked slots are invisible. Show every unlocked slot (filled or empty); tapping an empty slot opens the create flow, same as the Create character button. Today only locked slots show; empty unlocked slots are hidden. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
+- [ ] **P3** — Empty unlocked slot reuses the dashed locked style (no new CSS allowed in this pass). Not compared in a browser at 390px. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
 
 ## Character creation
 
@@ -68,3 +68,11 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 - [ ] **P3** — Shop: the selected totals sit in the bag section above the action bar in the sketch (today in the bottom bar); "{name} has N" is a separate bold span, not appended to the price line. [src/ui/Shop.tsx](src/ui/Shop.tsx)
 - [ ] **P3** — Gear: a "Sort" button on the bag, and a fuller paper-doll layout matching the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Warehouse: split heading ("Warehouse" + muted "Tab 1 · shared"), transfer buttons with an icon and a count badge, and a bag subtitle / character picker. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)
+
+## Navigation and app bar (#64)
+
+- [ ] **P2** — Sketch gap: `Main.dc.html`, `Comp-Navigation.dc.html` and the tab sketches still show the Roster tab, a title plus gold pill in the app bar, and back buttons on pushed screens. The app now has Farm, City, Character, Bestiary tabs and an app bar with only the character switcher (name, location, chevron), as in the "Character switcher" sketch. Update the sketches.
+- [ ] **P2** — Pushed screens (shop, warehouse, settings, creation) have no back button any more: the app bar holds only the switcher, so a tab tap is the way out. The screen's name shows as a heading at the top of the content. Revisit if playtesting finds the missing back button confusing. [src/ui/App.tsx](src/ui/App.tsx)
+- [ ] **P3** — The switcher list is a bottom sheet on phones and desktop alike; the design system asks for a centred dialog at `bp-desktop`. The delete sheet shares this. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
+- [ ] **P3** — Gold left the app bar. The Character screen header still shows it; the roster summary (gold per hour, warehouse) from the Roster sketch has no home yet.
+- [ ] **P3** — A pushed screen forgets which Character segment (Farm, Stats, Gear) was open when it closes.

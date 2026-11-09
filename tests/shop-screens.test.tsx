@@ -6,7 +6,7 @@ import type { Command } from '../src/engine/commands';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { ItemStack } from '../src/state/types';
 import { App } from '../src/ui/App';
-import { closeCharacter, closeShop, closeWarehouse, connectEngine, openCharacter, openShop, openWarehouse, route } from '../src/ui/store';
+import { closeShop, closeWarehouse, connectEngine, openShop, openWarehouse, route } from '../src/ui/store';
 
 const data = loadGameData();
 const host = document.createElement('div');
@@ -39,8 +39,7 @@ afterEach(() => {
   render(null, host);
   closeShop();
   closeWarehouse();
-  closeCharacter();
-  route.value = 'roster';
+  route.value = 'farm';
 });
 
 describe('city, shop, warehouse and gear screens', () => {
@@ -94,7 +93,7 @@ describe('city, shop, warehouse and gear screens', () => {
 
   it('equips from the bag and unequips from the slot', async () => {
     const dispatch = setup([stack('rusty-sword')]);
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     await click('[role=tab]', 'Gear');
     await click('button.ab-slot', 'Rusty sword');
@@ -104,7 +103,7 @@ describe('city, shop, warehouse and gear screens', () => {
 
   it('disables gear changes for a character out farming', async () => {
     setup([stack('rusty-sword')], 'searching');
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     await click('[role=tab]', 'Gear');
     expect(host.textContent).toContain('has to be in the city to change gear');

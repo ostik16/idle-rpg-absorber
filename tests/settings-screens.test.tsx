@@ -6,7 +6,7 @@ import type { Command } from '../src/engine/commands';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterSettings } from '../src/state/types';
 import { App } from '../src/ui/App';
-import { closeCharacter, closeSettings, connectEngine, openCharacter, openSettings, route, settingsCharacterId } from '../src/ui/store';
+import { closeSettings, connectEngine, openSettings, route, settingsCharacterId } from '../src/ui/store';
 
 const data = loadGameData();
 const host = document.createElement('div');
@@ -40,15 +40,14 @@ function open() {
 afterEach(() => {
   render(null, host);
   closeSettings();
-  closeCharacter();
-  route.value = 'roster';
+  route.value = 'farm';
 });
 
 describe('settings screen', () => {
   it('titles the screen with the character and shows data-driven rows', () => {
     setup();
     open();
-    expect(host.querySelector('h1')?.textContent).toBe('Kaela · settings');
+    expect(host.querySelector('.app__pushed-title')?.textContent).toBe('Kaela · settings');
     expect(host.textContent).toContain('Heads back when health drops below 20%.');
     expect(host.textContent).toContain('Minor health potion');
     expect(host.textContent).toContain('Swift draught');
@@ -133,16 +132,15 @@ describe('settings screen', () => {
     expect([...section.querySelectorAll<HTMLInputElement>('input[type=checkbox]')].every((box) => box.disabled)).toBe(true);
   });
 
-  it('opens from the Gear tab and from the city card, and goes back', async () => {
+  it('opens from the Gear tab and from the city card, and closes on a tab tap', async () => {
     setup();
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     await click('[role=tab]', 'Gear');
     await click('button', 'Loot filter');
     expect(settingsCharacterId.value).toBe('c1');
-    await click('button', 'Back');
+    await click('a.ab-tab', 'Character');
     expect(settingsCharacterId.value).toBeNull();
-    closeCharacter();
     route.value = 'city';
     await flush();
     expect(host.textContent).toContain('Minor health potion to 10.');

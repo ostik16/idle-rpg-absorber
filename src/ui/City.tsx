@@ -46,7 +46,7 @@ function CityRow({ view }: { view: CharacterView }) {
           <button type="button" class="ab-btn" disabled={shopping} onClick={() => selectCharacter(view.id)}>
             {shopping ? 'Shopping' : 'Shop as'}
           </button>
-          <a class="ab-btn ab-btn--primary" href={hrefFor('world')} onClick={() => selectCharacter(view.id)}>Send out</a>
+          <a class="ab-btn ab-btn--primary" href={hrefFor('farm')} onClick={() => selectCharacter(view.id)}>Send out</a>
         </div>
       )}
     </article>

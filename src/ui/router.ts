@@ -1,11 +1,11 @@
 // Small hash router (ADR 0001). Pure parsing lives here so it can be tested without a DOM.
 // Signals are created in store.ts only.
 
-/** The four main destinations, in tab order (design system README, Navigation). */
-export const ROUTES = ['roster', 'world', 'city', 'bestiary'] as const;
+/** The main destinations, in tab order (design system README, Navigation). */
+export const ROUTES = ['farm', 'city', 'character', 'bestiary'] as const;
 export type Route = (typeof ROUTES)[number];
 
-export const DEFAULT_ROUTE: Route = 'roster';
+export const DEFAULT_ROUTE: Route = 'farm';
 
 /** Maps a location hash such as `#/city` or `#city` to a route. Empty and unknown hashes give the default route. */
 export function parseHash(hash: string): Route {

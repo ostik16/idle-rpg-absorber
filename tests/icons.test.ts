@@ -7,7 +7,7 @@ describe('icon table', () => {
   it('has the concepts from the design system README', () => {
     // The 21 concepts in the README's "One icon per concept" list.
     const concepts: IconName[] = [
-      'roster', 'world', 'city', 'bestiary', 'farming', 'travelling', 'inCity', 'dead', 'gold', 'absorption', 'rareItem',
+      'farm', 'character', 'city', 'bestiary', 'farming', 'travelling', 'inCity', 'dead', 'gold', 'absorption', 'rareItem',
       'potion', 'upgrade', 'warehouse', 'teleporter', 'shop', 'lootFilter', 'returnToCity', 'targetEnemy', 'locked', 'bag',
     ];
     expect(names).toEqual(expect.arrayContaining(concepts));

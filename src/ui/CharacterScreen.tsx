@@ -7,20 +7,19 @@ import { formatGold, inCity, phaseDescriptor } from './format';
 import { Icon } from './Icon';
 import { BagGrid, ItemSlot } from './ItemSlot';
 import { hrefFor } from './router';
-import { TargetPicker } from './World';
+import { TargetPicker } from './Farm';
 import {
   areaEnemies,
   areaOf,
-  closeCharacter,
   equipmentSlots,
   formatDuration,
   itemInfo,
   listAreas,
   openSettings,
   requireGameData,
-  roster,
   send,
-  viewedCharacterId,
+  openDeleteConfirm,
+  selectedCharacter,
   type CharacterView,
   type LootKind,
 } from './store';
@@ -125,7 +124,7 @@ function AreaBlock({ view }: { view: CharacterView }) {
         <button type="button" class="ab-btn" onClick={() => setPicking(!picking)}>
           <Icon name="targetEnemy" size={16} /> Target enemy
         </button>
-        <a class="ab-btn" href={hrefFor('world')} onClick={closeCharacter}>Change area</a>
+        <a class="ab-btn" href={hrefFor('farm')}>Change area</a>
       </div>
       {picking && (
         <TargetPicker
@@ -187,7 +186,7 @@ function Farm({ view }: { view: CharacterView }) {
     return (
       <section class="ab-card app__stack">
         <p class="app__text">{view.name} is in the city.</p>
-        <a class="ab-btn ab-btn--primary" href={hrefFor('world')} onClick={closeCharacter}>Choose an area</a>
+        <a class="ab-btn ab-btn--primary" href={hrefFor('farm')}>Choose an area</a>
       </section>
     );
   }
@@ -405,9 +404,8 @@ function Gear({ view }: { view: CharacterView }) {
 
 export function CharacterScreen() {
   const [tab, setTab] = useState<'farm' | 'stats' | 'gear'>('farm');
-  const id = viewedCharacterId.value;
-  const view = roster.value.find((v) => v.id === id);
-  if (view === undefined) return null;
+  const view = selectedCharacter.value;
+  if (view === null) return null;
   const status = phaseDescriptor(view.activity.value);
   const area = view.areaId.value === null ? null : areaOf(view.areaId.value);
   return (
@@ -429,6 +427,9 @@ export function CharacterScreen() {
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'gear'} onClick={() => setTab('gear')}>Gear</button>
       </div>
       {tab === 'farm' ? <Farm view={view} /> : tab === 'stats' ? <Stats view={view} /> : <Gear view={view} />}
+      <button type="button" class="ab-btn ab-btn--ghost ab-btn--block" onClick={() => openDeleteConfirm(view.id)}>
+        Delete {view.name}
+      </button>
     </section>
   );
 }

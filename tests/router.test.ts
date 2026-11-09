@@ -13,7 +13,7 @@ describe('parseHash', () => {
   });
 
   it('uses the first segment and ignores the rest', () => {
-    expect(parseHash('#/world/area-1')).toBe('world');
+    expect(parseHash('#/farm/area-1')).toBe('farm');
     expect(parseHash('#/bestiary?filter=boss')).toBe('bestiary');
   });
 
@@ -25,7 +25,7 @@ describe('parseHash', () => {
 
   it('falls back to the default route for an unknown hash', () => {
     expect(parseHash('#/nowhere')).toBe(DEFAULT_ROUTE);
-    expect(parseHash('#/Roster')).toBe(DEFAULT_ROUTE);
+    expect(parseHash('#/Farm')).toBe(DEFAULT_ROUTE);
     expect(parseHash('#//city')).toBe(DEFAULT_ROUTE);
   });
 });
