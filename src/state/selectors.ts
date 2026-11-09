@@ -95,7 +95,7 @@ export function sendRefusal(character: CharacterState): string | null {
       return null;
     case 'dead':
       return `${character.name} is dead.`;
-    case 'restocking':
+    case 'restocking': // only reached with automation on (decisions A1)
       return `${character.name} is busy in the city.`;
     default:
       return `${character.name} has to be in the city first.`;

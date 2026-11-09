@@ -125,6 +125,22 @@ interface FightResult {
   queue: DrinkingPotion[];
 }
 
+/** Health regenerated per second: the base rate plus the regeneration trait's pulses as a rate. */
+function regenPerSecond(character: CharacterState, maxHealth: number, data: GameData): number {
+  const traits = constantSection(data, 'traits');
+  const regenPercent = character.absorption[traits.regenerationId] ?? 0;
+  return (
+    healthRegenPerSecond(maxHealth, constantSection(data, 'stats')) +
+    regenerationHeal(maxHealth, regenPercent) / traits.regenerationIntervalSeconds
+  );
+}
+
+/** Waiting in the city for `ms`: regeneration only, as in the live idle phase (decisions A1). */
+function rest(character: CharacterState, ms: number, data: GameData): void {
+  const { maxHealth } = derivedStats(character, data);
+  character.health = Math.min(maxHealth, character.health + (regenPerSecond(character, maxHealth, data) * ms) / MS_PER_SECOND);
+}
+
 /**
  * Walks one character through its trips (farm, return, sell, restock, heal, go back out) for `budgetMs`, one event at a
  * time: a search, a fight, a trip home. Fights run on the real `fightTick` and rewards on the real kill code, so
@@ -142,7 +158,10 @@ function estimateCharacter(
   data: GameData,
 ): CharacterSummary {
   const summary = { ...emptyCharacterSummary(character.id), deaths: 0 };
-  if (character.areaId === null || character.stayInCity) return summary;
+  if (character.areaId === null || character.stayInCity) {
+    if (character.phase === 'idle') rest(character, budgetMs, data);
+    return summary;
+  }
 
   const tickMs = requireNumberConstant(data, 'combat.tickMs');
   const streams = createCharacterStreams(state.clock.masterSeed, character.id, character.rng);
@@ -175,12 +194,7 @@ function estimateCharacter(
 
   const vitals = () => {
     const stats = derivedStats(character, data);
-    const traits = constantSection(data, 'traits');
-    const regenPercent = character.absorption[traits.regenerationId] ?? 0;
-    const perSecond =
-      healthRegenPerSecond(stats.maxHealth, constantSection(data, 'stats')) +
-      regenerationHeal(stats.maxHealth, regenPercent) / traits.regenerationIntervalSeconds;
-    return { stats, max: stats.maxHealth, perSecond };
+    return { stats, max: stats.maxHealth, perSecond: regenPerSecond(character, stats.maxHealth, data) };
   };
   const train = (skill: ProficiencyId, enemyLevel: number, units: number): void => {
     const points = character.proficiency[skill];
@@ -368,6 +382,7 @@ function estimateCharacter(
     leg = next;
   }
 
+  if (leg === 'home') rest(character, Math.max(0, budgetMs - elapsed), data);
   const head = queue[0];
   character.potions = {
     queue: queue.map((potion) => potion.itemId),

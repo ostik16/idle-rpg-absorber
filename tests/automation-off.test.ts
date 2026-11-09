@@ -122,6 +122,21 @@ describe('automation off (decisions A1)', () => {
     expect(character.phase).toBe('idle');
     expect(character.areaId).toBeNull();
     expect(potions(character)).toBe(10);
+    expect(character.health).toBe(derivedStats(character, data).maxHealth); // regenerates for the rest of the hour
+  });
+
+  it('the offline estimate regenerates a character idle in the city, as the live engine does', () => {
+    const data = loadGameData();
+    const live = setup((c) => void (c.health = 10));
+    const state = createGameState(7, T0, data);
+    const resting = createCharacterState('c1', 'Ysolde', data);
+    resting.health = 10;
+    state.roster.push(resting);
+    const seconds = 20;
+    estimateOffline(state, seconds, data);
+    live.advance(seconds * 1000 * (data.constants['offline'] as { efficiency: number }).efficiency);
+    expect(resting.health).toBeGreaterThan(10);
+    expect(resting.health).toBeCloseTo(live.character.health, 6);
   });
 });
 
@@ -151,6 +166,7 @@ describe('drinkPotion command (decisions A1)', () => {
     ['a dead character', (c: CharacterState) => void (c.phase = 'dead'), MINOR, 'Ysolde is dead.'],
     ['an item that is no potion', () => {}, HIDE, `No potion called ${HIDE}.`],
     ['a potion not in the bag', (c: CharacterState) => void (c.bag = []), MINOR, `Ysolde has no ${MINOR}.`],
+    ['a drink at full health, which would waste it', () => {}, MINOR, 'Ysolde is at full health.'],
   ])('refuses %s', (_, configure, itemId, reason) => {
     const { engine, character, advance } = setup(configure);
     const bag = structuredClone(character.bag);

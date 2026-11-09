@@ -96,6 +96,7 @@ export function drinkFromBag(character: CharacterState, itemId: string, data: Ga
   if (character.phase === 'dead') return `${character.name} is dead.`;
   if (potionTierOf(itemId, data) === null) return `No potion called ${itemId}.`;
   if (!character.bag.some((stack) => stack.itemId === itemId && stack.qty > 0)) return `${character.name} has no ${itemId}.`;
+  if (character.health >= derivedStats(character, data).maxHealth) return `${character.name} is at full health.`;
   takeFromBag(character, itemId);
   drinkPotion(character, itemId);
   return null;
