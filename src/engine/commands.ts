@@ -24,6 +24,7 @@ import type {
   ItemStack,
   RestockEntry,
 } from '../state/types';
+import { applyDevAction, type DevAction } from './dev';
 import type { EngineEvent } from './events';
 import type { StepContext } from './step-context';
 import { returnToCity, sendToArea, type AreaRow } from './travel';
@@ -66,7 +67,9 @@ export type Command =
   /** Replaces the list of potions to buy back up to before setting out (L4). */
   | { type: 'setRestockList'; characterId: string; list: RestockEntry[] }
   /** Replaces the loot filter rule set (L8). */
-  | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet };
+  | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet }
+  /** Developer tools for playtesting (#74). Refused in a production build. */
+  | { type: 'dev'; action: DevAction };
 
 const CITY_HEALING_MODES: readonly CityHealingMode[] = ['fast', 'balanced', 'slow'];
 const THRESHOLD_ERROR = 'Set a threshold between 1% and 100%.';
@@ -406,6 +409,12 @@ export function applyCommand(
     state.roster.find((c) => c.id === (command as { characterId?: string }).characterId);
 
   switch (command.type) {
+    case 'dev': {
+      // The DEV check lets the bundler drop `applyDevAction` from a production build.
+      if (!import.meta.env.DEV) return rejected('Developer tools are not in this build.');
+      const reason = applyDevAction(state, command.action, data, contextOf);
+      return reason === null ? null : rejected(reason);
+    }
     case 'createCharacter': {
       const reason = createCharacterError(state, command.name, data);
       if (reason !== null) return rejected(reason);
