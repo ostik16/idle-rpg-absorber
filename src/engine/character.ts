@@ -2,6 +2,7 @@
  * One character's state machine (ADR 0002 "Multiple characters"). A character is independent: it shares
  * nothing with the others except through the events it emits, which the engine applies at the end of the step.
  */
+import { constantSection } from '../data/game-data';
 import { derivedStats } from '../state/selectors';
 import type { CharacterState, Phase } from '../state/types';
 import { isBagFull, stepCityHealing } from './city';
@@ -43,10 +44,10 @@ const PHASE_STEPS: Readonly<Record<Phase, PhaseStep>> = {
  * Checks the auto-return triggers (design 3.2 L1, 2.3 L2): health in a fight or right after it, bag space after a
  * kill. Health only drops in `fighting` and the bag only grows into `looting`, so the other field phases cost
  * nothing. In a fight the health trigger goes through fleeing (L5). The bag-full trigger stays off until the bag
- * has space again.
+ * has space again. All off while automation is off (decisions A1).
  */
 function checkReturnTriggers(character: CharacterState, ctx: StepContext): void {
-  if (character.stayInCity || character.areaId === null) return;
+  if (!constantSection(ctx.data, 'automation').enabled || character.stayInCity || character.areaId === null) return;
   if (character.phase !== 'fighting' && character.phase !== 'looting') return;
   const { maxHealth } = derivedStats(character, ctx.data);
   if (character.health < character.settings.returnHealthThreshold * maxHealth) {

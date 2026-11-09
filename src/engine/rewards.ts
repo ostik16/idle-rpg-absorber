@@ -84,9 +84,10 @@ export function grantKillLoot(
 
   const itemOf = (itemId: string): ItemRow => itemRow(ctx.data, itemId);
   const limits = bagLimitsFor(character.equipment, itemOf, constantSection(ctx.data, 'inventory'));
+  const filtered = constantSection(ctx.data, 'automation').enabled; // off: picks up everything (decisions A1)
   for (const drop of drops) {
     const item = itemOf(drop.itemId);
-    if (!matchesLootFilter(character.settings.lootFilter, item, drop.bonuses)) continue;
+    if (filtered && !matchesLootFilter(character.settings.lootFilter, item, drop.bonuses)) continue;
     const stack = { itemId: drop.itemId, bonuses: drop.bonuses, upgradeLevel: 0, qty: drop.qty };
     const result = addToBag(character.bag, stack, item, limits, itemOf);
     character.bag = result.bag;

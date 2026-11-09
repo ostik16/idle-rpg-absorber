@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import { withAutomation } from './automation';
 import itemsJson from '../data/items.json';
 import xpTableJson from '../data/xp-table.json';
 import { createGameData, type GameData } from '../src/data/game-data';
@@ -387,7 +388,7 @@ describe('drops from a kill (3.8)', () => {
   });
 
   it('a loot filter leaves an item behind without a bagFull', () => {
-    const { character, events, kill } = harness();
+    const { character, events, kill } = harness(withAutomation(fixture()));
     character.settings.lootFilter = { enabled: true, rules: [{ category: 'consumable' }] };
     kill('soft');
     expect(character.bag).toEqual([]);

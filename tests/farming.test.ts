@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import { withAutomation } from './automation';
 import areasJson from '../data/areas.json';
 import enemiesJson from '../data/enemies.json';
 import dropTablesJson from '../data/drop-tables.json';
@@ -393,7 +394,7 @@ describe('commands (3.2, 3.3, L5)', () => {
 
   it('a return while dead or healing marks it to stay, and a second one is refused', () => {
     for (const phase of ['dead', 'restocking'] as const) {
-      const { engine, character, advance, id } = setup();
+      const { engine, character, advance, id } = setup(withAutomation(fixture()));
       character.areaId = AREA;
       character.phase = phase;
       character.health = 1; // at full health it would leave the city at once

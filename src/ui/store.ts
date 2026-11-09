@@ -10,7 +10,7 @@ import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
 import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
-import { derivedStats, type DerivedStats } from '../state/selectors';
+import { derivedStats, outOfPotions, type DerivedStats } from '../state/selectors';
 import type {
   CharacterState,
   CityHealingMode,
@@ -60,6 +60,8 @@ export interface CharacterView {
   /** Time in the current phase, in the design system's formats: `12s`, `3m 12s`, `7h 42m`. */
   readonly timeInActivity: ReadonlySignal<string>;
   readonly bag: ReadonlySignal<readonly ItemStack[]>;
+  /** No health potion left in the bag: with automation off it can now die from it (decisions A1). */
+  readonly noPotions: ReadonlySignal<boolean>;
   /** What is worn, by slot id. */
   readonly equipment: ReadonlySignal<Record<string, ItemStack>>;
   /** Bag cells and the stack size of stackable items, both set by the equipped backpack (design 2.1). */
@@ -230,6 +232,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const activity = signal(first.phase);
   const timeInActivity = signal('');
   const bag = signal<readonly ItemStack[]>([]);
+  const noPotions = signal(false);
   const equipment = signal<Record<string, ItemStack>>({});
   const bagCapacity = signal(0);
   const bagMaxStack = signal(0);
@@ -276,6 +279,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       activity,
       timeInActivity,
       bag,
+      noPotions,
       equipment,
       bagCapacity,
       bagMaxStack,
@@ -317,6 +321,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       phaseElapsedMs.value = character.timeInPhaseMs;
       phaseTotalMs.value = character.phase === 'dead' ? respawnSeconds(character.level, death) * MS_PER_SECOND : null;
       copyBag(character.bag);
+      noPotions.value = outOfPotions(character, data);
       copyEquipment(character.equipment);
       const limits = bagLimitsFor(character.equipment, itemOf, inventory);
       bagCapacity.value = limits.capacity;

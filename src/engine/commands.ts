@@ -25,6 +25,7 @@ import type {
   RestockEntry,
 } from '../state/types';
 import type { EngineEvent } from './events';
+import { drinkFromBag } from './healing';
 import type { StepContext } from './step-context';
 import { returnToCity, sendToArea, type AreaRow } from './travel';
 
@@ -66,7 +67,9 @@ export type Command =
   /** Replaces the list of potions to buy back up to before setting out (L4). */
   | { type: 'setRestockList'; characterId: string; list: RestockEntry[] }
   /** Replaces the loot filter rule set (L8). */
-  | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet };
+  | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet }
+  /** Drinks one potion from the bag now, in any phase but dead (decisions A1). */
+  | { type: 'drinkPotion'; characterId: string; itemId: string };
 
 const CITY_HEALING_MODES: readonly CityHealingMode[] = ['fast', 'balanced', 'slow'];
 const THRESHOLD_ERROR = 'Set a threshold between 1% and 100%.';
@@ -542,6 +545,12 @@ export function applyCommand(
       }
       character.settings.restockList = command.list.map(({ itemId, quantity }) => ({ itemId, quantity }));
       return null;
+    }
+    case 'drinkPotion': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      const reason = drinkFromBag(character, command.itemId, data);
+      return reason === null ? null : rejected(reason);
     }
   }
 }

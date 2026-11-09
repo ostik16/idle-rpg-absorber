@@ -133,6 +133,11 @@ function goBackToFarming(character: CharacterState, ctx: StepContext): void {
  * tick as the arrival, so a character that is already at full health leaves in that tick with no restocking phase.
  */
 export function arriveInCity(character: CharacterState, ctx: StepContext): void {
+  // Automation off (decisions A1): no selling, restocking or city healing; it waits in the city for the player.
+  if (!constantSection(ctx.data, 'automation').enabled) {
+    settleInCity(character, ctx);
+    return;
+  }
   autoSellBag(character, ctx.data);
   restockPotions(character, ctx.data);
   const { maxHealth } = derivedStats(character, ctx.data);
@@ -146,6 +151,11 @@ export function arriveInCity(character: CharacterState, ctx: StepContext): void 
 
 /** Stays until health is full, drinking as the character's healing choice says. Regeneration runs by itself. */
 export function stepCityHealing(character: CharacterState, ctx: StepContext): void {
+  // A save from before automation was turned off can still be in this phase.
+  if (!constantSection(ctx.data, 'automation').enabled) {
+    settleInCity(character, ctx);
+    return;
+  }
   const { maxHealth } = derivedStats(character, ctx.data);
   const mustHeal = constantSection(ctx.data, 'death').mustHealToFullBeforeFarming;
   if (!mustHeal || character.health >= maxHealth) {

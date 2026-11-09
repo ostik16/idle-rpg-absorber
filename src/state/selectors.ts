@@ -79,3 +79,11 @@ export function derivedStats(character: CharacterState, data: GameData): Derived
     movementSpeed: 1 + proficiencyEffect('speed', points.speed, proficiency) + gear.moveSpeedBonus,
   };
 }
+
+/** True when the bag holds no health potion (design 2.6), the Farm screen's alert: the character can now die from it. */
+export function outOfPotions(character: CharacterState, data: GameData): boolean {
+  return !character.bag.some((stack) => {
+    const row = requireRow(data, 'items', stack.itemId) as { effect?: { type?: string } };
+    return stack.qty > 0 && row.effect?.type === 'heal-over-time';
+  });
+}

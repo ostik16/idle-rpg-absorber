@@ -68,3 +68,9 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 - [ ] **P3** — Shop: the selected totals sit in the bag section above the action bar in the sketch (today in the bottom bar); "{name} has N" is a separate bold span, not appended to the price line. [src/ui/Shop.tsx](src/ui/Shop.tsx)
 - [ ] **P3** — Gear: a "Sort" button on the bag, and a fuller paper-doll layout matching the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Warehouse: split heading ("Warehouse" + muted "Tab 1 · shared"), transfer buttons with an icon and a count badge, and a bag subtitle / character picker. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)
+
+Automation off (#66, decisions A1):
+
+- [ ] **P2** — Copy and controls that describe automation still show while `automation.enabled` is false: City "Restock on return" card and "Restocking." state, Settings return threshold, restock quantities ("Restocked in the city before heading out"), city healing choice, loot filter and auto-sell editors. Hide or mark them inactive. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
+- [ ] **P3** — Character-Fell: the heal card reads "Then it waits in the city" instead of the sketch's "Then it heals before farming", because a respawned character no longer heals and leaves on its own. Update the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [ ] **P3** — Farm, in the city: health bar and one Drink row per health potion held (no sketch has them), so the player can heal by hand. The "no potions" alert (`CharacterView.noPotions`) is for the Farm screen rebuild (#64). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)

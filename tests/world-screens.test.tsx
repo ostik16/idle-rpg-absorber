@@ -45,12 +45,28 @@ describe('world screens', () => {
     ]);
   });
 
+  it('drinks a potion by hand in the city, only when health is short (decisions A1)', async () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.health = 5;
+    state.roster.push(character);
+    const dispatch = vi.fn<(command: Command) => void>();
+    connectEngine({ state, dispatch, drainEvents: () => [] }, data);
+    openCharacter('c1');
+    render(<App />, host);
+    expect(host.textContent).toContain('10 Minor health potion');
+    const drink = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Drink');
+    expect(drink?.disabled).toBe(false);
+    drink?.click();
+    expect(dispatch.mock.calls.map(([c]) => c)).toEqual([{ type: 'drinkPotion', characterId: 'c1', itemId: 'minor-health-potion' }]);
+  });
+
   it('shows the respawn health from data on a fallen character', () => {
     setup('dead');
     openCharacter('c1');
     render(<App />, host);
     expect(host.textContent).toContain('Respawns with10%');
-    expect(host.textContent).toContain('heals to full before farming');
+    expect(host.textContent).toContain('regenerates there until you send it out again');
   });
 
   it('shows a fleeing character as Fleeing', () => {
