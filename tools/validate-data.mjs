@@ -160,6 +160,7 @@ for (const a of tables['areas'] ?? []) {
 
 // Simulation limits and the reference build for the balance tools.
 if (!(Number.isInteger(C.engine?.maxStepsPerFrame) && C.engine.maxStepsPerFrame >= 1)) errors.push('constants.engine.maxStepsPerFrame must be a whole number of 1 or more');
+if (!(Number.isInteger(C.ui?.splashMinMs) && C.ui.splashMinMs >= 0)) errors.push('constants.ui.splashMinMs must be a whole number of 0 or more');
 const referenceBuild = C.balance?.referenceBuild ?? {};
 for (const key of ['weaponBase', 'weaponPerLevel', 'armourBase', 'armourPerLevel']) {
   if (!isFinite(referenceBuild[key]) || referenceBuild[key] < 0) errors.push(`constants.balance.referenceBuild.${key} must be a number of 0 or more`);

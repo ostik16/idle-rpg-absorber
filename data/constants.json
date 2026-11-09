@@ -289,5 +289,8 @@
   },
   "engine": {
     "maxStepsPerFrame": 600
+  },
+  "ui": {
+    "splashMinMs": 1000
   }
 }
