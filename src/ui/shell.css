@@ -40,12 +40,28 @@
 .app__sheet { max-width: var(--size-content); width: 100%; margin: 0 auto; }
 .app__sheet-title { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 700; letter-spacing: .02em; }
 
+/* Boot splash. Art bleeds off the top right corner; the name sits in the bottom third. Sizes follow the Cover card. */
+.splash { position: relative; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+.splash__art { position: absolute; top: 0; right: 0; display: block; width: 100%; max-height: 60vh; max-height: 60dvh; }
+.splash__words { margin-top: auto; padding: var(--space-6) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom)); }
+.splash__name { margin: 0; font-family: var(--font-display); font-size: clamp(40px, 13vw, 64px); line-height: .95; font-weight: 700; letter-spacing: .01em; color: var(--ink); }
+.splash__status { margin: var(--space-3) 0 0 2px; }
+.splash__block { rx: var(--radius-md); }
+.splash__satellite { rx: var(--radius-sm); }
+.splash__gold { fill: var(--gold); }
+.splash__gold-deep { fill: var(--gold-deep); }
+.splash__field { fill: var(--surface-3); }
+.splash__essence { fill: var(--essence); }
+.splash__arcane { fill: var(--arcane); }
+
 /* bp-desktop (900px, tokens.json): the tab bar becomes a left rail. Media queries cannot read custom properties. */
 @media (min-width: 900px) {
   .app { flex-direction: row; }
   .app__rail { display: flex; }
   .app__tabbar { display: none; }
   .app__main { padding: var(--space-6); }
+  .splash__art { width: 60%; }
+  .splash__words { padding: var(--space-6); }
   .app__scrim { align-items: center; justify-content: center; }
   .app__sheet { max-width: 420px; border-radius: var(--radius-lg); border-top: 1px solid var(--line-strong); }
 }
