@@ -454,6 +454,7 @@ describe('going back after healing (3.2, 3.7)', () => {
     character.settings.cityHealing = 'fast';
     character.bag = [{ itemId: MINOR, bonuses: [], upgradeLevel: 0, qty: 10 }];
     state.roster.push(character);
+    state.bestiary.kills['c1'] = { wall: 50 }; // targeting the wall is unlocked (3.3, A3)
     const engine = createEngine({ data: DATA, state });
     engine.dispatch({ type: 'sendToArea', characterId: 'c1', areaId: 'plain' });
     let now = T0;

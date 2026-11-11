@@ -44,6 +44,7 @@ describe('farm screens', () => {
     character.areaId = 'mossfang-glade';
     character.phase = 'searching';
     state.roster.push(character);
+    state.bestiary.kills['c1'] = { 'glade-rat': 50 }; // unlocked for targeting (3.3, A3)
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
     selectCharacter('c1');
@@ -54,6 +55,27 @@ describe('farm screens', () => {
     expect(host.textContent).toContain('Targeting ×2');
     host.querySelectorAll<HTMLInputElement>('input[type=radio]')[1]?.click();
     expect(dispatch.mock.calls.map(([c]) => c)).toEqual([{ type: 'setTarget', characterId: 'c1', enemyId: 'glade-rat' }]);
+  });
+
+  it('shows kill progress and disables the radio for a mob not yet unlocked (#67)', async () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'searching';
+    state.roster.push(character);
+    state.bestiary.kills['c1'] = { 'glade-rat': 12 };
+    const dispatch = vi.fn<(command: Command) => void>();
+    connectEngine({ state, dispatch, drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Target enemy'))?.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(host.textContent).toContain('12 / 50 kills to unlock');
+    const locked = host.querySelectorAll<HTMLInputElement>('input[type=radio]')[1];
+    expect(locked?.disabled).toBe(true);
+    locked?.click();
+    expect(dispatch.mock.calls).toHaveLength(0);
   });
 
   it('shows the exact reason a send is refused next to the button (#65)', () => {

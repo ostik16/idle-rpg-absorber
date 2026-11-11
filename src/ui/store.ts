@@ -76,6 +76,8 @@ export interface CharacterView {
   readonly areaId: ReadonlySignal<string | null>;
   /** The enemy type it targets, or null when it fights whatever it finds (design 3.3). */
   readonly targetEnemyId: ReadonlySignal<string | null>;
+  /** This character's bestiary kills by enemy id, for the targeting unlock (design 3.3, decisions A3). */
+  readonly kills: ReadonlySignal<Readonly<Record<string, number>>>;
   readonly attributes: ReadonlySignal<Attributes>;
   readonly derived: ReadonlySignal<DerivedStats>;
   readonly unspentPoints: ReadonlySignal<number>;
@@ -214,7 +216,7 @@ function copyInto<T>(target: Signal<T>): (source: T) => void {
 interface CharacterBinding {
   readonly view: CharacterView;
   addLoot(entry: Omit<LootEntry, 'id'>): void;
-  refresh(character: CharacterState): void;
+  refresh(character: CharacterState, kills: Readonly<Record<string, number>>): void;
 }
 
 /** The item reader the game helpers take, over `data.items`. An unknown id reads as a 1-cell item, so a stale save cannot stop the screen. */
@@ -225,7 +227,7 @@ function itemRowOf(data: GameData): (id: string) => EquipmentItemRow {
   };
 }
 
-function bindCharacter(first: CharacterState, data: GameData): CharacterBinding {
+function bindCharacter(first: CharacterState, data: GameData, firstKills: Readonly<Record<string, number>>): CharacterBinding {
   const health = signal(0);
   const maxHealth = signal(0);
   const mana = signal(0);
@@ -244,6 +246,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const bagUsedCells = signal(0);
   const areaId = signal<string | null>(first.areaId);
   const targetEnemyId = signal<string | null>(first.targetEnemyId);
+  const kills = signal<Readonly<Record<string, number>>>({});
   const attributes = signal<Attributes>(first.attributes);
   const derived = signal<DerivedStats>(derivedStats(first, data));
   const unspentPoints = signal(0);
@@ -268,6 +271,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
   const copyAttributes = copyInto(attributes);
   const copyDerived = copyInto(derived);
   const copyProficiency = copyInto(proficiency);
+  const copyKills = copyInto(kills);
   const death = constantSection(data, 'death');
 
   const binding: CharacterBinding = {
@@ -292,6 +296,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       bagUsedCells,
       areaId,
       targetEnemyId,
+      kills,
       attributes,
       derived,
       unspentPoints,
@@ -310,8 +315,9 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       lootCounter += 1;
       loot.value = [{ id: lootCounter, ...entry }, ...loot.value].slice(0, LOOT_LIMIT);
     },
-    refresh(character) {
+    refresh(character, characterKills) {
       const stats = derivedStats(character, data);
+      copyKills(characterKills);
       health.value = Math.ceil(character.health);
       maxHealth.value = Math.ceil(stats.maxHealth);
       mana.value = Math.ceil(character.mana);
@@ -345,7 +351,7 @@ function bindCharacter(first: CharacterState, data: GameData): CharacterBinding 
       copyAutoSell(character.settings.autoSell);
     },
   };
-  binding.refresh(first);
+  binding.refresh(first, firstKills);
   return binding;
 }
 
@@ -420,9 +426,10 @@ export function connectEngine(
     const ids = characters.map((character) => character.id);
     for (const id of bindings.keys()) if (!ids.includes(id)) bindings.delete(id);
     for (const character of characters) {
+      const kills = engine.state.bestiary.kills[character.id] ?? {};
       const binding = bindings.get(character.id);
-      if (binding) binding.refresh(character);
-      else bindings.set(character.id, bindCharacter(character, data));
+      if (binding) binding.refresh(character, kills);
+      else bindings.set(character.id, bindCharacter(character, data, kills));
     }
     const shown = rosterSignal.value;
     if (shown.length !== ids.length || shown.some((view, i) => view.id !== ids[i])) {

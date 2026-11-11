@@ -132,6 +132,7 @@ function AreaBlock({ view }: { view: CharacterView }) {
           areaId={area.id}
           searchSeconds={entry.searchSeconds}
           value={targetId}
+          kills={view.kills.value}
           onPick={(enemyId) => send({ type: 'setTarget', characterId: view.id, enemyId })}
         />
       )}

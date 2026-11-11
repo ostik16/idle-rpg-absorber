@@ -59,6 +59,10 @@ function setup(data: GameData = fixture()) {
   engine.dispatch({ type: 'createCharacter', name: 'Ysolde' });
   engine.advanceTo(T0 + TICK);
   const character = engine.state.roster[0] as CharacterState;
+  // Targeting unlocks at 50 kills (3.3, A3); seed the bestiary so the mechanics tests can target any enemy.
+  engine.state.bestiary.kills[character.id] = Object.fromEntries(
+    (data.enemies as readonly { id: string }[]).map((e) => [e.id, constants.farming.targeting.unlockKills]),
+  );
   let now = T0 + TICK;
   /** Moves the clock on, a step at a time as far as the engine is concerned. */
   const advance = (ms: number): void => {
@@ -446,6 +450,23 @@ describe('commands (3.2, 3.3, L5)', () => {
     advance(TICK);
     expect(rejections(engine)).toEqual(['No "nobody" in this area.']);
     expect(character.targetEnemyId).toBeNull();
+  });
+
+  it('a target unlocks at 50 kills of that enemy: rejected below, allowed at the threshold (#67)', () => {
+    const { engine, character, advance, id } = setup();
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    engine.state.bestiary.kills[id] = { [RAT]: 49 };
+    engine.drainEvents();
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: RAT });
+    advance(TICK);
+    expect(rejections(engine)).toEqual(['Defeat Glade rat 50 times to target it (49 so far).']);
+    expect(character.targetEnemyId).toBeNull();
+
+    engine.state.bestiary.kills[id] = { [RAT]: 50 };
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: RAT });
+    advance(TICK);
+    expect(rejections(engine)).toEqual([]);
+    expect(character.targetEnemyId).toBe(RAT);
   });
 
   it('can target the mini-boss and the boss, at their own multiplier, and clear the target', () => {

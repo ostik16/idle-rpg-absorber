@@ -53,6 +53,7 @@ Template per system: **Purpose**, **Rules** (decided), **Proposed** (not yet dec
 **Rules.**
 - Between fights the character moves to the next enemy. This takes 6 seconds by default (`constants.farming.movementSecondsBetweenEnemies`), and an area can set its own value. It trains the speed skill (4.6), which shortens it.
 - The player can target one enemy type. This means fewer fights per hour, because the character has to search for that enemy. The search time depends on the enemy's rarity: movement time × the enemy's targeting multiplier. Common enemies take double the time to find (×2), special enemies up to ×10. The multiplier is set per enemy (`constants.farming.targeting`). Assumed to apply to the movement time only, not the fight.
+- Targeting a mob is earned: it unlocks per mob at 50 kills of that mob (`constants.farming.targeting.unlockKills`), read from the bestiary kill count. The target picker shows unlocked mobs and the kill progress of the rest; the `setTarget` command rejects a locked mob, not only the UI. "Any enemy" is always available (decisions A3).
 
 **Data.** movement time between enemies (default and per-area override), targeting multiplier per enemy.
 
