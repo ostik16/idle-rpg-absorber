@@ -16,11 +16,17 @@
 .app__input--ok { border-color: var(--gold); }
 .app__input--bad { border-color: var(--danger); }
 
-/* Roster row with a trailing delete button. ab-char is a grid of two columns; the row adds a third for the button. */
-.app__row { grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; }
+/* App bar switcher: the selected character's avatar, name and location, opening the character list. */
+.app__who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-tap); padding: 0 var(--space-2) 0 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.app__who:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.app__who-avatar { width: var(--space-8); height: var(--space-8); border-color: var(--gold-deep); }
+.app__who-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.app__who-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app__who-text .ab-char__where { margin-top: 0; }
+
+/* A character or empty slot in the switcher sheet. */
+.app__pick { width: 100%; font: inherit; text-align: left; cursor: pointer; }
 .app__row-body { display: flex; flex-direction: column; min-width: 0; }
-.app__row-del { flex: none; color: var(--ink-muted); }
-.app__row-del:hover { color: var(--danger); }
 
 /* Section heading with a diamond ornament, label and a trailing count (design system README "Space, shape and depth"). */
 .app__section-head { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
@@ -37,7 +43,7 @@
 
 /* Delete confirm sheet sits on top of the app, inside the body of `.app`. */
 .app__scrim { position: fixed; inset: 0; z-index: 10; }
-.app__sheet { max-width: var(--size-content); width: 100%; margin: 0 auto; }
+.app__sheet { box-sizing: border-box; max-width: var(--size-content); width: 100%; margin: 0 auto; }
 .app__sheet-title { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 700; letter-spacing: .02em; }
 
 /* Boot splash. Art bleeds off the top right corner; the name sits in the bottom third. Sizes follow the Cover card. */
@@ -68,7 +74,6 @@
 
 /* World and character screens. */
 .app__grow { flex: 1; min-width: 0; }
-.app__row-open { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .app__area { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .app__area-top { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .app__area-top .ab-title { flex: 1; }
@@ -94,3 +99,6 @@
 .app__paper { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-2); }
 .app__gear-slot { display: grid; grid-template-columns: var(--size-slot) minmax(0, 1fr); align-items: center; gap: var(--space-2); min-width: 0; }
 .app__transfer { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.app__pushed-title { margin-bottom: var(--space-3); }
+/* Visible to screen readers only: the page's h1, since the app bar shows the character, not a title. */
+.app__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

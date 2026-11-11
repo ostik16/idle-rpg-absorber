@@ -37,6 +37,8 @@ export const route = signal<Route>(DEFAULT_ROUTE);
 /** Keeps `route` in step with the URL hash. Call once at startup. */
 export function startRouteSync(): () => void {
   return watchHash((next) => {
+    // A new tab shows its root, whatever moved the hash: a tab, an in-content link or the browser's back button.
+    closePushed();
     route.value = next;
   });
 }
@@ -118,11 +120,11 @@ const maxSlotsSignal = signal(0);
 const selectedIdSignal = signal<string | null>(null);
 const creationOpenSignal = signal(false);
 const pendingDeleteIdSignal = signal<string | null>(null);
-const viewedIdSignal = signal<string | null>(null);
 const openAreaIdSignal = signal<string | null>(null);
 const openShopIdSignal = signal<string | null>(null);
 const settingsIdSignal = signal<string | null>(null);
 const warehouseOpenSignal = signal(false);
+const shoppingListSignal = signal<Readonly<Record<string, number>>>({});
 /** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
 let gameData: GameData | null = null;
 
@@ -134,15 +136,15 @@ export const warehouseTabs: ReadonlySignal<readonly ReadonlySignal<WarehouseTab>
 export const pendingSummary: ReadonlySignal<OfflineSummary | null> = pendingSummarySignal;
 /** The latest answer from the engine: a refused command or a clock rewind. The next command clears it. */
 export const notice: ReadonlySignal<string | null> = noticeSignal;
-/** The character whose detail screen is pushed over the current screen, or null. */
-export const viewedCharacterId: ReadonlySignal<string | null> = viewedIdSignal;
-/** The area whose send sheet is open on the World screen, or null. */
+/** The area whose send sheet is open on the Farm tab, or null. */
 export const openAreaId: ReadonlySignal<string | null> = openAreaIdSignal;
 
 /** The shop whose screen is pushed over the City, or null. */
 export const openShopId: ReadonlySignal<string | null> = openShopIdSignal;
 /** The character whose settings screen is pushed over the current screen, or null. */
 export const settingsCharacterId: ReadonlySignal<string | null> = settingsIdSignal;
+/** Item id to quantity chosen in a shop. Lives here, not in the Shop screen, so it survives a tab switch. */
+export const shoppingList: ReadonlySignal<Readonly<Record<string, number>>> = shoppingListSignal;
 /** True while the warehouse screen is pushed over the City. */
 export const warehouseOpen: ReadonlySignal<boolean> = warehouseOpenSignal;
 
@@ -152,9 +154,9 @@ export const lastingNotices: ReadonlySignal<readonly string[]> = lastingNoticesS
 export const unlockedSlots: ReadonlySignal<number> = unlockedSlotsSignal;
 /** The maximum roster size (design 4.1, `constants.characters.maxSlots`). */
 export const maxSlots: ReadonlySignal<number> = maxSlotsSignal;
-/** The character whose numbers feed the app bar (decisions L18). Null before the roster has anyone. */
+/** The character the app bar names and the Farm, City and Character tabs act for. Null before the roster has anyone. */
 export const selectedCharacterId: ReadonlySignal<string | null> = selectedIdSignal;
-/** The character behind the app bar's gold pill, or null. */
+/** The selected character's view, or null. */
 export const selectedCharacter: ReadonlySignal<CharacterView | null> = computed(() => {
   const id = selectedIdSignal.value;
   if (id === null) return null;
@@ -433,7 +435,6 @@ export function connectEngine(
     if (pendingDeleteIdSignal.value !== null && !ids.includes(pendingDeleteIdSignal.value)) {
       pendingDeleteIdSignal.value = null;
     }
-    if (viewedIdSignal.value !== null && !ids.includes(viewedIdSignal.value)) viewedIdSignal.value = null;
     if (settingsIdSignal.value !== null && !ids.includes(settingsIdSignal.value)) settingsIdSignal.value = null;
   }
 
@@ -481,7 +482,7 @@ export function connectEngine(
   selectedIdSignal.value = null;
   creationOpenSignal.value = false;
   pendingDeleteIdSignal.value = null;
-  viewedIdSignal.value = null;
+  shoppingListSignal.value = {};
   openAreaIdSignal.value = null;
   openShopIdSignal.value = null;
   settingsIdSignal.value = null;
@@ -522,21 +523,22 @@ export function closeDeleteConfirm(): void {
   pendingDeleteIdSignal.value = null;
 }
 
-/** Points the app bar at a character (decisions L18). Null is only valid for an empty roster. */
+/** Points the app bar and the tabs at a character. Another character starts with an empty shopping list. */
 export function selectCharacter(characterId: string): void {
+  if (selectedIdSignal.value !== characterId) shoppingListSignal.value = {};
   selectedIdSignal.value = characterId;
 }
 
-/** Pushes a character's detail screen (design system "Mobile and layout"). */
-export function openCharacter(characterId: string): void {
-  viewedIdSignal.value = characterId;
+/** A tab was tapped: close every pushed screen so the tab shows its root (issue #64). The shopping list stays. */
+export function closePushed(): void {
+  creationOpenSignal.value = false;
+  openAreaIdSignal.value = null;
+  openShopIdSignal.value = null;
+  settingsIdSignal.value = null;
+  warehouseOpenSignal.value = false;
 }
 
-export function closeCharacter(): void {
-  viewedIdSignal.value = null;
-}
-
-/** Opens the send sheet for an area on the World screen. */
+/** Opens the send sheet for an area on the Farm tab. */
 export function openArea(areaId: string): void {
   openAreaIdSignal.value = areaId;
 }
@@ -560,6 +562,14 @@ export function openSettings(characterId: string): void {
 
 export function closeSettings(): void {
   settingsIdSignal.value = null;
+}
+
+export function setShoppingQty(itemId: string, qty: number): void {
+  shoppingListSignal.value = { ...shoppingListSignal.value, [itemId]: qty };
+}
+
+export function clearShoppingList(): void {
+  shoppingListSignal.value = {};
 }
 
 export function openWarehouse(): void {
@@ -626,7 +636,7 @@ function areaRows(): readonly AreaRow[] {
   return requireGameData().areas as unknown as readonly AreaRow[];
 }
 
-/** Every area in data order, for the World screen. */
+/** Every area in data order, for the Farm tab. */
 export function listAreas(): readonly AreaListEntry[] {
   return areaRows().map((area) => ({
     id: area.id,

@@ -155,7 +155,7 @@ function AreaSheet({ area, view }: { area: AreaListEntry; view: CharacterView })
   );
 }
 
-export function World() {
+export function Farm() {
   const view = selectedCharacter.value;
   if (view === null) {
     return (

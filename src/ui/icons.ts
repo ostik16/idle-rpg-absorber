@@ -3,6 +3,7 @@ import archive from 'lucide-static/icons/archive.svg?raw';
 import backpack from 'lucide-static/icons/backpack.svg?raw';
 import bookOpen from 'lucide-static/icons/book-open.svg?raw';
 import castle from 'lucide-static/icons/castle.svg?raw';
+import chevronDown from 'lucide-static/icons/chevron-down.svg?raw';
 import circleDot from 'lucide-static/icons/circle-dot.svg?raw';
 import coins from 'lucide-static/icons/coins.svg?raw';
 import crosshair from 'lucide-static/icons/crosshair.svg?raw';
@@ -24,12 +25,12 @@ import store from 'lucide-static/icons/store.svg?raw';
 import sword from 'lucide-static/icons/sword.svg?raw';
 import swords from 'lucide-static/icons/swords.svg?raw';
 import undo2 from 'lucide-static/icons/undo-2.svg?raw';
-import users from 'lucide-static/icons/users.svg?raw';
+import user from 'lucide-static/icons/user.svg?raw';
 
 const rawIcons = {
-  roster: users,
-  world: map,
+  farm: map,
   city: castle,
+  character: user,
   bestiary: bookOpen,
   farming: swords,
   travelling: footprints,
@@ -47,6 +48,7 @@ const rawIcons = {
   returnToCity: undo2,
   targetEnemy: crosshair,
   locked: lock,
+  chevronDown,
   bag: backpack,
   categorySword: sword,
   categoryShield: shield,

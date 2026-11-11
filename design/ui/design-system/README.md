@@ -56,9 +56,9 @@ Idle RPG Absorber is a browser idle RPG. A roster of characters farms on its own
 ## Mobile and layout
 
 - Design at 390px wide first (`bp-phone`). Everything works one-handed: navigation and the screen's main action sit in the bottom third.
-- Below `bp-desktop` (900px): a `size-appbar` app bar with the screen title and gold balance, and a bottom tab bar (`size-tabbar`) with four destinations: Roster, World, City, Bestiary. Pad the tab bar with `env(safe-area-inset-bottom)`.
+- Below `bp-desktop` (900px): a `size-appbar` app bar with the selected character's name, their location and the character switcher, and a bottom tab bar (`size-tabbar`) with four destinations: Farm, City, Character, Bestiary. Tapping any tab closes whatever is pushed and shows that tab's root. Pad the tab bar with `env(safe-area-inset-bottom)`.
 - At `bp-desktop` and wider, the tab bar becomes a left rail (`size-rail`); roster, character detail and the loot feed sit side by side; the warehouse and a character's bag sit side by side for transfers; bottom sheets become centred dialogs. Content stops at `size-content`.
-- Character detail is a pushed screen with a back button and a segmented control: Farm, Stats, Gear, Spells.
+- The Character tab is the selected character's detail screen with a segmented control: Farm, Stats, Gear. Shops, the warehouse and settings are pushed over a tab with no back button; any tab tap closes them.
 - Touch targets are at least `size-tap` (44px). Item cells are `size-slot` (44px); weapons span 3 cells tall, body armour and leggings 2. A 7-column grid with 6px gaps fits a 390px phone.
 - No hover-only information. Tapping an item or an area opens a bottom sheet on phones and a dialog on desktop. Drag and drop is a desktop shortcut for transfers, never the only way.
 - Moving items between two inventories (a bag and the warehouse) always shows both grids at once. On phones the bag sits above and the warehouse below, with "To warehouse ↓" and "To bag ↑" between them. On desktop they sit side by side with → and ← buttons. Tapping items multi-selects them (2px `gold` edge and a gold check), and only the button for the selected side is live and gold. Stacks merge into existing stacks first. A status line under the buttons says what moved, or why something didn't fit ("No room for Rusty Dagger: it needs 2 free cells in one column").
@@ -69,7 +69,7 @@ Idle RPG Absorber is a browser idle RPG. A roster of characters farms on its own
 ## Iconography
 
 - Lucide icons (ISC licence): 24px grid, stroke width 1.75, round caps and joins, coloured with `currentColor`. 20px in buttons and tabs, 16px in rows, 14px in chips. Never emoji.
-- One icon per concept: Roster `users`, World `map`, City `castle`, Bestiary `book-open`, Farming `swords`, Travelling `footprints`, In city `house`, Dead `skull`, Gold `coins`, Absorption `sparkle`, Rare item `gem`, Potion `flask-round`, Upgrade `hammer`, Warehouse `archive`, Teleporter `orbit`, Shop `store`, Loot filter `filter`, Return to city `undo-2`, Target enemy `crosshair`, Locked `lock`, Bag `backpack`.
+- One icon per concept: Farm `map`, City `castle`, Character `user`, Bestiary `book-open`, Farming `swords`, Travelling `footprints`, In city `house`, Dead `skull`, Gold `coins`, Absorption `sparkle`, Rare item `gem`, Potion `flask-round`, Upgrade `hammer`, Warehouse `archive`, Teleporter `orbit`, Shop `store`, Loot filter `filter`, Return to city `undo-2`, Target enemy `crosshair`, Locked `lock`, Bag `backpack`.
 - Items have no art yet. A slot shows its category's icon (sword, shield, flask, gem, ring, scroll) in `ink-muted`, or `arcane` for rare items. When item art arrives it replaces the icon and keeps the slot frame and corner marks.
 - There is no logo yet: set the name in `display`.
 

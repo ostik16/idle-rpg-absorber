@@ -7,7 +7,7 @@ import { createEngine, type Engine } from '../src/engine/engine';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterState, GameState } from '../src/state/types';
 import { App } from '../src/ui/App';
-import { Roster } from '../src/ui/Roster';
+import { Switcher } from '../src/ui/Switcher';
 import {
   closeCreation,
   closeDeleteConfirm,
@@ -18,6 +18,7 @@ import {
   openCreation,
   openDeleteConfirm,
   roster,
+  route,
   send,
   showLastingNotices,
   warehouseTabs,
@@ -77,32 +78,40 @@ async function observe(change: () => void) {
   return { records, diffs };
 }
 
-function goldTextNode(row: number): Text {
-  const stat = host.querySelectorAll('.ab-char')[row]?.querySelector('.ab-char__stat');
-  return stat?.querySelector('b')?.firstChild as Text;
+const flush = () => new Promise((resolve) => setTimeout(resolve));
+
+/** Opens the app bar switcher's character list. */
+async function openSwitcher(): Promise<void> {
+  (host.querySelector('.app__who') as HTMLElement).click();
+  await flush();
+}
+
+function levelTextNode(row: number): Text {
+  return host.querySelectorAll('.ab-char')[row]?.querySelector('.ab-level b')?.firstChild as Text;
 }
 
 describe('live numbers (ADR 0001)', () => {
-  it("changing one character's gold updates one text node, not the component tree", async () => {
+  it("changing one character's level updates one text node, not the component tree", async () => {
     const state = gameWith('Ysolde', 'Brann');
     const refresh = connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<Roster />, host);
+    render(<Switcher />, host);
+    await openSwitcher();
 
-    const target = goldTextNode(0);
-    const other = goldTextNode(1);
+    const target = levelTextNode(0);
+    const other = levelTextNode(1);
     const otherText = other.data;
     const rows = [...host.querySelectorAll('.ab-char')];
-    (state.roster[0] as CharacterState).gold = 48_210;
+    (state.roster[0] as CharacterState).level = 7;
 
     const { records, diffs } = await observe(refresh);
 
     expect(records).toHaveLength(1);
     expect(records[0]?.type).toBe('characterData');
     expect(records[0]?.target).toBe(target);
-    expect(target.data).toBe('48,210');
+    expect(target.data).toBe('7');
     expect(diffs).toBe(0);
 
-    expect(goldTextNode(0)).toBe(target);
+    expect(levelTextNode(0)).toBe(target);
     expect(other.data).toBe(otherText);
     expect([...host.querySelectorAll('.ab-char')]).toEqual(rows);
   });
@@ -110,7 +119,7 @@ describe('live numbers (ADR 0001)', () => {
   it('touches nothing when no shown value changed', async () => {
     const state = gameWith('Ysolde');
     const refresh = connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<Roster />, host);
+    render(<Switcher />, host);
     (state.roster[0] as CharacterState).health -= 0.0001;
     const { records, diffs } = await observe(refresh);
     expect(records).toHaveLength(0);
@@ -247,8 +256,8 @@ describe('the avatar initial', () => {
   function avatarOf(name: string): string | null | undefined {
     const state = gameWith(name);
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<Roster />, host);
-    return host.querySelector('.ab-char__avatar')?.textContent;
+    render(<Switcher />, host);
+    return host.querySelector('.app__who-avatar')?.textContent;
   }
 
   it('is the first letter', () => {
@@ -294,49 +303,70 @@ describe('roster and character creation (design 4.1)', () => {
     return { engine, refresh };
   }
 
-  it('shows a locked slot for every slot above unlockedSlots', () => {
+  it('shows a locked slot for every slot above unlockedSlots', async () => {
     const state = gameWith('Ysolde');
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
     render(<App />, host);
+    await openSwitcher();
     const locked = [...host.querySelectorAll('.ab-char--locked')];
     expect(locked).toHaveLength(constants.characters.maxSlots - state.account.unlockedSlots);
     expect(locked[0]?.textContent).toContain('Locked.');
   });
 
-  it('shows one empty row per unlocked free slot, and clicking one opens creation', () => {
+  it('shows one empty row per unlocked free slot, and clicking one closes the list and opens creation', async () => {
     const state = gameWith('Ysolde');
     state.account.unlockedSlots = 3;
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<Roster />, host);
+    render(<Switcher />, host);
+    await openSwitcher();
 
     const empty = [...host.querySelectorAll('button')].filter((b) => b.textContent?.includes('Empty. Create a character.'));
     expect(empty).toHaveLength(2);
     expect(empty[0]?.textContent).toContain('Slot 2');
     empty[0]?.click();
+    await flush();
     expect(creationOpen.value).toBe(true);
+    expect(host.querySelector('[role="dialog"]')).toBeNull();
     closeCreation();
   });
 
-  it('shows an area name and level range on a character that farms somewhere', () => {
-    const state = gameWith('Ysolde');
-    (state.roster[0] as CharacterState).phase = 'searching';
-    (state.roster[0] as CharacterState).areaId = 'mossfang-glade';
+  it('names the selected character and where it is in the app bar, and switches on a tap', async () => {
+    const state = gameWith('Ysolde', 'Brann');
+    (state.roster[1] as CharacterState).phase = 'searching';
+    (state.roster[1] as CharacterState).areaId = 'mossfang-glade';
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<Roster />, host);
-    const where = host.querySelector('.ab-char__where') as HTMLElement;
-    expect(where.textContent).toContain('Mossfang Glade');
-    expect(where.textContent).toContain('Lv 1');
-    expect(where.textContent).toContain('5');
-    expect(host.querySelector('.ab-status')?.textContent).toContain('Farming');
+    render(<Switcher />, host);
+    expect(host.querySelector('.app__who')?.textContent).toContain('Ysolde');
+    expect(host.querySelector('.app__who')?.textContent).toContain('City');
+    await openSwitcher();
+    const brann = [...host.querySelectorAll<HTMLElement>('.app__pick')].find((b) => b.textContent?.includes('Brann'));
+    expect(brann?.textContent).toContain('Farming Mossfang Glade');
+    brann?.click();
+    await flush();
+    expect(host.querySelector('.app__who')?.textContent).toContain('Brann');
+    expect(host.querySelector('.app__who')?.textContent).toContain('Farming Mossfang Glade');
+    expect(host.querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it('disables the Create button when every unlocked slot is taken, and shows no hardcoded ticket hint', () => {
+  it('offers no empty slot when every unlocked slot is taken, and creation is refused', async () => {
     const state = gameWith('Ysolde');
     connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
+    render(<Switcher />, host);
+    await openSwitcher();
+    expect(host.textContent).not.toContain('Empty. Create a character.');
+  });
+
+  it('with an empty roster the app bar says so and the Character tab offers Create character', async () => {
+    connectEngine({ state: gameWith(), dispatch: () => {}, drainEvents: () => [] }, data);
+    route.value = 'character';
     render(<App />, host);
-    const button = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Create character');
-    expect(button?.hasAttribute('disabled')).toBe(true);
-    expect(host.querySelector('.app__stack [role="status"]')).toBeNull();
+    expect(host.querySelector('.app__who')?.textContent).toContain('No character');
+    const create = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Create character');
+    create?.click();
+    await flush();
+    expect(creationOpen.value).toBe(true);
+    closeCreation();
+    route.value = 'farm';
   });
 
   it('openCreation refuses to open when no slot is free, so a later caller cannot land on an unsubmittable form', () => {
@@ -352,7 +382,7 @@ describe('roster and character creation (design 4.1)', () => {
 
     openCreation();
     await new Promise((resolve) => setTimeout(resolve));
-    expect(host.querySelector('.ab-appbar__title')?.textContent).toBe('New character');
+    expect(host.querySelector('.app__pushed-title')?.textContent).toBe('New character');
 
     const input = host.querySelector('input') as HTMLInputElement;
     input.value = 'Ysolde';
@@ -472,22 +502,6 @@ describe('roster and character creation (design 4.1)', () => {
 
     expect(dispatch).not.toHaveBeenCalled();
     closeDeleteConfirm();
-  });
-});
-
-describe('the app bar gold pill (decisions L18)', () => {
-  it('shows the first character\'s gold, formatted with thousand separators', async () => {
-    const state = gameWith('Ysolde');
-    (state.roster[0] as CharacterState).gold = 48_210;
-    connectEngine({ state, dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<App />, host);
-    expect(host.querySelector('.ab-gold')?.textContent).toContain('48,210');
-  });
-
-  it('is absent while the roster is empty', () => {
-    connectEngine({ state: gameWith(), dispatch: () => {}, drainEvents: () => [] }, data);
-    render(<App />, host);
-    expect(host.querySelector('.ab-gold')).toBeNull();
   });
 });
 

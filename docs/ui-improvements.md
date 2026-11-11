@@ -6,10 +6,10 @@ Priority: **P1** blocks a screen or breaks the voice / design rules, **P2** noti
 
 Every UI change here is checked against the screen sketches in `design/ui/screens/*.dc.html` before it ships.
 
-## Roster
+## Roster (tab removed in #64; the switcher in the app bar replaced it)
 
-- [x] **P2** — Empty unlocked slots are invisible. Show every unlocked slot (filled or empty); tapping an empty slot opens the create flow, same as the Create character button. Today only locked slots show; empty unlocked slots are hidden. [src/ui/Roster.tsx](src/ui/Roster.tsx)
-- [ ] **P3** — Empty unlocked slot reuses the dashed locked style (no new CSS allowed in this pass). Not compared in a browser at 390px. [src/ui/Roster.tsx](src/ui/Roster.tsx)
+- [x] **P2** — Empty unlocked slots are invisible. Show every unlocked slot (filled or empty); tapping an empty slot opens the create flow, same as the Create character button. Today only locked slots show; empty unlocked slots are hidden. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
+- [ ] **P3** — Empty unlocked slot reuses the dashed locked style (no new CSS allowed in this pass). Not compared in a browser at 390px. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
 
 ## Character creation
 
@@ -60,7 +60,7 @@ Still deferred:
 - [ ] **P3** — Warehouse: side-by-side layout with → and ← on desktop, drag and drop, partial-quantity transfer, a status line under the buttons saying what moved (refusals show as the top notice), and extra tabs (L13). Only tab 1 shows. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)
 - [ ] **P3** — Bag grids: tallest-first ordering, an item sheet instead of the inline Equip button, and required-attribute and damage-penalty lines on the equipped weapon. [src/ui/ItemSlot.tsx](src/ui/ItemSlot.tsx)
 - [ ] **P3** — Item grids use as many 44px cells as fit (6 across on a 390px phone), not the sketch's 7, because the card padding leaves 326px. [src/ui/shell.css](src/ui/shell.css)
-- [ ] **P3** — Opening a shop or the warehouse stays pushed when a tab-bar destination is tapped; same as the character detail screen. [src/ui/App.tsx](src/ui/App.tsx)
+- [x] **P3** — Opening a shop or the warehouse stays pushed when a tab-bar destination is tapped (fixed in #64); same as the character detail screen. [src/ui/App.tsx](src/ui/App.tsx)
 
 Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is correct; these are layout/copy):
 
@@ -69,6 +69,15 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 - [ ] **P3** — Gear: a "Sort" button on the bag, and a fuller paper-doll layout matching the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Warehouse: split heading ("Warehouse" + muted "Tab 1 · shared"), transfer buttons with an icon and a count badge, and a bag subtitle / character picker. [src/ui/Warehouse.tsx](src/ui/Warehouse.tsx)
 
+## Navigation and app bar (#64)
+
+- [ ] **P2** — Sketch gap: `Main.dc.html`, `Comp-Navigation.dc.html` and the tab sketches still show the Roster tab, a title plus gold pill in the app bar, and back buttons on pushed screens. The app now has Farm, City, Character, Bestiary tabs and an app bar with only the character switcher (name, location, chevron), as in the "Character switcher" sketch. Update the sketches.
+- [ ] **P2** — Pushed screens (shop, warehouse, settings, creation) have no back button any more: the app bar holds only the switcher, so a tab tap is the way out. The screen's name shows as a heading at the top of the content. Revisit if playtesting finds the missing back button confusing. [src/ui/App.tsx](src/ui/App.tsx)
+- [ ] **P3** — The switcher list is a bottom sheet on phones and desktop alike; the design system asks for a centred dialog at `bp-desktop`. The delete sheet shares this. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
+- [ ] **P3** — Gold left the app bar. The Character screen header still shows it; the roster summary (gold per hour, warehouse) from the Roster sketch has no home yet.
+- [ ] **P3** — A pushed screen forgets which Character segment (Farm, Stats, Gear) was open when it closes.
+- [ ] **P3** — `design/ui/design-system/components/Navigation/preview.html` still shows the Roster/World tabs and the gold pill. Redraw it.
+- [ ] **P3** — Switcher layout checked against the Character switcher in `Comp-Navigation.dc.html` and the Character screens at 390 px (browser). Not compared at desktop width; the sketch has no Character screen with the Delete button, so its place at the bottom of the screen is unverified against a sketch.
 Automation off (#66, decisions A1):
 
 - [ ] **P2** — Copy and controls that describe automation still show while `automation.enabled` is false: City "Restock on return" card and "Restocking." state, Settings return threshold, restock quantities ("Restocked in the city before heading out"), city healing choice, loot filter and auto-sell editors. Hide or mark them inactive. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
@@ -77,4 +86,4 @@ Automation off (#66, decisions A1):
 
 Send to farm (#65, decisions A2):
 
-- [ ] **P3** — World-Area: the send sheet no longer has the sketch's Target list; "Send" goes straight to the area and the target is set from the Farm screen's "Target enemy". The line under the button is the engine's refusal reason when a send is refused. Update the sketch. [src/ui/World.tsx](src/ui/World.tsx)
+- [ ] **P3** — World-Area: the send sheet no longer has the sketch's Target list; "Send" goes straight to the area and the target is set from the Farm screen's "Target enemy". The line under the button is the engine's refusal reason when a send is refused. Update the sketch. [src/ui/Farm.tsx](src/ui/Farm.tsx)

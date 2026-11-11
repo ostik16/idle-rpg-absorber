@@ -39,3 +39,22 @@ export function phaseDescriptor(phase: Phase): PhaseDescriptor {
 export function inCity(phase: Phase): boolean {
   return phase === 'idle' || phase === 'restocking';
 }
+
+/** The app bar's location line: where a character is, given its phase and the area it farms or walks to. */
+export function locationLabel(phase: Phase, areaName: string | null): string {
+  switch (phase) {
+    case 'searching':
+    case 'fighting':
+    case 'looting':
+      return areaName === null ? 'Farming' : `Farming ${areaName}`;
+    case 'travelling':
+      return areaName === null ? 'Travelling' : `Travelling to ${areaName}`;
+    case 'fleeing':
+    case 'returning':
+      return 'Returning to the city';
+    case 'dead':
+    case 'restocking':
+    case 'idle':
+      return 'City';
+  }
+}

@@ -2,13 +2,13 @@ import { useState } from 'preact/hooks';
 import { formatGold, inCity } from './format';
 import { Icon } from './Icon';
 import { BagGrid } from './ItemSlot';
-import { itemInfo, listShops, openShopId, selectedCharacter, send, shopItems } from './store';
+import { clearShoppingList, itemInfo, listShops, openShopId, selectedCharacter, send, setShoppingQty, shoppingList, shopItems } from './store';
 
 export function Shop() {
   const view = selectedCharacter.value;
   const shop = listShops().find((row) => row.id === openShopId.value);
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
-  const [qty, setQty] = useState<Record<string, number>>({});
+  const qty = shoppingList.value;
   const [picked, setPicked] = useState<ReadonlySet<number>>(new Set());
   if (view === null || shop === undefined) return null;
 
@@ -24,7 +24,7 @@ export function Shop() {
 
   const buy = () => {
     for (const row of chosen) send({ type: 'buyItem', characterId: view.id, shopId: shop.id, itemId: row.itemId, qty: qty[row.itemId] ?? 0 }, { saveAfter: true });
-    setQty({});
+    clearShoppingList();
   };
   // Highest index first: selling a stack shifts the ones after it.
   const sell = () => {
@@ -66,9 +66,9 @@ export function Shop() {
                   <span class="app__field-help ab-c-muted">{formatGold(row.price)} each{has > 0 ? ` · ${view.name} has ${has}` : ''}</span>
                 </span>
                 <span class="app__stepper">
-                  <button type="button" class="ab-btn ab-btn--icon" aria-label={`One fewer ${info.name}`} disabled={n === 0} onClick={() => setQty({ ...qty, [row.itemId]: n - 1 })}>−</button>
+                  <button type="button" class="ab-btn ab-btn--icon" aria-label={`One fewer ${info.name}`} disabled={n === 0} onClick={() => setShoppingQty(row.itemId, n - 1)}>−</button>
                   <span class="ab-num" aria-live="polite">{n}</span>
-                  <button type="button" class="ab-btn ab-btn--icon" aria-label={`One more ${info.name}`} onClick={() => setQty({ ...qty, [row.itemId]: n + 1 })}>+</button>
+                  <button type="button" class="ab-btn ab-btn--icon" aria-label={`One more ${info.name}`} onClick={() => setShoppingQty(row.itemId, n + 1)}>+</button>
                 </span>
               </div>
             );

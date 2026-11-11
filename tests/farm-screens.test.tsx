@@ -5,7 +5,7 @@ import { loadGameData } from '../src/data/game-data';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { Command } from '../src/engine/commands';
 import { App } from '../src/ui/App';
-import { closeArea, closeCharacter, connectEngine, openArea, openCharacter, route } from '../src/ui/store';
+import { closeArea, connectEngine, openArea, route, selectCharacter } from '../src/ui/store';
 
 const data = loadGameData();
 const host = document.createElement('div');
@@ -24,14 +24,13 @@ function setup(phase?: 'dead' | 'fleeing') {
 afterEach(() => {
   render(null, host);
   closeArea();
-  closeCharacter();
-  route.value = 'roster';
+  route.value = 'farm';
 });
 
-describe('world screens', () => {
+describe('farm screens', () => {
   it('sends a character straight to the area, with no target picker (#65)', () => {
     const dispatch = setup();
-    route.value = 'world';
+    route.value = 'farm';
     openArea('mossfang-glade');
     render(<App />, host);
     expect(host.querySelectorAll('input[type=radio]')).toHaveLength(0);
@@ -47,7 +46,8 @@ describe('world screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    selectCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Target enemy'))?.click();
     await new Promise((resolve) => setTimeout(resolve));
@@ -58,7 +58,7 @@ describe('world screens', () => {
 
   it('shows the exact reason a send is refused next to the button (#65)', () => {
     setup('dead');
-    route.value = 'world';
+    route.value = 'farm';
     openArea('mossfang-glade');
     render(<App />, host);
     expect([...host.querySelectorAll('button')].find((b) => b.textContent === 'Send Kaela')?.disabled).toBe(true);
@@ -72,7 +72,8 @@ describe('world screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    selectCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('10 Minor health potion');
     const drink = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Drink');
@@ -83,7 +84,7 @@ describe('world screens', () => {
 
   it('shows the respawn health from data on a fallen character', () => {
     setup('dead');
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('Respawns with10%');
     expect(host.textContent).toContain('regenerates there until you send it out again');
@@ -91,7 +92,7 @@ describe('world screens', () => {
 
   it('shows a fleeing character as Fleeing', () => {
     setup('fleeing');
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('Fleeing');
   });
@@ -103,7 +104,7 @@ describe('world screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    route.value = 'character';
     render(<App />, host);
     const tick = () => new Promise((resolve) => setTimeout(resolve));
     [...host.querySelectorAll('button')].find((b) => b.textContent?.startsWith('Stats'))?.click();

@@ -8,4 +8,4 @@ Priority: **P1** blocks the slice working, **P2** meaningful gameplay fix, **P3*
 
 ## Navigation
 
-- [ ] **P3** — Move the roster from a tab into the appbar title slot, as a roster switcher. That leaves World, City and Bestiary in the tabbar. The Bestiary is mostly a wiki today with little gameplay role — rethink what sits in the tabbar (Character, Travel, Settings, …) so each tab earns its place.
+- [x] **P3** — (Roster moved into the app bar switcher, #64. The tab rethink stays open.) Move the roster from a tab into the appbar title slot, as a roster switcher. That leaves World, City and Bestiary in the tabbar. The Bestiary is mostly a wiki today with little gameplay role — rethink what sits in the tabbar (Character, Travel, Settings, …) so each tab earns its place.
