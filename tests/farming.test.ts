@@ -11,7 +11,8 @@ import { applyCommand } from '../src/engine/commands';
 import { createEngine, type Engine } from '../src/engine/engine';
 import type { EngineEvent } from '../src/engine/events';
 import { createCharacterStreams } from '../src/engine/streams';
-import { baseMovementSeconds, rollSpawn, spawnsInArea, targetingMultiplier } from '../src/game/farming';
+import { baseMovementSeconds, rollSpawn, searchSeconds, spawnsInArea, targetingMultiplier } from '../src/game/farming';
+import { phaseTotalMsFor } from '../src/ui/store';
 import { createRng, createStream } from '../src/game/rng';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { CharacterState, GameState } from '../src/state/types';
@@ -87,6 +88,13 @@ describe('movement and spawn rules (3.1, 3.3)', () => {
   it('reads the targeting multiplier of the enemy, else the common one', () => {
     expect(targetingMultiplier({})).toBe(2);
     expect(targetingMultiplier({ targetingMultiplier: 10 })).toBe(10);
+  });
+
+  it('search time is the movement time, times the target multiplier when one is set', () => {
+    const area = { movementSecondsBetweenEnemies: 6 };
+    expect(searchSeconds(area, null)).toBe(6);
+    expect(searchSeconds(area, {})).toBe(12); // common multiplier 2
+    expect(searchSeconds(area, { targetingMultiplier: 10 })).toBe(60);
   });
 
   it('knows who can be met in an area', () => {
@@ -467,6 +475,31 @@ describe('commands (3.2, 3.3, L5)', () => {
     advance(TICK);
     expect(rejections(engine)).toEqual([]);
     expect(character.targetEnemyId).toBe(RAT);
+  });
+
+  it('phaseTotalMsFor matches the engine phase length for travel and a targeted search (#68)', () => {
+    const data = fixture({ enemies: [{ enemyId: RAT, spawnWeight: 1 }] });
+    const { engine, character, advance, id } = setup(data);
+    engine.state.bestiary.kills[id] = { [RAT]: 50 };
+    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
+    engine.dispatch({ type: 'setTarget', characterId: id, enemyId: RAT });
+    advance(TICK);
+    expect(character.phase).toBe('travelling');
+    expect(character.targetEnemyId).toBe(RAT);
+
+    // The UI total should land the engine's phase change on the exact step, for both the trip and the targeted search.
+    const leaveAfter = (total: number) => advance(total - character.timeInPhaseMs - TICK);
+    const travel = phaseTotalMsFor(character, data) as number;
+    leaveAfter(travel);
+    expect(character.phase).toBe('travelling');
+    advance(TICK);
+    expect(character.phase).toBe('searching');
+
+    const search = phaseTotalMsFor(character, data) as number;
+    leaveAfter(search);
+    expect(character.phase).toBe('searching');
+    advance(TICK);
+    expect(character.fight?.enemyId).toBe(RAT);
   });
 
   it('can target the mini-boss and the boss, at their own multiplier, and clear the target', () => {

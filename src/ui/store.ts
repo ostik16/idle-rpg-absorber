@@ -5,7 +5,7 @@ import type { Command } from '../engine/commands';
 import type { Engine } from '../engine/engine';
 import type { EngineEvent } from '../engine/events';
 import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
-import { baseMovementSeconds, targetingMultiplier } from '../game/farming';
+import { baseMovementSeconds, searchSeconds, targetingMultiplier } from '../game/farming';
 import { movementDurationMs } from '../game/formulas';
 import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
@@ -650,25 +650,26 @@ function areaRows(): readonly AreaRow[] {
 }
 
 /**
- * How long the character's current phase runs, for a progress bar, or null when it has no fixed length.
- * Mirrors the engine's own travel/search/flee/respawn durations (travel.ts, fight.ts) with the shared pure
- * helpers, since those engine functions need a StepContext the UI cannot build.
+ * How long the character's current phase runs, for a progress bar, or null when it has no fixed length. Uses the
+ * same pure helpers as the engine's travel/search/flee/respawn durations (travel.ts, fight.ts) so the bar cannot
+ * drift from them; a pure function of its arguments, pinned to the engine by a test in farming.test.ts.
  */
-function phaseTotalMsFor(character: CharacterState, data: GameData): number | null {
+export function phaseTotalMsFor(character: CharacterState, data: GameData): number | null {
   const speed = character.proficiency.speed;
   const prof = constantSection(data, 'proficiency');
+  const farming = constantSection(data, 'farming');
   const tickMs = constantSection(data, 'combat').tickMs;
   if (character.phase === 'dead') return respawnSeconds(character.level, constantSection(data, 'death')) * MS_PER_SECOND;
-  const area = character.areaId === null ? undefined : areaRows().find((row) => row.id === character.areaId);
+  const area = character.areaId === null ? undefined : (data.areas as unknown as readonly AreaRow[]).find((row) => row.id === character.areaId);
   if (area === undefined) return null;
   switch (character.phase) {
     case 'travelling':
     case 'returning':
       return movementDurationMs(area.distanceFromCity, speed, prof, tickMs);
     case 'searching': {
-      const base = baseMovementSeconds(area);
-      const multiplier = character.targetEnemyId === null ? 1 : targetingMultiplier(enemyRow(character.targetEnemyId) ?? {});
-      return movementDurationMs(base * multiplier, speed, prof, tickMs);
+      const target =
+        character.targetEnemyId === null ? null : (data.enemies.find((e) => e.id === character.targetEnemyId) as { targetingMultiplier?: number } | undefined) ?? null;
+      return movementDurationMs(searchSeconds(area, target, farming), speed, prof, tickMs);
     }
     case 'fleeing':
       return movementDurationMs(constantSection(data, 'combat').fleeSeconds, speed, prof, tickMs);
@@ -719,11 +720,8 @@ function enemyRow(enemyId: string): EnemyRow | undefined {
   return requireGameData().enemies.find((row) => row.id === enemyId) as unknown as EnemyRow | undefined;
 }
 
-/** The display values of one enemy by id, or null when the id is unknown (a stale save). */
-export function enemyView(enemyId: string): EnemyView | null {
-  const data = requireGameData();
-  const enemy = enemyRow(enemyId);
-  if (enemy === undefined) return null;
+/** The display values of an already-looked-up enemy row. */
+function enemyViewOf(enemy: EnemyRow, data: GameData): EnemyView {
   const table = data.dropTables.find((row) => row.id === enemy.dropTableId) as unknown as
     | { entries: readonly { baseChance: number }[] }
     | undefined;
@@ -738,13 +736,20 @@ export function enemyView(enemyId: string): EnemyView | null {
   };
 }
 
+/** The display values of one enemy by id, or null when the id is unknown (a stale save). */
+export function enemyView(enemyId: string): EnemyView | null {
+  const enemy = enemyRow(enemyId);
+  return enemy === undefined ? null : enemyViewOf(enemy, requireGameData());
+}
+
 /** The enemies listed in an area's spawn table (mini-boss and boss rows come later). */
 export function areaEnemies(areaId: string): readonly AreaEnemyView[] {
+  const data = requireGameData();
   const area = areaRows().find((row) => row.id === areaId);
   if (area === undefined) return [];
   return area.enemies.flatMap(({ enemyId }) => {
-    const view = enemyView(enemyId);
-    return view === null ? [] : [{ ...view, targetingMultiplier: targetingMultiplier(enemyRow(enemyId) ?? {}) }];
+    const enemy = enemyRow(enemyId);
+    return enemy === undefined ? [] : [{ ...enemyViewOf(enemy, data), targetingMultiplier: targetingMultiplier(enemy) }];
   });
 }
 

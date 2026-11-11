@@ -40,6 +40,19 @@ export function targetingMultiplier(
   return enemy.targetingMultiplier ?? c.targeting.commonMultiplier;
 }
 
+/**
+ * Seconds spent finding the next enemy, before the speed skill (3.3): the area's movement time, multiplied by the
+ * targeted enemy's targeting multiplier when one is set. Shared by the engine (searchDurationMs) and the UI progress bar.
+ */
+export function searchSeconds(
+  area: { movementSecondsBetweenEnemies?: number },
+  targetEnemy: { targetingMultiplier?: number } | null,
+  c: FarmingConstants = constants.farming,
+): number {
+  const base = baseMovementSeconds(area, c);
+  return targetEnemy === null ? base : base * targetingMultiplier(targetEnemy, c);
+}
+
 /** True when this enemy can be met in the area: a listed spawn, its mini-boss or its boss. */
 export function spawnsInArea(area: SpawnTable, enemyId: string): boolean {
   return area.enemies.some((e) => e.enemyId === enemyId) || area.miniBossId === enemyId || area.bossId === enemyId;
