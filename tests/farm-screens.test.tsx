@@ -47,7 +47,7 @@ describe('farm screens', () => {
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
     selectCharacter('c1');
-    route.value = 'farm';
+    route.value = 'character';
     render(<App />, host);
     [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Target enemy'))?.click();
     await new Promise((resolve) => setTimeout(resolve));
@@ -73,7 +73,7 @@ describe('farm screens', () => {
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
     selectCharacter('c1');
-    route.value = 'farm';
+    route.value = 'character';
     render(<App />, host);
     expect(host.textContent).toContain('10 Minor health potion');
     const drink = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Drink');
