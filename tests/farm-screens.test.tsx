@@ -5,7 +5,7 @@ import { loadGameData } from '../src/data/game-data';
 import { createCharacterState, createGameState } from '../src/state/factory';
 import type { Command } from '../src/engine/commands';
 import { App } from '../src/ui/App';
-import { closeArea, connectEngine, openArea, route } from '../src/ui/store';
+import { closeArea, connectEngine, openArea, route, selectCharacter } from '../src/ui/store';
 
 const data = loadGameData();
 const host = document.createElement('div');
@@ -46,7 +46,8 @@ describe('farm screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    selectCharacter('c1');
+    route.value = 'farm';
     render(<App />, host);
     [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Target enemy'))?.click();
     await new Promise((resolve) => setTimeout(resolve));
@@ -57,7 +58,7 @@ describe('farm screens', () => {
 
   it('shows the exact reason a send is refused next to the button (#65)', () => {
     setup('dead');
-    route.value = 'world';
+    route.value = 'farm';
     openArea('mossfang-glade');
     render(<App />, host);
     expect([...host.querySelectorAll('button')].find((b) => b.textContent === 'Send Kaela')?.disabled).toBe(true);
@@ -71,7 +72,8 @@ describe('farm screens', () => {
     state.roster.push(character);
     const dispatch = vi.fn<(command: Command) => void>();
     connectEngine({ state, dispatch, drainEvents: () => [] }, data);
-    openCharacter('c1');
+    selectCharacter('c1');
+    route.value = 'farm';
     render(<App />, host);
     expect(host.textContent).toContain('10 Minor health potion');
     const drink = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Drink');
