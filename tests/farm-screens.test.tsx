@@ -87,6 +87,54 @@ describe('farm screens', () => {
     expect(host.textContent).toContain('Kaela is dead.');
   });
 
+  it('shows the Now fighting card with the enemy, kills and a health bar (#68)', () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'fighting';
+    character.fight = { enemyId: 'glade-rat', enemyHp: 9, ticks: 0 };
+    state.roster.push(character);
+    state.bestiary.kills['c1'] = { 'glade-rat': 5 };
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect(host.textContent).toContain('Now fighting');
+    expect(host.textContent).toContain('Glade rat');
+    expect(host.textContent).toContain('5 kills');
+    const bar = [...host.querySelectorAll('[role=progressbar]')].find((b) => b.getAttribute('aria-label') === 'Glade rat health');
+    expect(bar?.getAttribute('aria-valuenow')).toBe('9');
+    expect(bar?.getAttribute('aria-valuemax')).toBe('18');
+  });
+
+  it('warns on the Farm screen when no potions are left to drink (#68)', () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'searching';
+    character.bag = [];
+    state.roster.push(character);
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect(host.textContent).toContain('No health potions left to drink');
+  });
+
+  it('shows the trip progress and destination while travelling (#68)', () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'travelling';
+    state.roster.push(character);
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect(host.textContent).toContain('Arrives in');
+    expect([...host.querySelectorAll('[role=progressbar]')].some((b) => b.getAttribute('aria-label') === 'Arrives in')).toBe(true);
+  });
+
   it('drinks a potion by hand in the city, only when health is short (decisions A1)', async () => {
     const state = createGameState(7, 1_000_000, data);
     const character = createCharacterState('c1', 'Kaela', data);

@@ -6,6 +6,7 @@ import type { Engine } from '../engine/engine';
 import type { EngineEvent } from '../engine/events';
 import { bagLimitsFor, type EquipmentItemRow } from '../game/equipment';
 import { baseMovementSeconds, targetingMultiplier } from '../game/farming';
+import { movementDurationMs } from '../game/formulas';
 import { usedCells } from '../game/inventory';
 import type { ProficiencyId } from '../game/proficiency';
 import { respawnSeconds } from '../game/progression';
@@ -84,8 +85,10 @@ export interface CharacterView {
   /** Hidden numbers (design 4.6): screens show titles only. */
   readonly proficiency: ReadonlySignal<Record<ProficiencyId, number>>;
   readonly phaseElapsedMs: ReadonlySignal<number>;
-  /** Length of the current phase when it is known (a dead character's respawn wait), else null. */
+  /** Length of the current phase when it runs for a known time (respawn, travel, search, flee, return), else null. */
   readonly phaseTotalMs: ReadonlySignal<number | null>;
+  /** The enemy being fought and its current health, or null when not in a fight (design 3.6). */
+  readonly fight: ReadonlySignal<{ enemyId: string; enemyHp: number } | null>;
   /** Newest first, at most `LOOT_LIMIT` lines. */
   readonly loot: ReadonlySignal<readonly LootEntry[]>;
   /** Per-character settings (design 3.2, 2.3), changed with the `set…` commands. */
@@ -253,6 +256,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
   const proficiency = signal(first.proficiency);
   const phaseElapsedMs = signal(0);
   const phaseTotalMs = signal<number | null>(null);
+  const fight = signal<{ enemyId: string; enemyHp: number } | null>(null);
   const loot = signal<readonly LootEntry[]>([]);
   const returnHealthThreshold = signal(first.settings.returnHealthThreshold);
   const cityHealing = signal<CityHealingMode>(first.settings.cityHealing);
@@ -272,7 +276,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
   const copyDerived = copyInto(derived);
   const copyProficiency = copyInto(proficiency);
   const copyKills = copyInto(kills);
-  const death = constantSection(data, 'death');
+  const copyFight = copyInto(fight);
 
   const binding: CharacterBinding = {
     view: {
@@ -303,6 +307,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
       proficiency,
       phaseElapsedMs,
       phaseTotalMs,
+      fight,
       loot,
       returnHealthThreshold,
       cityHealing,
@@ -332,7 +337,8 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
       targetEnemyId.value = character.targetEnemyId;
       unspentPoints.value = character.points.characterUnspent;
       phaseElapsedMs.value = character.timeInPhaseMs;
-      phaseTotalMs.value = character.phase === 'dead' ? respawnSeconds(character.level, death) * MS_PER_SECOND : null;
+      phaseTotalMs.value = phaseTotalMsFor(character, data);
+      copyFight(character.fight === null ? null : { enemyId: character.fight.enemyId, enemyHp: character.fight.enemyHp });
       copyBag(character.bag);
       noPotions.value = outOfPotions(character, data);
       copyEquipment(character.equipment);
@@ -643,6 +649,34 @@ function areaRows(): readonly AreaRow[] {
   return requireGameData().areas as unknown as readonly AreaRow[];
 }
 
+/**
+ * How long the character's current phase runs, for a progress bar, or null when it has no fixed length.
+ * Mirrors the engine's own travel/search/flee/respawn durations (travel.ts, fight.ts) with the shared pure
+ * helpers, since those engine functions need a StepContext the UI cannot build.
+ */
+function phaseTotalMsFor(character: CharacterState, data: GameData): number | null {
+  const speed = character.proficiency.speed;
+  const prof = constantSection(data, 'proficiency');
+  const tickMs = constantSection(data, 'combat').tickMs;
+  if (character.phase === 'dead') return respawnSeconds(character.level, constantSection(data, 'death')) * MS_PER_SECOND;
+  const area = character.areaId === null ? undefined : areaRows().find((row) => row.id === character.areaId);
+  if (area === undefined) return null;
+  switch (character.phase) {
+    case 'travelling':
+    case 'returning':
+      return movementDurationMs(area.distanceFromCity, speed, prof, tickMs);
+    case 'searching': {
+      const base = baseMovementSeconds(area);
+      const multiplier = character.targetEnemyId === null ? 1 : targetingMultiplier(enemyRow(character.targetEnemyId) ?? {});
+      return movementDurationMs(base * multiplier, speed, prof, tickMs);
+    }
+    case 'fleeing':
+      return movementDurationMs(constantSection(data, 'combat').fleeSeconds, speed, prof, tickMs);
+    default:
+      return null;
+  }
+}
+
 /** Every area in data order, for the Farm tab. */
 export function listAreas(): readonly AreaListEntry[] {
   return areaRows().map((area) => ({
@@ -655,15 +689,19 @@ export function listAreas(): readonly AreaListEntry[] {
   }));
 }
 
-export interface AreaEnemyView {
+export interface EnemyView {
   readonly id: string;
   readonly name: string;
   readonly level: number;
   readonly type: string;
-  readonly targetingMultiplier: number;
+  readonly maxHealth: number;
   readonly traits: readonly { name: string; value: number; magical: boolean }[];
   /** The highest base chance in the enemy's drop table, 0 to 1; 0 without a table. Multiply by the level modifier. */
   readonly topDropChanceBase: number;
+}
+
+export interface AreaEnemyView extends EnemyView {
+  readonly targetingMultiplier: number;
 }
 
 interface EnemyRow {
@@ -671,37 +709,42 @@ interface EnemyRow {
   name: string;
   level: number;
   type: string;
+  health: number;
   targetingMultiplier?: number;
   traits: readonly { id: string; value: number; magical: boolean }[];
   dropTableId?: string;
 }
 
+function enemyRow(enemyId: string): EnemyRow | undefined {
+  return requireGameData().enemies.find((row) => row.id === enemyId) as unknown as EnemyRow | undefined;
+}
+
+/** The display values of one enemy by id, or null when the id is unknown (a stale save). */
+export function enemyView(enemyId: string): EnemyView | null {
+  const data = requireGameData();
+  const enemy = enemyRow(enemyId);
+  if (enemy === undefined) return null;
+  const table = data.dropTables.find((row) => row.id === enemy.dropTableId) as unknown as
+    | { entries: readonly { baseChance: number }[] }
+    | undefined;
+  return {
+    id: enemy.id,
+    name: enemy.name,
+    level: enemy.level,
+    type: enemy.type,
+    maxHealth: enemy.health,
+    traits: enemy.traits.map((trait) => ({ name: nameIn(data, 'traits', trait.id), value: trait.value, magical: trait.magical })),
+    topDropChanceBase: Math.max(0, ...(table?.entries.map((entry) => entry.baseChance) ?? [])),
+  };
+}
+
 /** The enemies listed in an area's spawn table (mini-boss and boss rows come later). */
 export function areaEnemies(areaId: string): readonly AreaEnemyView[] {
-  const data = requireGameData();
   const area = areaRows().find((row) => row.id === areaId);
   if (area === undefined) return [];
   return area.enemies.flatMap(({ enemyId }) => {
-    const enemy = data.enemies.find((row) => row.id === enemyId) as unknown as EnemyRow | undefined;
-    if (enemy === undefined) return [];
-    const table = data.dropTables.find((row) => row.id === enemy.dropTableId) as unknown as
-      | { entries: readonly { baseChance: number }[] }
-      | undefined;
-    return [
-      {
-        id: enemy.id,
-        name: enemy.name,
-        level: enemy.level,
-        type: enemy.type,
-        targetingMultiplier: targetingMultiplier(enemy),
-        traits: enemy.traits.map((trait) => ({
-          name: nameIn(data, 'traits', trait.id),
-          value: trait.value,
-          magical: trait.magical,
-        })),
-        topDropChanceBase: Math.max(0, ...(table?.entries.map((entry) => entry.baseChance) ?? [])),
-      },
-    ];
+    const view = enemyView(enemyId);
+    return view === null ? [] : [{ ...view, targetingMultiplier: targetingMultiplier(enemyRow(enemyId) ?? {}) }];
   });
 }
 

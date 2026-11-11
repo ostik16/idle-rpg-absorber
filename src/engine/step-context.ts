@@ -1,12 +1,9 @@
 /** What a character's step works with, and the one way to change its phase. */
 import { constantSection, type GameData } from '../data/game-data';
-import { quantiseToSteps } from '../game/formulas';
-import { movementSeconds } from '../game/proficiency';
+import { movementDurationMs as movementDurationMsPure } from '../game/formulas';
 import type { CharacterState, Phase } from '../state/types';
 import type { EngineEvent } from './events';
 import type { CharacterStreams } from './streams';
-
-const MS_PER_SECOND = 1000;
 
 export interface StepContext {
   readonly data: GameData;
@@ -20,8 +17,7 @@ export interface StepContext {
 
 /** Time a movement of `baseSeconds` takes this character, shortened by the speed skill (4.2), in whole steps. */
 export function movementDurationMs(baseSeconds: number, character: CharacterState, ctx: StepContext): number {
-  const seconds = movementSeconds(baseSeconds, character.proficiency.speed, constantSection(ctx.data, 'proficiency'));
-  return quantiseToSteps(seconds * MS_PER_SECOND, ctx.tickMs);
+  return movementDurationMsPure(baseSeconds, character.proficiency.speed, constantSection(ctx.data, 'proficiency'), ctx.tickMs);
 }
 
 /** Moves a character to another phase: time in phase starts again and `phaseChanged` is emitted. */

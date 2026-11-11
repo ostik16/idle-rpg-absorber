@@ -4,7 +4,7 @@
  */
 import constants from '../../data/constants.json';
 
-type ProficiencyConstants = typeof constants.proficiency;
+export type ProficiencyConstants = typeof constants.proficiency;
 
 /**
  * The hidden skills (design 4.6): unarmed, one-handed, two-handed, toughness, speed and combat.

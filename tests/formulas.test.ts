@@ -6,8 +6,11 @@ import {
   chanceToMaxWithoutFailure,
   dropChance,
   dropLevelModifier,
+  movementDurationMs,
+  quantiseToSteps,
   upgradeSuccessChance,
 } from '../src/game/formulas';
+import { movementSeconds } from '../src/game/proficiency';
 
 describe('drop level modifier (design 3.8)', () => {
   it('is 1 at the same level', () => {
@@ -33,6 +36,24 @@ describe('drop level modifier (design 3.8)', () => {
 
   it('multiplies the base chance', () => {
     expect(dropChance(0.2, 15, 10)).toBeCloseTo(0.1);
+  });
+});
+
+describe('movement duration (design 3.2, 3.3, 4.2)', () => {
+  const prof = constants.proficiency;
+  it('at 0 speed points is the base time quantised to whole steps', () => {
+    expect(movementDurationMs(6, 0, prof, 100)).toBe(6000);
+    expect(movementDurationMs(6, 0, prof, 100)).toBe(quantiseToSteps(6000, 100));
+  });
+
+  it('the speed skill shortens it, matching movementSeconds', () => {
+    const quick = movementDurationMs(6, 100, prof, 100);
+    expect(quick).toBe(quantiseToSteps(movementSeconds(6, 100, prof) * 1000, 100));
+    expect(quick).toBeLessThan(6000);
+  });
+
+  it('is never less than one step', () => {
+    expect(movementDurationMs(0.001, 0, prof, 100)).toBe(100);
   });
 });
 

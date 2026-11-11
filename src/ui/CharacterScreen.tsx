@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { constantSection } from '../data/game-data';
+import { dropLevelModifier } from '../game/formulas';
 import { proficiencyTitle, type ProficiencyId } from '../game/proficiency';
 import { pointMarks, respawnHealth, xpToNextLevel } from '../game/progression';
 import type { AttributeId } from '../game/stats';
@@ -11,6 +12,7 @@ import { TargetPicker } from './Farm';
 import {
   areaEnemies,
   areaOf,
+  enemyView,
   equipmentSlots,
   formatDuration,
   itemInfo,
@@ -23,6 +25,7 @@ import {
   selectedCharacter,
   type CharacterView,
   type LootKind,
+  type Phase,
 } from './store';
 
 const pct = (value: number, max: number): number => (max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0);
@@ -203,9 +206,82 @@ function DrinkRows({ view }: { view: CharacterView }) {
   );
 }
 
+const dropTone = (drop: number): 'full' | 'partial' | 'none' => (drop <= 10 ? 'none' : drop >= 100 ? 'full' : 'partial');
+
+function EnemyTraits({ traits }: { traits: readonly { name: string; value: number; magical: boolean }[] }) {
+  if (traits.length === 0) return null;
+  return (
+    <span class="app__tags">
+      {traits.map((trait) => (
+        <span class={`ab-tag${trait.magical ? ' ab-tag--magic' : ''}`} key={trait.name}>
+          {trait.magical && <Icon name="absorption" size={14} />}
+          {trait.name} {trait.value}%
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The enemy in the current fight: name, level, drop chance, traits, kill count and a live health bar (design 3.6). */
+function NowFighting({ view }: { view: CharacterView }) {
+  const fight = view.fight.value;
+  if (fight === null) return null;
+  const enemy = enemyView(fight.enemyId);
+  if (enemy === null) return null;
+  const drop = Math.round(dropLevelModifier(view.level.value, enemy.level) * 100);
+  const kills = view.kills.value[enemy.id] ?? 0;
+  return (
+    <section class="ab-card app__stack" aria-labelledby="fight-h">
+      <div class="app__field-head">
+        <h2 id="fight-h" class="ab-label app__grow">Now fighting</h2>
+        <span class="app__field-help ab-c-muted ab-num">{kills} {kills === 1 ? 'kill' : 'kills'}</span>
+      </div>
+      <div class="app__field-head">
+        <span class="ab-title app__grow">{enemy.name}</span>
+        <span class="ab-level ab-level--enemy">Lv {enemy.level}</span>
+        <span class={`ab-drop ab-drop--${dropTone(drop)}`}>Drops {drop}%</span>
+      </div>
+      <EnemyTraits traits={enemy.traits} />
+      <div class="ab-bar ab-bar--hp">
+        <div class="ab-bar__track" role="progressbar" aria-label={`${enemy.name} health`} aria-valuenow={Math.ceil(fight.enemyHp)} aria-valuemin={0} aria-valuemax={Math.ceil(enemy.maxHealth)}>
+          <div class="ab-bar__fill" style={{ width: `${pct(fight.enemyHp, enemy.maxHealth)}%` }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const MOVE_HEADING: Partial<Record<Phase, string>> = {
+  travelling: 'Arrives in',
+  searching: 'Finding the next enemy',
+  fleeing: 'Fleeing to the city',
+  returning: 'Heading back to the city',
+};
+
+/** Trip, search, flee and return progress with the time left (design 3.2, 3.3). The action text lives in the status header. */
+function MovementProgress({ view }: { view: CharacterView }) {
+  const phase = view.activity.value;
+  const heading = MOVE_HEADING[phase];
+  if (heading === undefined) return null;
+  const total = view.phaseTotalMs.value;
+  const elapsed = total === null ? view.phaseElapsedMs.value : Math.min(total, view.phaseElapsedMs.value);
+  const area = view.areaId.value === null ? null : areaOf(view.areaId.value);
+  return (
+    <section class="ab-card app__stack" aria-label={heading}>
+      <h2 class="ab-label">{heading}</h2>
+      <div class="ab-num app__big">{total === null ? view.timeInActivity : formatDuration(Math.max(0, total - elapsed))}</div>
+      {phase === 'travelling' && area !== null && <p class="app__text ab-c-muted">To {area.name}</p>}
+      {total !== null && (
+        <div class="ab-bar__track" role="progressbar" aria-label={heading} aria-valuenow={Math.round(pct(elapsed, total))} aria-valuemin={0} aria-valuemax={100}>
+          <div class="ab-bar__fill" style={{ width: `${pct(elapsed, total)}%` }} />
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Farm({ view }: { view: CharacterView }) {
   const phase = view.activity.value;
-  const returning = phase === 'fleeing' || phase === 'returning';
   const out = phase === 'searching' || phase === 'fighting' || phase === 'looting' || phase === 'travelling';
   if (phase === 'dead') return <Dead view={view} />;
   if (phase === 'idle' || phase === 'restocking') {
@@ -218,18 +294,14 @@ function Farm({ view }: { view: CharacterView }) {
       </section>
     );
   }
-  const area = view.areaId.value === null ? null : areaOf(view.areaId.value);
   return (
     <>
+      <MovementProgress view={view} />
+      {phase === 'fighting' && <NowFighting view={view} />}
+      {view.noPotions.value && out && (
+        <p class="app__field-help ab-c-warning">No health potions left to drink. {view.name} heals only by regeneration until you restock.</p>
+      )}
       <section class="ab-card app__stack">
-        {phase === 'travelling' && (
-          <>
-            <h2 class="ab-label">Travelling</h2>
-            <div class="ab-num app__big">{view.timeInActivity}</div>
-            <p class="app__text">To {area?.name ?? 'the area'}</p>
-          </>
-        )}
-        {returning && <p class="app__text">Heading back to the city.</p>}
         <Vitals view={view} />
         {out && (
           <button type="button" class="ab-btn ab-btn--block" onClick={() => send({ type: 'returnToCity', characterId: view.id })}>
