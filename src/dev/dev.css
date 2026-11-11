@@ -1,0 +1,11 @@
+/* Dev panel (#74). Spacing, colour and type come from tokens; the few sizes with no token (panel width and height, textarea height, event text) and the z-index are literal. */
+.dev__toggle { position: fixed; right: var(--space-3); bottom: var(--space-3); z-index: 20; }
+.dev { position: fixed; right: var(--space-3); bottom: var(--space-3); z-index: 20; display: grid; gap: var(--space-3); width: min(380px, calc(100vw - 2 * var(--space-3))); max-height: 75dvh; overflow-y: auto; }
+.dev__head, .dev__row { display: flex; align-items: center; gap: var(--space-2); }
+.dev__head { justify-content: space-between; }
+.dev__section { display: grid; gap: var(--space-2); }
+.dev__input { min-width: 0; flex: 1; min-height: var(--size-tap); }
+.dev__text { min-height: 96px; font-family: var(--font-condensed); resize: vertical; }
+.dev__mono { font-family: var(--font-condensed); font-size: 12px; overflow-wrap: anywhere; }
+.dev__events { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.dev__dl { margin: 0; }

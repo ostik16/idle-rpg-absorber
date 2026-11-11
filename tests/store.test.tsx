@@ -223,6 +223,11 @@ describe('numbers on screen', () => {
     return roster.value[0];
   }
 
+  it('flags a character with no health potion in the bag (decisions A1)', () => {
+    expect(viewOf(() => {})?.noPotions.value).toBe(false);
+    expect(viewOf((character) => void (character.bag = []))?.noPotions.value).toBe(true);
+  });
+
   it('rounds XP up to a whole number, like health and mana', () => {
     const view = viewOf((character) => {
       character.xpInLevel = 12.25;

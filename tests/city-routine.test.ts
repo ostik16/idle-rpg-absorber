@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
-import { loadGameData } from '../src/data/game-data';
+import { withAutomation as loadGameData } from './automation';
 import { autoSellBag, restockPotions, isBagFull } from '../src/engine/city';
 import { createEngine, type Engine } from '../src/engine/engine';
 import { createCharacterState, createGameState } from '../src/state/factory';

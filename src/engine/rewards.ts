@@ -16,13 +16,11 @@ export function xpTableOf(data: GameData): XpTable {
   return data.xpTable as unknown as XpTable;
 }
 
-/** Gives the XP of one kill, with the character points and levels it earns. Nothing at the level cap. */
-export function grantKillXp(character: CharacterState, enemyId: string, ctx: StepContext): void {
+/** Gives `xp` to a character, with the character points, levels and base stats it earns. Nothing at the level cap. */
+export function grantXp(character: CharacterState, xp: number, ctx: StepContext): void {
   const levelCap = requireNumberConstant(ctx.data, 'levelCap');
   if (character.level >= levelCap) return;
-  const enemy = requireRow(ctx.data, 'enemies', enemyId) as unknown as Parameters<typeof killXp>[0];
   const previousLevel = character.level;
-  const xp = killXp(enemy, constantSection(ctx.data, 'progression'));
   const gain = gainXp(character, xp, levelCap, xpTableOf(ctx.data), constantSection(ctx.data, 'points'));
 
   character.level = gain.level;
@@ -39,6 +37,12 @@ export function grantKillXp(character: CharacterState, enemyId: string, ctx: Ste
   for (let level = previousLevel + 1; level <= gain.level; level++) {
     ctx.emit({ type: 'levelUp', characterId: character.id, level });
   }
+}
+
+/** Gives the XP of one kill (design 4.3, 4.4). */
+export function grantKillXp(character: CharacterState, enemyId: string, ctx: StepContext): void {
+  const enemy = requireRow(ctx.data, 'enemies', enemyId) as unknown as Parameters<typeof killXp>[0];
+  grantXp(character, killXp(enemy, constantSection(ctx.data, 'progression')), ctx);
 }
 
 interface ItemRow extends BagItemLike, EquipmentItemRow {
@@ -84,9 +88,10 @@ export function grantKillLoot(
 
   const itemOf = (itemId: string): ItemRow => itemRow(ctx.data, itemId);
   const limits = bagLimitsFor(character.equipment, itemOf, constantSection(ctx.data, 'inventory'));
+  const filtered = constantSection(ctx.data, 'automation').enabled; // off: picks up everything (decisions A1)
   for (const drop of drops) {
     const item = itemOf(drop.itemId);
-    if (!matchesLootFilter(character.settings.lootFilter, item, drop.bonuses)) continue;
+    if (filtered && !matchesLootFilter(character.settings.lootFilter, item, drop.bonuses)) continue;
     const stack = { itemId: drop.itemId, bonuses: drop.bonuses, upgradeLevel: 0, qty: drop.qty };
     const result = addToBag(character.bag, stack, item, limits, itemOf);
     character.bag = result.bag;

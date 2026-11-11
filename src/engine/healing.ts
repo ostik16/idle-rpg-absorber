@@ -91,6 +91,17 @@ function takeFromBag(character: CharacterState, itemId: string): void {
   if (stack.qty === 0) character.bag.splice(index, 1);
 }
 
+/** The player's drink command (decisions A1): takes one from the bag and queues it. Returns why it cannot, or null. */
+export function drinkFromBag(character: CharacterState, itemId: string, data: GameData): string | null {
+  if (character.phase === 'dead') return `${character.name} is dead.`;
+  if (potionTierOf(itemId, data) === null) return `No potion called ${itemId}.`;
+  if (!character.bag.some((stack) => stack.itemId === itemId && stack.qty > 0)) return `${character.name} has no ${itemId}.`;
+  if (character.health >= derivedStats(character, data).maxHealth) return `${character.name} is at full health.`;
+  takeFromBag(character, itemId);
+  drinkPotion(character, itemId);
+  return null;
+}
+
 /** Drinks at most one potion, if the rules in `chooseAutoPotion` call for one. */
 export function autoUsePotion(character: CharacterState, ctx: StepContext): void {
   const pending = pendingHeal(

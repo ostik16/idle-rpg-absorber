@@ -5,6 +5,7 @@
 import { render } from 'preact';
 import constants from '../data/constants.json';
 import { loadGameData, type GameData } from './data/game-data';
+import { devNow } from './dev/clock';
 import { createEngine, type Engine } from './engine/engine';
 import type { GameState } from './state/types';
 import { App } from './ui/App';
@@ -83,11 +84,17 @@ export async function startGame(root: Element, seam: SaveSeam, boot: Boot = DEFA
     stopAutosave = () => autosave.stop();
     const refresh = connectEngine(engine, data, () => void autosave.saveNow());
     render(<App />, root);
-    startFrameLoop(engine, refresh, (error) => {
-      console.error(error);
-      autosave.stop();
-      showLastingNotices([GAME_STOPPED]);
-    });
+    if (import.meta.env.DEV) void import('./dev/mount').then(({ mountDevTools }) => mountDevTools(engine, data));
+    startFrameLoop(
+      engine,
+      refresh,
+      (error) => {
+        console.error(error);
+        autosave.stop();
+        showLastingNotices([GAME_STOPPED]);
+      },
+      import.meta.env.DEV ? devNow : Date.now,
+    );
   } catch (error) {
     console.error(error);
     stopAutosave();

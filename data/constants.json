@@ -38,6 +38,9 @@
     "cellsPerTab": 56,
     "tabCosts": [25000]
   },
+  "automation": {
+    "enabled": false
+  },
   "returnTriggers": {
     "healthThreshold": 0.2
   },

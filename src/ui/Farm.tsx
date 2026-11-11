@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import { dropLevelModifier } from '../game/formulas';
 import { Icon } from './Icon';
 import {
@@ -109,12 +108,10 @@ export function TargetPicker({
 }
 
 function AreaSheet({ area, view }: { area: AreaListEntry; view: CharacterView }) {
-  const [target, setTarget] = useState<string | null>(null);
   const drop = dropRange(view.level.value, area);
-  const canSend = view.activity.value === 'idle';
+  const refusal = view.sendRefusal.value;
   const sendIt = () => {
     send({ type: 'sendToArea', characterId: view.id, areaId: area.id });
-    send({ type: 'setTarget', characterId: view.id, enemyId: target });
     closeArea();
   };
   return (
@@ -145,14 +142,13 @@ function AreaSheet({ area, view }: { area: AreaListEntry; view: CharacterView })
           </button>
         </div>
         <span class={`ab-drop ab-drop--${drop.tone}`}>{drop.text}</span>
-        <TargetPicker areaId={area.id} searchSeconds={area.searchSeconds} value={target} onPick={setTarget} />
         <div class="ab-sheet__actions">
-          <button type="button" class="ab-btn ab-btn--primary ab-btn--block" onClick={sendIt} disabled={!canSend}>
+          <button type="button" class="ab-btn ab-btn--primary ab-btn--block" onClick={sendIt} disabled={refusal !== null}>
             Send {view.name}
           </button>
         </div>
         <p class="app__field-help ab-c-muted">
-          {canSend ? `Arrives in ${formatDuration(area.distanceFromCity * 1000)} on foot.` : `${view.name} is busy. Call it back to the city first.`}
+          {refusal ?? `Arrives in ${formatDuration(area.distanceFromCity * 1000)} on foot.`}
         </p>
       </section>
     </div>

@@ -102,13 +102,14 @@ function deliver(queue: DrinkingPotion[], ms: number): number {
 const pendingOf = (queue: readonly DrinkingPotion[]): number =>
   queue.reduce((sum, potion) => sum + (potion.amount * potion.remainingMs) / potion.durationMs, 0);
 
-type Leg = 'out' | 'field' | 'back' | 'heal' | 'dead';
+type Leg = 'out' | 'field' | 'back' | 'heal' | 'dead' | 'home';
 const PHASE_OF_LEG: Readonly<Record<Leg, Phase>> = {
   out: 'travelling',
   field: 'searching',
   back: 'returning',
   heal: 'restocking',
   dead: 'dead',
+  home: 'idle',
 };
 
 interface FightResult {
@@ -122,6 +123,22 @@ interface FightResult {
   drunk: string[];
   /** The potion queue as the fight left it. */
   queue: DrinkingPotion[];
+}
+
+/** Health regenerated per second: the base rate plus the regeneration trait's pulses as a rate. */
+function regenPerSecond(character: CharacterState, maxHealth: number, data: GameData): number {
+  const traits = constantSection(data, 'traits');
+  const regenPercent = character.absorption[traits.regenerationId] ?? 0;
+  return (
+    healthRegenPerSecond(maxHealth, constantSection(data, 'stats')) +
+    regenerationHeal(maxHealth, regenPercent) / traits.regenerationIntervalSeconds
+  );
+}
+
+/** Waiting in the city for `ms`: regeneration only, as in the live idle phase (decisions A1). */
+function rest(character: CharacterState, ms: number, data: GameData): void {
+  const { maxHealth } = derivedStats(character, data);
+  character.health = Math.min(maxHealth, character.health + (regenPerSecond(character, maxHealth, data) * ms) / MS_PER_SECOND);
 }
 
 /**
@@ -141,7 +158,10 @@ function estimateCharacter(
   data: GameData,
 ): CharacterSummary {
   const summary = { ...emptyCharacterSummary(character.id), deaths: 0 };
-  if (character.areaId === null || character.stayInCity) return summary;
+  if (character.areaId === null || character.stayInCity) {
+    if (character.phase === 'idle') rest(character, budgetMs, data);
+    return summary;
+  }
 
   const tickMs = requireNumberConstant(data, 'combat.tickMs');
   const streams = createCharacterStreams(state.clock.masterSeed, character.id, character.rng);
@@ -168,17 +188,13 @@ function estimateCharacter(
   };
   const area = requireRow(data, 'areas', character.areaId) as unknown as AreaRow & { levelRange: { max: number } };
   const goldAtStart = character.gold;
+  const automation = constantSection(data, 'automation').enabled;
   let elapsed = 0;
   let unfinished: Partial<CharacterRngState> = {};
 
   const vitals = () => {
     const stats = derivedStats(character, data);
-    const traits = constantSection(data, 'traits');
-    const regenPercent = character.absorption[traits.regenerationId] ?? 0;
-    const perSecond =
-      healthRegenPerSecond(stats.maxHealth, constantSection(data, 'stats')) +
-      regenerationHeal(stats.maxHealth, regenPercent) / traits.regenerationIntervalSeconds;
-    return { stats, max: stats.maxHealth, perSecond };
+    return { stats, max: stats.maxHealth, perSecond: regenPerSecond(character, stats.maxHealth, data) };
   };
   const train = (skill: ProficiencyId, enemyLevel: number, units: number): void => {
     const points = character.proficiency[skill];
@@ -206,7 +222,7 @@ function estimateCharacter(
     const enemy = enemyCombatant(row, tickMs);
     const regenPerTick = (perSecond * tickMs) / MS_PER_SECOND;
     const lifeSteal = character.absorption[constantSection(data, 'traits').lifeStealId] ?? 0;
-    const trigger = character.settings.returnHealthThreshold * max;
+    const trigger = automation ? character.settings.returnHealthThreshold * max : 0;
     const fleeTicks = fleeDurationMs(character, ctx) / tickMs;
     const held = heldPotions(character, data);
     const drunk: string[] = [];
@@ -277,6 +293,7 @@ function estimateCharacter(
     const levelAtKill = character.level;
     grantKillXp(character, enemyId, ctx);
     grantKillLoot(character, enemyId, ctx, levelAtKill);
+    if (!automation) return 'field';
     if (character.health < character.settings.returnHealthThreshold * vitals().max) return 'back';
     if (!isBagFull(character, data)) {
       character.blockBagFullReturn = false;
@@ -285,9 +302,10 @@ function estimateCharacter(
     return character.blockBagFullReturn ? 'field' : 'back';
   };
 
-  /** Arrival in the city: sell and restock by the live code, then heal or leave. */
+  /** Arrival in the city: sell and restock by the live code, then heal, leave, or stay home with automation off. */
   const arrive = (): Leg => {
     arriveInCity(character, ctx);
+    if (character.phase === 'idle') return 'home';
     return character.phase === 'restocking' ? 'heal' : 'out';
   };
 
@@ -333,7 +351,7 @@ function estimateCharacter(
     return { itemId, amount: tier.amount, durationMs, remainingMs: durationMs - (i === 0 ? character.potions.ticksDone * potionTickMs : 0) };
   });
 
-  let leg: Leg = character.phase === 'restocking' ? 'heal' : character.phase === 'returning' ? 'back' : 'out';
+  let leg: Leg = character.phase === 'restocking' ? (automation ? 'heal' : arrive()) : character.phase === 'returning' ? 'back' : 'out';
   if (character.phase === 'dead') {
     // As stepDead: wait out the rest of the respawn timer, then arrive in the city (sell, restock) at respawn health.
     elapsed = Math.max(0, respawnDurationMs(character, ctx) - character.timeInPhaseMs);
@@ -343,7 +361,7 @@ function estimateCharacter(
       leg = arrive();
     }
   }
-  while (leg !== 'dead') {
+  while (leg !== 'dead' && leg !== 'home') {
     let next: Leg | null;
     if (leg === 'field') next = fieldStep();
     else if (leg === 'heal') {
@@ -364,6 +382,7 @@ function estimateCharacter(
     leg = next;
   }
 
+  if (leg === 'home') rest(character, Math.max(0, budgetMs - elapsed), data);
   const head = queue[0];
   character.potions = {
     queue: queue.map((potion) => potion.itemId),

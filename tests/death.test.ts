@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import constants from '../data/constants.json';
+import { constantsWithAutomation as constants, withAutomation } from './automation';
 import itemsJson from '../data/items.json';
 import xpTableJson from '../data/xp-table.json';
-import { createGameData, loadGameData, type GameData } from '../src/data/game-data';
+import { createGameData, type GameData } from '../src/data/game-data';
 import { stepCharacter, type StepContext } from '../src/engine/character';
 import { loseXpOnDeath } from '../src/engine/death';
 import { createEngine } from '../src/engine/engine';
@@ -649,7 +649,7 @@ describe('determinism (ADR 0002)', () => {
   }
 
   it('the loop of farming, dying and walking back gives the same result however it is split, and survives JSON', () => {
-    const data = loadGameData();
+    const data = withAutomation();
     const END = 1_800_000; // 30 minutes: about 5 deaths for a new character
     const whole = createEngine({ data, state: farmingState(data) });
     const parts = createEngine({ data, state: farmingState(data) });

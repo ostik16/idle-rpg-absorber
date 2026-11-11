@@ -78,3 +78,12 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 - [ ] **P3** — A pushed screen forgets which Character segment (Farm, Stats, Gear) was open when it closes.
 - [ ] **P3** — `design/ui/design-system/components/Navigation/preview.html` still shows the Roster/World tabs and the gold pill. Redraw it.
 - [ ] **P3** — Switcher layout checked against the Character switcher in `Comp-Navigation.dc.html` and the Character screens at 390 px (browser). Not compared at desktop width; the sketch has no Character screen with the Delete button, so its place at the bottom of the screen is unverified against a sketch.
+Automation off (#66, decisions A1):
+
+- [ ] **P2** — Copy and controls that describe automation still show while `automation.enabled` is false: City "Restock on return" card and "Restocking." state, Settings return threshold, restock quantities ("Restocked in the city before heading out"), city healing choice, loot filter and auto-sell editors. Hide or mark them inactive. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
+- [ ] **P3** — Character-Fell: the heal card reads "Then it waits in the city" instead of the sketch's "Then it heals before farming", because a respawned character no longer heals and leaves on its own. Update the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [ ] **P3** — Farm, in the city: health bar and one Drink row per health potion held (no sketch has them), so the player can heal by hand. The "no potions" alert (`CharacterView.noPotions`) is for the Farm screen rebuild (#64). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+
+Send to farm (#65, decisions A2):
+
+- [ ] **P3** — World-Area: the send sheet no longer has the sketch's Target list; "Send" goes straight to the area and the target is set from the Farm screen's "Target enemy". The line under the button is the engine's refusal reason when a send is refused. Update the sketch. [src/ui/Farm.tsx](src/ui/Farm.tsx)
