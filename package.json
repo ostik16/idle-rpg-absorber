@@ -17,11 +17,12 @@
     "test:watch": "vitest",
     "tokens": "node tools/build-tokens.mjs",
     "tokens:check": "node tools/build-tokens.mjs --check",
+    "dev-strip:check": "node tools/check-dev-strip.mjs",
     "validate:data": "node tools/validate-data.mjs",
     "balance:combat": "vite-node tools/balance/combat-sim.ts --",
     "balance:drops": "vite-node tools/balance/drop-calc.ts --",
     "balance:progression": "vite-node tools/balance/progression.ts --",
-    "check": "npm run typecheck && npm test && npm run validate:data && npm run tokens:check"
+    "check": "npm run typecheck && npm test && npm run validate:data && npm run tokens:check && npm run dev-strip:check"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.7",

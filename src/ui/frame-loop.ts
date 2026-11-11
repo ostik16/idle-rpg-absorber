@@ -9,12 +9,13 @@ import type { Engine } from '../engine/engine';
  *
  * If either one throws, the loop stops for good and calls `onFailure` once. A failed `advanceTo` leaves state partly
  * stepped, so another call would only build on it, and the caller must stop saving it too.
- * Returns a function that stops the loop.
+ * `now` is the clock; only the dev build passes another one (#74). Returns a function that stops the loop.
  */
 export function startFrameLoop(
   engine: Pick<Engine, 'advanceTo'>,
   refresh: () => void,
   onFailure: (error: unknown) => void,
+  now: () => number = Date.now,
 ): () => void {
   let frame: number | null = null;
 
@@ -32,7 +33,7 @@ export function startFrameLoop(
 
   function onFrame(): void {
     turn(() => {
-      const { mode, steps } = engine.advanceTo(Date.now());
+      const { mode, steps } = engine.advanceTo(now());
       if (steps > 0 || mode !== 'step') refresh();
     });
   }
@@ -46,7 +47,7 @@ export function startFrameLoop(
     stopFrames();
     if (document.visibilityState !== 'visible') return;
     turn(() => {
-      engine.advanceTo(Date.now());
+      engine.advanceTo(now());
       refresh();
     });
   }

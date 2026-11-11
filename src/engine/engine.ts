@@ -141,11 +141,12 @@ export function createEngine({ data, state, estimateOffline = defaultEstimateOff
     const contextOf = (characterId: string): StepContext | undefined =>
       runners.find(({ character }) => character.id === characterId)?.ctx;
     for (const command of pendingCommands.splice(0)) {
-      const rosterSize = state.roster.length;
+      const rosterBefore = state.roster;
+      const rosterSize = rosterBefore.length;
       const event = applyCommand(state, command, data, contextOf);
       publishStepEvents(stepEvents, outbox, applyShared);
       if (event) outbox.push(event);
-      if (state.roster.length !== rosterSize) {
+      if (state.roster !== rosterBefore || state.roster.length !== rosterSize) {
         saveStreams();
         loadRunners();
       }
