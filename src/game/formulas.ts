@@ -3,7 +3,7 @@
  * Constants come from data/constants.json (design 5.1), never hard-coded here.
  */
 import constants from '../../data/constants.json';
-import { proficiencyGain, type ProficiencyId } from './proficiency';
+import { movementSeconds, proficiencyGain, type ProficiencyConstants, type ProficiencyId } from './proficiency';
 
 type DropConstants = typeof constants.drops;
 type AbsorptionConstants = typeof constants.absorption;
@@ -15,6 +15,15 @@ type UpgradeConstants = typeof constants.upgrade;
  */
 export function quantiseToSteps(ms: number, tickMs: number): number {
   return Math.max(1, Math.round(ms / tickMs)) * tickMs;
+}
+
+/**
+ * Whole-step duration (ms) of a movement that takes `baseSeconds` at 0 speed points, for a character with this
+ * speed proficiency (design 3.2, 3.3, 4.2). The engine's `movementDurationMs` wrapper and the UI both use this so
+ * a travel, search or flee progress bar matches the time the engine will actually take.
+ */
+export function movementDurationMs(baseSeconds: number, speedPoints: number, c: ProficiencyConstants, tickMs: number): number {
+  return quantiseToSteps(movementSeconds(baseSeconds, speedPoints, c) * 1000, tickMs);
 }
 
 /**

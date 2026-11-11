@@ -24,7 +24,7 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 
 ## World and character screens (#33, deferred)
 
-- [ ] **P2** — Trip, search and flee progress bars and "arrives in {total}". Needs a pure duration helper in `src/game`; the engine's duration functions are off-limits to the UI, so only elapsed time and the respawn countdown show. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [x] **P2** — Trip, search and flee progress bars and "arrives in {total}" (#68). Pure `movementDurationMs` in `src/game/formulas.ts` gives the phase total, so the bars match the engine. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Loot feed relative timestamps ("now", "31s", "1m"). The time column is empty. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P2** — Absorption: the Farm "now absorbing" line and the Stats "absorbed traits" card. The engine exposes no absorption event or maximum yet. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Derived stats: damage range and health and mana regeneration rows. `DerivedStats` does not expose them. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
@@ -36,7 +36,7 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 - [ ] **P3** — World area card: 4px level-range bar with a marker at the character's level.
 - [ ] **P3** — World area card: "{name} fell here {age} ago" line for a character that died in that area.
 - [ ] **P3** — World-Area sheet: second threat pill "Enemies up to +N levels".
-- [ ] **P3** — Farm: "Now fighting" card (enemy name, Lv, drop%, trait chips, live enemy-HP bar, kill count and kills per minute). Needs fight state and bestiary exposure in the store.
+- [x] **P3** — Farm: "Now fighting" card (enemy name, Lv, drop%, trait chips, live enemy-HP bar, kill count) (#68). Fight state and kills are now on `CharacterView`. Kills-per-minute waits on the rate tracking below.
 - [ ] **P3** — Farm state row: gold-per-hour rate. Needs rate tracking; shows the gold total for now.
 - [ ] **P3** — Stats: per-attribute "+N gear" suffix. Needs a per-attribute gear-bonus breakdown.
 - [ ] **P3** — Dead and Farm: "Health potions · N left" row. Needs potion-count exposure.
@@ -82,7 +82,7 @@ Automation off (#66, decisions A1):
 
 - [ ] **P2** — Copy and controls that describe automation still show while `automation.enabled` is false: City "Restock on return" card and "Restocking." state, Settings return threshold, restock quantities ("Restocked in the city before heading out"), city healing choice, loot filter and auto-sell editors. Hide or mark them inactive. [src/ui/City.tsx](src/ui/City.tsx), [src/ui/Settings.tsx](src/ui/Settings.tsx)
 - [ ] **P3** — Character-Fell: the heal card reads "Then it waits in the city" instead of the sketch's "Then it heals before farming", because a respawned character no longer heals and leaves on its own. Update the sketch. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
-- [ ] **P3** — Farm, in the city: health bar and one Drink row per health potion held (no sketch has them), so the player can heal by hand. The "no potions" alert (`CharacterView.noPotions`) is for the Farm screen rebuild (#64). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [x] **P3** — Farm, in the city: health bar and one Drink row per health potion held, so the player can heal by hand. The "no potions" alert (`CharacterView.noPotions`) shows while farming (#68). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 
 Send to farm (#65, decisions A2):
 
