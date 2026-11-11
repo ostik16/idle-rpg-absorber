@@ -135,6 +135,35 @@ describe('farm screens', () => {
     expect([...host.querySelectorAll('[role=progressbar]')].some((b) => b.getAttribute('aria-label') === 'Arrives in')).toBe(true);
   });
 
+  it('moves the Bestiary onto the Character screen with tiered reveal, and drops the Bestiary nav tab (#69)', async () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    state.roster.push(character);
+    state.bestiary.revealed = { 'glade-rat': 2 };
+    state.bestiary.kills = { c1: { 'glade-rat': 15 } };
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect([...host.querySelectorAll('.app__tabbar a')].map((a) => a.textContent)).not.toContain('Bestiary');
+
+    [...host.querySelectorAll('button')].find((b) => b.textContent === 'Bestiary')?.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(host.textContent).toContain('Glade rat');
+    expect(host.textContent).toContain('Health'); // stats revealed at tier 2 (10 kills)
+    expect(host.textContent).toContain('25 kills reveal traits'); // next-tier hint
+  });
+
+  it('shows the game version at the bottom of the Character screen (#69)', () => {
+    const state = createGameState(7, 1_000_000, data);
+    state.roster.push(createCharacterState('c1', 'Kaela', data));
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect(host.querySelector('.app__version')?.textContent).toMatch(/^Version \d+\.\d+\.\d+$/);
+  });
+
   it('drinks a potion by hand in the city, only when health is short (decisions A1)', async () => {
     const state = createGameState(7, 1_000_000, data);
     const character = createCharacterState('c1', 'Kaela', data);

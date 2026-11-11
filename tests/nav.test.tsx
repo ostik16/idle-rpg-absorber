@@ -72,10 +72,10 @@ const PUSHED = [
 ] as const;
 
 describe('navigation', () => {
-  it('has the Farm, City, Character and Bestiary tabs and no Roster', () => {
+  it('has the Farm, City and Character tabs and no Roster or Bestiary (#69)', () => {
     setup();
     render(<App />, host);
-    expect([...host.querySelectorAll('nav.ab-tabbar a.ab-tab')].map((a) => a.textContent?.trim())).toEqual(['Farm', 'City', 'Character', 'Bestiary']);
+    expect([...host.querySelectorAll('nav.ab-tabbar a.ab-tab')].map((a) => a.textContent?.trim())).toEqual(['Farm', 'City', 'Character']);
   });
 
   it('shows only the switcher in the app bar, with the page heading for screen readers', () => {

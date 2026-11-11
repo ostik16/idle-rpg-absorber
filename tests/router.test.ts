@@ -14,7 +14,7 @@ describe('parseHash', () => {
 
   it('uses the first segment and ignores the rest', () => {
     expect(parseHash('#/farm/area-1')).toBe('farm');
-    expect(parseHash('#/bestiary?filter=boss')).toBe('bestiary');
+    expect(parseHash('#/city?filter=boss')).toBe('city');
   });
 
   it('falls back to the default route for an empty hash', () => {

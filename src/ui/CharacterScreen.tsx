@@ -12,6 +12,7 @@ import { TargetPicker } from './Farm';
 import {
   areaEnemies,
   areaOf,
+  bestiaryEntries,
   enemyView,
   equipmentSlots,
   formatDuration,
@@ -502,8 +503,57 @@ function Gear({ view }: { view: CharacterView }) {
   );
 }
 
+/** The enemies any character has recorded, revealed in tiers as they are killed (design 4.5). */
+function Bestiary({ view }: { view: CharacterView }) {
+  const entries = bestiaryEntries(view.id);
+  if (entries.length === 0) {
+    return (
+      <section class="ab-card">
+        <p class="app__text ab-c-muted">No enemies recorded yet. {view.name} fills the bestiary by fighting.</p>
+      </section>
+    );
+  }
+  return (
+    <section class="app__stack" aria-label="Bestiary">
+      {entries.map((enemy) => (
+        <section class="ab-card app__stack" key={enemy.id} aria-labelledby={`best-${enemy.id}`}>
+          <div class="app__field-head">
+            <span id={`best-${enemy.id}`} class="ab-title app__grow">{enemy.name}</span>
+            <span class="ab-level ab-level--enemy">Lv {enemy.level}</span>
+          </div>
+          <div class="app__field-help ab-c-muted">{enemy.type} · {enemy.areas.join(', ')}</div>
+          <div class="app__field-head">
+            <span class="app__field-help ab-c-muted app__grow">Kills · all characters</span>
+            <span class="ab-num">{enemy.totalKills}</span>
+          </div>
+          {enemy.myKills > 0 && (
+            <div class="app__field-head">
+              <span class="app__field-help ab-c-muted app__grow">{view.name}</span>
+              <span class="ab-num">{enemy.myKills}</span>
+            </div>
+          )}
+          {enemy.stats !== null && (
+            <dl class="ab-dl">
+              <dt>Health</dt><dd>{enemy.stats.health}</dd>
+              <dt>Damage</dt><dd>{enemy.stats.damage}</dd>
+              <dt>Attack speed</dt><dd>{enemy.stats.attackSpeed.toFixed(2)} / s</dd>
+              <dt>Defence</dt><dd>{enemy.stats.defence}</dd>
+              <dt>XP</dt><dd>{enemy.stats.xp}</dd>
+              <dt>Gold</dt><dd>{enemy.stats.gold.min}–{enemy.stats.gold.max}</dd>
+            </dl>
+          )}
+          {enemy.traits !== null && <EnemyTraits traits={enemy.traits} />}
+          {enemy.nextReveal !== null && (
+            <p class="app__field-help ab-c-muted">{enemy.nextReveal.kills} kills reveal {enemy.nextReveal.label}.</p>
+          )}
+        </section>
+      ))}
+    </section>
+  );
+}
+
 export function CharacterScreen() {
-  const [tab, setTab] = useState<'farm' | 'stats' | 'gear'>('farm');
+  const [tab, setTab] = useState<'farm' | 'stats' | 'gear' | 'bestiary'>('farm');
   const view = selectedCharacter.value;
   if (view === null) return null;
   const status = phaseDescriptor(view.activity.value);
@@ -525,11 +575,21 @@ export function CharacterScreen() {
           Stats{view.unspentPoints.value > 0 && <span class="ab-c-gold" aria-label={`${view.unspentPoints.value} points to spend`}>&nbsp;{view.unspentPoints.value}</span>}
         </button>
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'gear'} onClick={() => setTab('gear')}>Gear</button>
+        <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'bestiary'} onClick={() => setTab('bestiary')}>Bestiary</button>
       </div>
-      {tab === 'farm' ? <Farm view={view} /> : tab === 'stats' ? <Stats view={view} /> : <Gear view={view} />}
+      {tab === 'farm' ? (
+        <Farm view={view} />
+      ) : tab === 'stats' ? (
+        <Stats view={view} />
+      ) : tab === 'gear' ? (
+        <Gear view={view} />
+      ) : (
+        <Bestiary view={view} />
+      )}
       <button type="button" class="ab-btn ab-btn--ghost ab-btn--block" onClick={() => openDeleteConfirm(view.id)}>
         Delete {view.name}
       </button>
+      <p class="app__field-help ab-c-muted app__version">Version {__APP_VERSION__}</p>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 // Signals are created in store.ts only.
 
 /** The main destinations, in tab order (design system README, Navigation). */
-export const ROUTES = ['farm', 'city', 'character', 'bestiary'] as const;
+export const ROUTES = ['farm', 'city', 'character'] as const;
 export type Route = (typeof ROUTES)[number];
 
 export const DEFAULT_ROUTE: Route = 'farm';

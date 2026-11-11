@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vitest/config';
+
+// The game version shown in the UI (#69), read from package.json at build time.
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 // design/ui/design-system/components/bundle.css is a byte-for-byte snapshot of a design artifact whose
 // runtime needs a Google Fonts @import. The game self-hosts its fonts (src/styles/fonts.css), so this
@@ -19,6 +23,7 @@ function stripGoogleFontsImport(): Plugin {
 export default defineConfig({
   // Relative base so the build works from any path (GitHub Pages project site, itch.io, a folder).
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [stripGoogleFontsImport()],
   test: {
     include: ['tests/**/*.test.{ts,tsx}'],
