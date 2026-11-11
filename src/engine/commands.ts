@@ -15,7 +15,7 @@ import { addToBag, warehouseStackLimit, type BagStackLike } from '../game/invent
 import { firstSlotTicketLevel, type LevelUpRewardRow } from '../game/progression';
 import { characterNameError, type Attributes } from '../game/stats';
 import { createCharacterState } from '../state/factory';
-import { derivedStats } from '../state/selectors';
+import { sendRefusal } from '../state/selectors';
 import type {
   CharacterState,
   CityHealingMode,
@@ -26,6 +26,7 @@ import type {
 } from '../state/types';
 import { applyDevAction, type DevAction } from './dev';
 import type { EngineEvent } from './events';
+import { drinkFromBag } from './healing';
 import type { StepContext } from './step-context';
 import { returnToCity, sendToArea, type AreaRow } from './travel';
 
@@ -68,6 +69,8 @@ export type Command =
   | { type: 'setRestockList'; characterId: string; list: RestockEntry[] }
   /** Replaces the loot filter rule set (L8). */
   | { type: 'setLootFilter'; characterId: string; lootFilter: ItemRuleSet }
+  /** Drinks one potion from the bag now, in any phase but dead (decisions A1). */
+  | { type: 'drinkPotion'; characterId: string; itemId: string }
   /** Developer tools for playtesting (#74). Refused in a production build. */
   | { type: 'dev'; action: DevAction };
 
@@ -118,18 +121,7 @@ function findArea(areaId: string, data: GameData): AreaRow | undefined {
 }
 
 function sendToAreaError(character: CharacterState, areaId: string, data: GameData): string | null {
-  if (findArea(areaId, data) === undefined) return `No area "${areaId}".`;
-  switch (character.phase) {
-    case 'idle':
-      break;
-    case 'dead':
-      return `${character.name} is dead.`;
-    case 'restocking':
-      return `${character.name} is busy in the city.`;
-    default:
-      return `${character.name} has to be in the city first.`;
-  }
-  return character.health < derivedStats(character, data).maxHealth ? `${character.name} needs full health to set out.` : null;
+  return findArea(areaId, data) === undefined ? `No area "${areaId}".` : sendRefusal(character);
 }
 
 function setTargetError(character: CharacterState, enemyId: string | null, data: GameData): string | null {
@@ -551,6 +543,12 @@ export function applyCommand(
       }
       character.settings.restockList = command.list.map(({ itemId, quantity }) => ({ itemId, quantity }));
       return null;
+    }
+    case 'drinkPotion': {
+      const character = findCharacter();
+      if (character === undefined) return rejected(`No character "${command.characterId}".`);
+      const reason = drinkFromBag(character, command.itemId, data);
+      return reason === null ? null : rejected(reason);
     }
   }
 }

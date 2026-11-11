@@ -17,6 +17,7 @@ import {
   itemInfo,
   listAreas,
   openSettings,
+  restockablePotions,
   requireGameData,
   roster,
   send,
@@ -160,12 +161,12 @@ function Dead({ view }: { view: CharacterView }) {
         </div>
       </section>
       <section class="ab-card app__stack" aria-labelledby="heal-h">
-        <h2 id="heal-h" class="ab-label">Then it heals before farming</h2>
+        <h2 id="heal-h" class="ab-label">Then it waits in the city</h2>
         <dl class="ab-dl">
           <dt>Respawns with</dt>
           <dd>{Math.round(death.respawnHealthFraction * 100)}% · {respawnHealth(view.maxHealth.value, death)} / {view.maxHealth.value}</dd>
         </dl>
-        <p class="app__field-help ab-c-muted">{view.name} heals to full before farming again.</p>
+        <p class="app__field-help ab-c-muted">{view.name} regenerates there until you send it out again.</p>
       </section>
       <section class="ab-card app__stack" aria-labelledby="lost-h">
         <h2 id="lost-h" class="ab-label">What was lost</h2>
@@ -174,6 +175,30 @@ function Dead({ view }: { view: CharacterView }) {
           XP never falls below the last point mark {view.name} passed in this level, and a level is never lost. Bag and gear are kept: nothing is lost except XP.
         </p>
       </section>
+    </>
+  );
+}
+
+/** The player's drink command (decisions A1): the city heals by regeneration only, so potions are drunk by hand. */
+function DrinkRows({ view }: { view: CharacterView }) {
+  const full = view.health.value >= view.maxHealth.value;
+  // Health potions are the consumables with a drink-at threshold; buffs have none.
+  return (
+    <>
+      {restockablePotions()
+        .filter((potion) => potion.autoUseDefaultThreshold !== null)
+        .map((potion) => {
+          const qty = view.bag.value.filter((s) => s.itemId === potion.id).reduce((sum, s) => sum + s.qty, 0);
+          if (qty === 0) return null;
+          return (
+            <div class="app__field-head" key={potion.id}>
+              <span class="ab-num app__grow">{qty} {potion.name}</span>
+              <button type="button" class="ab-btn ab-btn--sm" disabled={full} onClick={() => send({ type: 'drinkPotion', characterId: view.id, itemId: potion.id })}>
+                Drink
+              </button>
+            </div>
+          );
+        })}
     </>
   );
 }
@@ -187,6 +212,8 @@ function Farm({ view }: { view: CharacterView }) {
     return (
       <section class="ab-card app__stack">
         <p class="app__text">{view.name} is in the city.</p>
+        <Vitals view={view} />
+        <DrinkRows view={view} />
         <a class="ab-btn ab-btn--primary" href={hrefFor('world')} onClick={closeCharacter}>Choose an area</a>
       </section>
     );

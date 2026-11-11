@@ -6,8 +6,8 @@
  * for a test run, so the fixtures use `SECONDS` and `npm run balance:offline` is the tool for the full cap.
  */
 import { describe, expect, it } from 'vitest';
-import constants from '../data/constants.json';
-import { createGameData, loadGameData, type GameData, type GameDataInput, type TableName } from '../src/data/game-data';
+import { constantsWithAutomation as constants, withAutomation } from './automation';
+import { createGameData, type GameData, type GameDataInput, type TableName } from '../src/data/game-data';
 import { createEngine } from '../src/engine/engine';
 import { estimateOffline, mergeSummaries } from '../src/engine/offline';
 import { createCharacterState, createGameState } from '../src/state/factory';
@@ -30,7 +30,7 @@ type Constants = Record<string, Record<string, unknown>>;
 /** The real tables with the offline rates at 1 (the parity is checked at full efficiency) and edits for a fixture. */
 function dataWith(edit: (input: Mutable) => void = () => {}): GameData {
   const input: Mutable = {
-    ...loadGameData(),
+    ...withAutomation(),
     constants: { ...constants, offline: { ...constants.offline, efficiency: 1, proficiencyRate: 1 } },
   };
   edit(input);
@@ -174,6 +174,11 @@ const SELL_EVERYTHING = { enabled: true, rules: [{ category: 'material' }, { cat
 describe('offline estimator against the step loop (ADR 0002)', () => {
   it('a new character in the first area, 200 seeds: kills, XP, gold and drops', { timeout: 300_000 }, () => {
     expectParity(driftOver(200, SECONDS, dataWith()), [...BASIC, 'item hide-scrap', 'item minor-health-potion']);
+  });
+
+  it('automation off (decisions A1): farms until recalled or dead, then stays home', { timeout: 300_000 }, () => {
+    const data = dataWith((input) => editConstants(input, 'automation', { enabled: false }));
+    expectParity(driftOver(100, SECONDS, data), BASIC);
   });
 
   it('a bag filling early: the character goes home to sell and comes back', { timeout: 300_000 }, () => {

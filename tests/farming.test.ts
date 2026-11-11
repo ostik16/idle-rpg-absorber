@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import constants from '../data/constants.json';
+import { withAutomation } from './automation';
 import areasJson from '../data/areas.json';
 import enemiesJson from '../data/enemies.json';
 import dropTablesJson from '../data/drop-tables.json';
@@ -335,18 +336,13 @@ describe('commands (3.2, 3.3, L5)', () => {
     expect(missing).toMatchObject({ type: 'commandRejected', reason: 'No character "c1".' });
   });
 
-  it('needs full health to set out (3.2), and goes once healed', () => {
+  it('sets out at any health (decisions A2)', () => {
     const { engine, character, advance, id } = setup();
     engine.drainEvents();
-    character.health = 69;
+    character.health = 1;
     engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
     advance(TICK);
-    expect(rejections(engine)).toEqual(['Ysolde needs full health to set out.']);
-    expect(character).toMatchObject({ phase: 'idle', areaId: null });
-
-    character.health = 70;
-    engine.dispatch({ type: 'sendToArea', characterId: id, areaId: AREA });
-    advance(TICK);
+    expect(rejections(engine)).toEqual([]);
     expect(character.phase).toBe('travelling');
   });
 
@@ -393,7 +389,7 @@ describe('commands (3.2, 3.3, L5)', () => {
 
   it('a return while dead or healing marks it to stay, and a second one is refused', () => {
     for (const phase of ['dead', 'restocking'] as const) {
-      const { engine, character, advance, id } = setup();
+      const { engine, character, advance, id } = setup(withAutomation(fixture()));
       character.areaId = AREA;
       character.phase = phase;
       character.health = 1; // at full health it would leave the city at once
