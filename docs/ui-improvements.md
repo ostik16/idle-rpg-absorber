@@ -30,7 +30,8 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 - [ ] **P3** — Derived stats: damage range and health and mana regeneration rows. `DerivedStats` does not expose them. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P2** — World character switcher. The screen uses the selected character. [src/ui/World.tsx](src/ui/World.tsx)
 - [ ] **P3** — Send sheet: Walk / Teleporter control (teleporters are a later service) and a speed-adjusted arrival time. [src/ui/World.tsx](src/ui/World.tsx)
-- [ ] **P2** — Character screen: Spells tab. Farm, Stats and Gear show. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [ ] **P2** — Character screen: Spells tab (blocked: no spells system in the engine yet — `SpellsState` is inert, no cast/rank commands). Farm, Stats, Gear and Bestiary show (#69). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [ ] **P3** — Bestiary first version (#69) is a Character sub-tab: recorded enemies most-fought first, tiered reveal (name → stats → traits) from `bestiary.revealed`. Deferred vs the sketch: the search box, per-character absorption bars, the drop list and exact drop rates (tiers 4–5), and the per-character "Brann 51 · Oric 13" kill attribution. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Area sheet: mini-boss, boss and cursed-object rows. Only listed spawns show. [src/ui/World.tsx](src/ui/World.tsx)
 - [ ] **P3** — Farm screen: "Returns to city when" and "Recovery" blocks (editing thresholds is #34), and the area card's "farming here" gold edge. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — World area card: 4px level-range bar with a marker at the character's level.
@@ -71,7 +72,7 @@ Sketch-fidelity gaps found comparing #34 core to the sketches (behaviour is corr
 
 ## Navigation and app bar (#64)
 
-- [ ] **P2** — Sketch gap: `Main.dc.html`, `Comp-Navigation.dc.html` and the tab sketches still show the Roster tab, a title plus gold pill in the app bar, and back buttons on pushed screens. The app now has Farm, City, Character, Bestiary tabs and an app bar with only the character switcher (name, location, chevron), as in the "Character switcher" sketch. Update the sketches.
+- [ ] **P2** — Sketch gap: `Main.dc.html`, `Comp-Navigation.dc.html` and the tab sketches still show the Roster tab, a title plus gold pill in the app bar, and back buttons on pushed screens. The app now has Farm, City and Character tabs (the Bestiary moved to a Character sub-tab, #69) and an app bar with only the character switcher (name, location, chevron), as in the "Character switcher" sketch. Update the sketches.
 - [ ] **P2** — Pushed screens (shop, warehouse, settings, creation) have no back button any more: the app bar holds only the switcher, so a tab tap is the way out. The screen's name shows as a heading at the top of the content. Revisit if playtesting finds the missing back button confusing. [src/ui/App.tsx](src/ui/App.tsx)
 - [ ] **P3** — The switcher list is a bottom sheet on phones and desktop alike; the design system asks for a centred dialog at `bp-desktop`. The delete sheet shares this. [src/ui/Switcher.tsx](src/ui/Switcher.tsx)
 - [ ] **P3** — Gold left the app bar. The Character screen header still shows it; the roster summary (gold per hour, warehouse) from the Roster sketch has no home yet.

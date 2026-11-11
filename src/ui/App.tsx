@@ -23,7 +23,7 @@ import {
   warehouseOpen,
 } from './store';
 
-const LABELS: Record<Route, string> = { farm: 'Farm', city: 'City', character: 'Character', bestiary: 'Bestiary' };
+const LABELS: Record<Route, string> = { farm: 'Farm', city: 'City', character: 'Character' };
 
 /** The destinations. Used by both the phone tab bar and the desktop rail; CSS shows one of them. A tap always closes pushed screens. */
 function Tabs({ current }: { current: Route }) {
@@ -87,16 +87,10 @@ export function App() {
               <Farm />
             ) : current === 'city' ? (
               <City />
-            ) : current === 'character' ? (
-              hasCharacter ? <CharacterScreen /> : <NoCharacter />
+            ) : hasCharacter ? (
+              <CharacterScreen />
             ) : (
-              <section class="ab-card">
-                <div class="ab-card__head">
-                  <span class="ab-label">{LABELS[current]}</span>
-                </div>
-                <p class="app__text">No enemies recorded yet.</p>
-                <p class="app__text ab-c-muted">This screen is not built yet.</p>
-              </section>
+              <NoCharacter />
             )}
           </div>
         </main>

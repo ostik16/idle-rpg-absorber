@@ -13,6 +13,7 @@ import { respawnSeconds } from '../game/progression';
 import { characterNameError as nameErrorFn, type Attributes } from '../game/stats';
 import { derivedStats, outOfPotions, sendRefusal, type DerivedStats } from '../state/selectors';
 import type {
+  BestiaryState,
   CharacterState,
   CityHealingMode,
   ItemRuleSet,
@@ -130,6 +131,8 @@ const openShopIdSignal = signal<string | null>(null);
 const settingsIdSignal = signal<string | null>(null);
 const warehouseOpenSignal = signal(false);
 const shoppingListSignal = signal<Readonly<Record<string, number>>>({});
+const bestiarySignal = signal<BestiaryState>({ kills: {}, revealed: {} });
+const copyBestiary = copyInto(bestiarySignal);
 /** The game data the engine runs on, exposed to screens that read names (areas) or validate input. */
 let gameData: GameData | null = null;
 
@@ -476,6 +479,7 @@ export function connectEngine(
     batch(() => {
       refreshRoster();
       refreshWarehouse();
+      copyBestiary(engine.state.bestiary);
       copySummary(engine.state.pendingSummary);
       for (const event of engine.drainEvents()) {
         const message = noticeFor(event);
@@ -751,6 +755,95 @@ export function areaEnemies(areaId: string): readonly AreaEnemyView[] {
     const enemy = enemyRow(enemyId);
     return enemy === undefined ? [] : [{ ...enemyViewOf(enemy, data), targetingMultiplier: targetingMultiplier(enemy) }];
   });
+}
+
+export interface BestiaryStats {
+  readonly health: number;
+  readonly damage: number;
+  readonly attackSpeed: number;
+  readonly defence: number;
+  readonly xp: number;
+  readonly gold: { readonly min: number; readonly max: number };
+}
+
+export interface BestiaryEntry {
+  readonly id: string;
+  /** Highest reveal tier any character has reached (1..thresholds). Only tier >= 1 enemies are listed. */
+  readonly tier: number;
+  readonly name: string;
+  readonly level: number;
+  readonly type: string;
+  /** Area names the enemy appears in. */
+  readonly areas: readonly string[];
+  /** Kills by every character. */
+  readonly totalKills: number;
+  /** Kills by the character whose bestiary is being viewed. */
+  readonly myKills: number;
+  /** The next reveal and its kill threshold, or null when everything is revealed. */
+  readonly nextReveal: { readonly kills: number; readonly label: string } | null;
+  /** Revealed at tier 2 (10 kills), else null. */
+  readonly stats: BestiaryStats | null;
+  /** Revealed at tier 3 (25 kills), else null. */
+  readonly traits: readonly { name: string; value: number; magical: boolean }[] | null;
+}
+
+interface FullEnemyRow extends EnemyRow {
+  damage: number;
+  attackSpeed: number;
+  defence: number;
+  xpReward: number;
+  moneyRange: { min: number; max: number };
+  areas: readonly string[];
+}
+
+interface ThresholdRow {
+  id: string;
+  kills: number;
+}
+
+/** Friendly name of what each bestiary threshold reveals, keyed by its id (data/bestiary-thresholds.json). */
+const REVEAL_LABEL: Record<string, string> = {
+  identity: 'name',
+  stats: 'stats',
+  traits: 'traits',
+  'drop-list': 'drops',
+  'drop-rates': 'drop rates',
+};
+
+/**
+ * The enemies any character has recorded (design 4.5), most-fought first, for the Character screen's Bestiary.
+ * Reveal follows the party's highest kill tier (`bestiary.revealed`); `myKills` is the viewing character's own count.
+ */
+export function bestiaryEntries(myCharacterId: string | null): readonly BestiaryEntry[] {
+  const data = requireGameData();
+  const { kills, revealed } = bestiarySignal.value;
+  const thresholds = data.bestiaryThresholds as unknown as readonly ThresholdRow[];
+  const areaName = (id: string): string => areaRows().find((area) => area.id === id)?.name ?? id;
+  const entries: BestiaryEntry[] = [];
+  for (const [enemyId, tier] of Object.entries(revealed)) {
+    if (tier < 1) continue;
+    const enemy = enemyRow(enemyId) as FullEnemyRow | undefined;
+    if (enemy === undefined) continue;
+    const totalKills = Object.values(kills).reduce((sum, perEnemy) => sum + (perEnemy[enemyId] ?? 0), 0);
+    const next = thresholds[tier];
+    entries.push({
+      id: enemyId,
+      tier,
+      name: enemy.name,
+      level: enemy.level,
+      type: enemy.type,
+      areas: enemy.areas.map(areaName),
+      totalKills,
+      myKills: (myCharacterId === null ? 0 : kills[myCharacterId]?.[enemyId]) ?? 0,
+      nextReveal: next === undefined ? null : { kills: next.kills, label: REVEAL_LABEL[next.id] ?? next.id },
+      stats:
+        tier < 2
+          ? null
+          : { health: enemy.health, damage: enemy.damage, attackSpeed: enemy.attackSpeed, defence: enemy.defence, xp: enemy.xpReward, gold: enemy.moneyRange },
+      traits: tier < 3 ? null : enemy.traits.map((t) => ({ name: nameIn(data, 'traits', t.id), value: t.value, magical: t.magical })),
+    });
+  }
+  return entries.sort((a, b) => b.totalKills - a.totalKills || a.name.localeCompare(b.name));
 }
 
 export interface ItemInfo {
