@@ -84,7 +84,8 @@
     "movementSecondsBetweenEnemies": 6,
     "targeting": {
       "commonMultiplier": 2,
-      "maxMultiplier": 10
+      "maxMultiplier": 10,
+      "unlockKills": 50
     }
   },
   "save": {

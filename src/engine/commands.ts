@@ -124,14 +124,20 @@ function sendToAreaError(character: CharacterState, areaId: string, data: GameDa
   return findArea(areaId, data) === undefined ? `No area "${areaId}".` : sendRefusal(character);
 }
 
-function setTargetError(character: CharacterState, enemyId: string | null, data: GameData): string | null {
+function setTargetError(character: CharacterState, enemyId: string | null, kills: number, data: GameData): string | null {
   if (character.areaId === null) return `${character.name} has no area to search.`;
   if (enemyId === null) return null;
   if (character.stayInCity || character.phase === 'fleeing' || character.phase === 'returning') {
     return `${character.name} is on the way back.`;
   }
   const area = findArea(character.areaId, data);
-  return area !== undefined && spawnsInArea(area, enemyId) ? null : `No "${enemyId}" in this area.`;
+  if (area === undefined || !spawnsInArea(area, enemyId)) return `No "${enemyId}" in this area.`;
+  // Targeting one enemy is earned by killing it (decisions A3): unlocks at `farming.targeting.unlockKills`.
+  const unlockKills = constantSection(data, 'farming').targeting.unlockKills;
+  if (kills < unlockKills) {
+    return `Defeat ${requireRow(data, 'enemies', enemyId).name} ${unlockKills} times to target it (${kills} so far).`;
+  }
+  return null;
 }
 
 function returnToCityError(character: CharacterState, data: GameData): string | null {
@@ -442,7 +448,8 @@ export function applyCommand(
         if (reason !== null) return rejected(reason);
         sendToArea(character, command.areaId, ctx);
       } else if (command.type === 'setTarget') {
-        const reason = setTargetError(character, command.enemyId, data);
+        const kills = (command.enemyId === null ? 0 : state.bestiary.kills[character.id]?.[command.enemyId]) ?? 0;
+        const reason = setTargetError(character, command.enemyId, kills, data);
         if (reason !== null) return rejected(reason);
         character.targetEnemyId = command.enemyId;
       } else {

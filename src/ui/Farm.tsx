@@ -1,7 +1,9 @@
+import { constantSection } from '../data/game-data';
 import { dropLevelModifier } from '../game/formulas';
 import { Icon } from './Icon';
 import {
   areaEnemies,
+  requireGameData,
   closeArea,
   formatDuration,
   listAreas,
@@ -58,22 +60,28 @@ function AreaCard({ area, view }: { area: AreaListEntry; view: CharacterView }) 
   );
 }
 
-/** Radios for "Any enemy" and one row per listed enemy, each with its targeting multiplier (design 3.3). */
+/**
+ * Radios for "Any enemy" and one row per listed enemy (design 3.3). Targeting a mob unlocks at
+ * `farming.targeting.unlockKills` kills of it (decisions A3); a locked mob shows its kill progress and cannot be picked.
+ */
 export function TargetPicker({
   areaId,
   searchSeconds,
   value,
+  kills,
   onPick,
 }: {
   areaId: string;
   searchSeconds: number;
   value: string | null;
+  kills: Readonly<Record<string, number>>;
   onPick: (enemyId: string | null) => void;
 }) {
   const enemies = areaEnemies(areaId);
-  const row = (id: string | null, name: string, sub: string, enemy?: AreaEnemyView) => (
-    <label class="app__target" key={id ?? 'any'}>
-      <input type="radio" name={`target-${areaId}`} checked={value === id} onChange={() => onPick(id)} />
+  const unlockKills = constantSection(requireGameData(), 'farming').targeting.unlockKills;
+  const row = (id: string | null, name: string, sub: string, locked: boolean, enemy?: AreaEnemyView) => (
+    <label class={`app__target${locked ? ' app__target--locked' : ''}`} key={id ?? 'any'}>
+      <input type="radio" name={`target-${areaId}`} checked={value === id} disabled={locked} onChange={() => onPick(id)} />
       <span class="app__target-body">
         <span class="ab-num">{name}</span>
         <span class="app__field-help ab-c-muted">{sub}</span>
@@ -94,15 +102,20 @@ export function TargetPicker({
   return (
     <fieldset class="app__targets">
       <legend class="ab-label">Target</legend>
-      {row(null, 'Any enemy', between(1))}
-      {enemies.map((enemy) =>
-        row(
+      {row(null, 'Any enemy', between(1), false)}
+      {enemies.map((enemy) => {
+        const killed = kills[enemy.id] ?? 0;
+        const locked = killed < unlockKills;
+        return row(
           enemy.id,
           `${enemy.name} · Lv ${enemy.level}`,
-          `Targeting ×${enemy.targetingMultiplier} · ${between(enemy.targetingMultiplier)}`,
+          locked
+            ? `${killed} / ${unlockKills} kills to unlock`
+            : `Targeting ×${enemy.targetingMultiplier} · ${between(enemy.targetingMultiplier)}`,
+          locked,
           enemy,
-        ),
-      )}
+        );
+      })}
     </fieldset>
   );
 }
