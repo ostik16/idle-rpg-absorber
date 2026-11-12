@@ -63,6 +63,19 @@ describe('city, shop, warehouse and gear screens', () => {
     expect(sent(dispatch)).toEqual([{ type: 'buyItem', characterId: 'c1', shopId: 'alchemist', itemId: 'minor-health-potion', qty: 2 }]);
   });
 
+  it('out of the city, shows a banner with a call-back, keeps browsing, and disables Buy (#72)', async () => {
+    const dispatch = setup([], 'searching');
+    openShop('alchemist');
+    render(<App />, host);
+    expect(host.textContent).toContain('is not in the city. Travel there to buy.');
+    await click('button', 'One more Minor health potion'); // building the list stays allowed
+    expect(host.textContent).toContain('Buy ·');
+    const buy = [...host.querySelectorAll('button')].find((b) => b.textContent?.startsWith('Buy ·')) as HTMLButtonElement;
+    expect(buy.disabled).toBe(true);
+    await click('button', 'Call Kaela back');
+    expect(sent(dispatch)).toEqual([{ type: 'returnToCity', characterId: 'c1' }]);
+  });
+
   it('sells selected stacks, highest bag slot first', async () => {
     const dispatch = setup([stack('rusty-sword'), stack('minor-health-potion', 4)]);
     openShop('alchemist');
