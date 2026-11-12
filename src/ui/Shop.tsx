@@ -14,6 +14,8 @@ export function Shop() {
 
   const bag = view.bag.value;
   const here = inCity(view.activity.value);
+  const dead = view.activity.value === 'dead';
+  const headingBack = view.activity.value === 'fleeing' || view.activity.value === 'returning';
   const stock = shopItems(shop.id);
   const chosen = stock.filter((row) => (qty[row.itemId] ?? 0) > 0);
   const items = chosen.reduce((sum, row) => sum + (qty[row.itemId] ?? 0), 0);
@@ -47,7 +49,20 @@ export function Shop() {
         <span class="app__field-help ab-c-muted app__grow">Lv {view.level.value} · bag {view.bagUsedCells.value}/{view.bagCapacity.value}</span>
         <span class="ab-c-gold ab-num"><Icon name="gold" size={14} /> {formatGold(view.gold.value)}</span>
       </div>
-      {!here && <p class="app__field-help ab-c-warning">{view.name} has to be in the city to shop.</p>}
+      {!here && (
+        <div class="ab-card app__stack">
+          <p class="app__field-help ab-c-warning">{view.name} is not in the city. Travel there to buy.</p>
+          {dead ? (
+            <p class="app__field-help ab-c-muted">{view.name} is dead and will wait in the city.</p>
+          ) : headingBack ? (
+            <p class="app__field-help ab-c-muted">On the way back now.</p>
+          ) : (
+            <button type="button" class="ab-btn ab-btn--block" onClick={() => send({ type: 'returnToCity', characterId: view.id })}>
+              <Icon name="returnToCity" size={16} /> Call {view.name} back
+            </button>
+          )}
+        </div>
+      )}
       <div class="ab-seg" role="tablist" aria-label="Shop view">
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'buy'} onClick={() => setTab('buy')}>Buy</button>
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'sell'} onClick={() => setTab('sell')}>Sell</button>
