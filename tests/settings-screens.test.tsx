@@ -136,7 +136,7 @@ describe('settings screen', () => {
     setup();
     route.value = 'character';
     render(<App />, host);
-    await click('[role=tab]', 'Gear');
+    await click('[role=tab]', 'Inventory');
     await click('button', 'Loot filter');
     expect(settingsCharacterId.value).toBe('c1');
     await click('a.ab-tab', 'Character');

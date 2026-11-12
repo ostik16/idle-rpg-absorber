@@ -192,6 +192,23 @@ describe('equipItem and unequipItem (design 2.2)', () => {
     expect(reason).toMatch(/off hand/i);
   });
 
+  it('equips while out farming, and refuses only while dead (#71, decisions A5)', () => {
+    const state = makeState();
+    const character = find(state, 'a');
+    character.level = 5;
+    character.areaId = 'mossfang-glade';
+    character.bag = [stack('mossfang-sword', 1)];
+
+    character.phase = 'fighting';
+    apply(state, { type: 'equipItem', characterId: 'a', bagIndex: 0, slot: 'main-hand' });
+    expect(character.equipment['main-hand']?.itemId).toBe('mossfang-sword');
+
+    character.phase = 'dead';
+    const reason = reject(state, { type: 'unequipItem', characterId: 'a', slot: 'main-hand' });
+    expect(reason).toMatch(/while dead/i);
+    expect(character.equipment['main-hand']?.itemId).toBe('mossfang-sword');
+  });
+
   it('refuses when the item does not fit the slot', () => {
     const state = makeState();
     const character = find(state, 'a');

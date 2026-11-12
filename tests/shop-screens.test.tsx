@@ -13,7 +13,7 @@ const host = document.createElement('div');
 document.body.append(host);
 const stack = (itemId: string, qty = 1): ItemStack => ({ itemId, bonuses: [], upgradeLevel: 0, qty });
 
-function setup(bag: ItemStack[] = [], phase: 'idle' | 'searching' = 'idle') {
+function setup(bag: ItemStack[] = [], phase: 'idle' | 'searching' | 'dead' = 'idle') {
   const state = createGameState(7, 1_000_000, data);
   const character = createCharacterState('c1', 'Kaela', data);
   character.bag = bag;
@@ -91,23 +91,33 @@ describe('city, shop, warehouse and gear screens', () => {
     ]);
   });
 
-  it('equips from the bag and unequips from the slot', async () => {
+  it('equips from the bag via the item sheet (#71)', async () => {
     const dispatch = setup([stack('rusty-sword')]);
     route.value = 'character';
     render(<App />, host);
-    await click('[role=tab]', 'Gear');
+    await click('[role=tab]', 'Inventory');
     await click('button.ab-slot', 'Rusty sword');
-    await click('button', 'Equip in Main hand');
+    await click('.ab-sheet button', 'Equip in Main hand');
     expect(sent(dispatch)).toEqual([{ type: 'equipItem', characterId: 'c1', bagIndex: 0, slot: 'main-hand' }]);
   });
 
-  it('disables gear changes for a character out farming', async () => {
-    setup([stack('rusty-sword')], 'searching');
+  it('allows gear changes while out farming (#71)', async () => {
+    const dispatch = setup([stack('rusty-sword')], 'searching');
     route.value = 'character';
     render(<App />, host);
-    await click('[role=tab]', 'Gear');
-    expect(host.textContent).toContain('has to be in the city to change gear');
+    await click('[role=tab]', 'Inventory');
     await click('button.ab-slot', 'Rusty sword');
-    expect((host.querySelector('button.ab-btn--primary') as HTMLButtonElement).disabled).toBe(true);
+    expect((host.querySelector('.ab-sheet button.ab-btn--primary') as HTMLButtonElement).disabled).toBe(false);
+    await click('.ab-sheet button', 'Equip in Main hand');
+    expect(sent(dispatch)).toEqual([{ type: 'equipItem', characterId: 'c1', bagIndex: 0, slot: 'main-hand' }]);
+  });
+
+  it('disables equipping only while dead (#71)', async () => {
+    setup([stack('rusty-sword')], 'dead');
+    route.value = 'character';
+    render(<App />, host);
+    await click('[role=tab]', 'Inventory');
+    await click('button.ab-slot', 'Rusty sword');
+    expect((host.querySelector('.ab-sheet button.ab-btn--primary') as HTMLButtonElement).disabled).toBe(true);
   });
 });
