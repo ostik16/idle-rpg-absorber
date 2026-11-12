@@ -26,8 +26,8 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 
 - [x] **P2** — Trip, search and flee progress bars and "arrives in {total}" (#68). Pure `movementDurationMs` in `src/game/formulas.ts` gives the phase total, so the bars match the engine. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P3** — Loot feed relative timestamps ("now", "31s", "1m"). The time column is empty. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
-- [ ] **P2** — Absorption: the Farm "now absorbing" line and the Stats "absorbed traits" card. The engine exposes no absorption event or maximum yet. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
-- [ ] **P3** — Derived stats: damage range and health and mana regeneration rows. `DerivedStats` does not expose them. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [x] **P2** — Absorption (#70): the Farm "now absorbing" line and the Stats "absorbed traits" card, from `CharacterView.absorption` and the `nowAbsorbing`/`absorbedTraits` selectors (cap = the highest enemy trait value). The per-kill absorption rate line is deferred. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
+- [ ] **P3** — Derived stats: health regeneration row ships (#70); damage range (no variance model decided) and mana regeneration (no constant) are still open. [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
 - [ ] **P2** — World character switcher. The screen uses the selected character. [src/ui/World.tsx](src/ui/World.tsx)
 - [ ] **P3** — Send sheet: Walk / Teleporter control (teleporters are a later service) and a speed-adjusted arrival time. [src/ui/World.tsx](src/ui/World.tsx)
 - [ ] **P2** — Character screen: Spells tab (blocked: no spells system in the engine yet — `SpellsState` is inert, no cast/rank commands). Farm, Stats, Gear and Bestiary show (#69). [src/ui/CharacterScreen.tsx](src/ui/CharacterScreen.tsx)
@@ -39,7 +39,7 @@ Every UI change here is checked against the screen sketches in `design/ui/screen
 - [ ] **P3** — World-Area sheet: second threat pill "Enemies up to +N levels".
 - [x] **P3** — Farm: "Now fighting" card (enemy name, Lv, drop%, trait chips, live enemy-HP bar, kill count) (#68). Fight state and kills are now on `CharacterView`. Kills-per-minute waits on the rate tracking below.
 - [ ] **P3** — Farm state row: gold-per-hour rate. Needs rate tracking; shows the gold total for now.
-- [ ] **P3** — Stats: per-attribute "+N gear" suffix. Needs a per-attribute gear-bonus breakdown.
+- [x] **P3** — Stats: per-attribute "+N gear" suffix (#70), from `DerivedStats.attributeGear`. The per-item breakdown of what each equipped item adds is deferred.
 - [ ] **P3** — Dead and Farm: "Health potions · N left" row. Needs potion-count exposure.
 - [ ] **P3** — Dead: XP before and after ("X% → Y%") and the loss segment on the bar. Needs pre-death XP.
 - [ ] **P3** — Travelling: destination explainer card and "On arrival" (target / between-fights) card.

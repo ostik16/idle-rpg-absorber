@@ -10,6 +10,7 @@ import { BagGrid, ItemSlot } from './ItemSlot';
 import { hrefFor } from './router';
 import { TargetPicker } from './Farm';
 import {
+  absorbedTraits,
   areaEnemies,
   areaOf,
   bestiaryEntries,
@@ -18,6 +19,7 @@ import {
   formatDuration,
   itemInfo,
   listAreas,
+  nowAbsorbing,
   openSettings,
   restockablePotions,
   requireGameData,
@@ -231,6 +233,7 @@ function NowFighting({ view }: { view: CharacterView }) {
   if (enemy === null) return null;
   const drop = Math.round(dropLevelModifier(view.level.value, enemy.level) * 100);
   const kills = view.kills.value[enemy.id] ?? 0;
+  const absorbing = nowAbsorbing(enemy.id, view.absorption.value);
   return (
     <section class="ab-card app__stack" aria-labelledby="fight-h">
       <div class="app__field-head">
@@ -248,6 +251,19 @@ function NowFighting({ view }: { view: CharacterView }) {
           <div class="ab-bar__fill" style={{ width: `${pct(fight.enemyHp, enemy.maxHealth)}%` }} />
         </div>
       </div>
+      {absorbing.map((trait) => (
+        <div class="app__stack" key={trait.name}>
+          <div class="app__field-head">
+            <span class="app__field-help ab-c-muted app__grow">
+              <Icon name="absorption" size={14} /> Absorbing {trait.name}
+            </span>
+            <span class="ab-num">{trait.have.toFixed(1)}% <span class="ab-c-muted">of {trait.cap.toFixed(1)}%</span></span>
+          </div>
+          <div class="ab-bar__track" role="progressbar" aria-label={`${trait.name} absorbed`} aria-valuenow={Math.round(pct(trait.have, trait.cap))} aria-valuemin={0} aria-valuemax={100}>
+            <div class="ab-bar__fill" style={{ width: `${pct(trait.have, trait.cap)}%` }} />
+          </div>
+        </div>
+      ))}
     </section>
   );
 }
@@ -334,6 +350,38 @@ const PROFICIENCIES: Record<ProficiencyId, string> = {
 
 type Pending = Partial<Record<AttributeId, number>>;
 
+/** Traits absorbed from enemies (design 4.7): amount against the cap, with the enemies that carry each. */
+function AbsorbedTraits({ view }: { view: CharacterView }) {
+  const traits = absorbedTraits(view.absorption.value);
+  if (traits.length === 0) {
+    return (
+      <section class="ab-card" aria-labelledby="abs-h">
+        <h2 id="abs-h" class="ab-label app__card-title">Absorbed traits</h2>
+        <p class="app__text ab-c-muted">None yet. {view.name} absorbs a magical trait by killing enemies that carry it.</p>
+      </section>
+    );
+  }
+  return (
+    <section class="ab-card app__stack" aria-labelledby="abs-h">
+      <h2 id="abs-h" class="ab-label app__card-title">Absorbed traits</h2>
+      {traits.map((trait) => (
+        <div class="app__stack" key={trait.id}>
+          <div class="app__field-head">
+            <span class="ab-num app__grow">
+              <Icon name="absorption" size={14} /> {trait.name}
+            </span>
+            <span class="ab-num">{trait.have.toFixed(1)}% <span class="ab-c-muted">of {trait.cap.toFixed(1)}%</span></span>
+          </div>
+          <div class="ab-bar__track" role="progressbar" aria-label={trait.name} aria-valuenow={Math.round(pct(trait.have, trait.cap))} aria-valuemin={0} aria-valuemax={100}>
+            <div class="ab-bar__fill" style={{ width: `${pct(trait.have, trait.cap)}%` }} />
+          </div>
+          {trait.sources.length > 0 && <span class="app__field-help ab-c-muted">From {trait.sources.join(', ')}</span>}
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function Stats({ view }: { view: CharacterView }) {
   const [pending, setPending] = useState<Pending>({});
   const used = Object.values(pending).reduce((sum, n) => sum + n, 0);
@@ -362,6 +410,7 @@ function Stats({ view }: { view: CharacterView }) {
             <span class="ab-num">
               {view.attributes.value[id] + (pending[id] ?? 0)}
               {(pending[id] ?? 0) > 0 && <span class="ab-c-gold"> +{pending[id]}</span>}
+              {stats.attributeGear[id] > 0 && <span class="app__field-help ab-c-muted"> +{stats.attributeGear[id]} gear</span>}
             </span>
             <button
               type="button"
@@ -395,8 +444,11 @@ function Stats({ view }: { view: CharacterView }) {
           <dt>Mana</dt><dd>{Math.ceil(stats.maxMana)}</dd>
           <dt>Travel speed</dt><dd>{Math.round(stats.movementSpeed * 100)}%</dd>
           <dt>Spell damage</dt><dd>+{Math.round((stats.spellDamageMultiplier - 1) * 100)}%</dd>
+          <dt>Health regen</dt><dd>{stats.healthRegenPerSecond.toFixed(1)} / s</dd>
+          <dt>Of max health</dt><dd>{(constantSection(requireGameData(), 'stats').healthRegen.fractionOfMaxPerSecond * 100).toFixed(1)}% / s</dd>
         </dl>
       </section>
+      <AbsorbedTraits view={view} />
       <section class="ab-card" aria-labelledby="prof-h">
         <h2 id="prof-h" class="ab-label app__card-title">Proficiency</h2>
         <p class="app__field-help ab-c-muted">Rises as {view.name} fights, takes hits and travels. Exact values stay hidden.</p>

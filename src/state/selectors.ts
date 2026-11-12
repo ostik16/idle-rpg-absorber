@@ -20,6 +20,7 @@ import {
   physicalDamage,
   spellDamageMultiplier,
   weaponPenaltyMultiplier,
+  type Attributes,
 } from '../game/stats';
 import type { CharacterState } from './types';
 
@@ -37,6 +38,10 @@ export interface DerivedStats {
   spellDamageMultiplier: number;
   /** Multiplier that divides travel and movement time. */
   movementSpeed: number;
+  /** The bonus each attribute gets from equipped gear (design 2.2), for the Stats "+N gear" line. */
+  attributeGear: Attributes;
+  /** Health regained per second out of combat (design 4.2): `maxHealth` × `stats.healthRegen.fractionOfMaxPerSecond`. */
+  healthRegenPerSecond: number;
 }
 
 /**
@@ -65,6 +70,7 @@ export function derivedStats(character: CharacterState, data: GameData): Derived
     stats,
   );
 
+  const healthMax = maxHealth(a.vitality, proficiencyEffect('toughness', points.toughness, proficiency), gear.flatHealth, stats);
   return {
     damage:
       physicalDamage(a.strength, weaponDamage, stats) *
@@ -72,11 +78,13 @@ export function derivedStats(character: CharacterState, data: GameData): Derived
     attacksPerSecond,
     attackIntervalMs: attackIntervalMs(attacksPerSecond, combat.tickMs),
     critChance: critChance(a.dexterity, 0, stats),
-    maxHealth: maxHealth(a.vitality, proficiencyEffect('toughness', points.toughness, proficiency), gear.flatHealth, stats),
+    maxHealth: healthMax,
     defence: defence(a.vitality, gear.flatDefence, stats),
     maxMana: maxMana(a.intelligence, gear.flatMana, stats),
     spellDamageMultiplier: spellDamageMultiplier(a.intelligence, stats),
     movementSpeed: 1 + proficiencyEffect('speed', points.speed, proficiency) + gear.moveSpeedBonus,
+    attributeGear: gear.attributeBonuses,
+    healthRegenPerSecond: healthMax * stats.healthRegen.fractionOfMaxPerSecond,
   };
 }
 
