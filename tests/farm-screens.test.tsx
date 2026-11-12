@@ -154,6 +154,39 @@ describe('farm screens', () => {
     expect(host.textContent).toContain('25 kills reveal traits'); // next-tier hint
   });
 
+  it('shows absorbed traits and the health-regen rows on the Stats tab (#70)', async () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.absorption = { 'life-steal': 3 };
+    state.roster.push(character);
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    [...host.querySelectorAll('button')].find((b) => b.textContent?.startsWith('Stats'))?.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(host.textContent).toContain('Absorbed traits');
+    expect(host.textContent).toContain('Life steal');
+    expect(host.textContent).toContain('of 15.0%'); // cap = highest enemy value
+    expect(host.textContent).toContain('From Glade rat');
+    expect(host.textContent).toContain('Health regen');
+  });
+
+  it('shows a now-absorbing line on the fighting card for a magical trait (#70)', () => {
+    const state = createGameState(7, 1_000_000, data);
+    const character = createCharacterState('c1', 'Kaela', data);
+    character.areaId = 'mossfang-glade';
+    character.phase = 'fighting';
+    character.fight = { enemyId: 'glade-rat', enemyHp: 9, ticks: 0 };
+    character.absorption = { 'life-steal': 1 };
+    state.roster.push(character);
+    connectEngine({ state, dispatch: vi.fn(), drainEvents: () => [] }, data);
+    selectCharacter('c1');
+    route.value = 'character';
+    render(<App />, host);
+    expect(host.textContent).toContain('Absorbing Life steal');
+  });
+
   it('shows the game version at the bottom of the Character screen (#69)', () => {
     const state = createGameState(7, 1_000_000, data);
     state.roster.push(createCharacterState('c1', 'Kaela', data));

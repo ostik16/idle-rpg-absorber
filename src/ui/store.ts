@@ -82,6 +82,8 @@ export interface CharacterView {
   readonly kills: ReadonlySignal<Readonly<Record<string, number>>>;
   readonly attributes: ReadonlySignal<Attributes>;
   readonly derived: ReadonlySignal<DerivedStats>;
+  /** Absorbed value by trait id (design 4.7), for the Stats "Absorbed traits" card. */
+  readonly absorption: ReadonlySignal<Readonly<Record<string, number>>>;
   readonly unspentPoints: ReadonlySignal<number>;
   /** Hidden numbers (design 4.6): screens show titles only. */
   readonly proficiency: ReadonlySignal<Record<ProficiencyId, number>>;
@@ -255,6 +257,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
   const kills = signal<Readonly<Record<string, number>>>({});
   const attributes = signal<Attributes>(first.attributes);
   const derived = signal<DerivedStats>(derivedStats(first, data));
+  const absorption = signal<Readonly<Record<string, number>>>({});
   const unspentPoints = signal(0);
   const proficiency = signal(first.proficiency);
   const phaseElapsedMs = signal(0);
@@ -280,6 +283,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
   const copyProficiency = copyInto(proficiency);
   const copyKills = copyInto(kills);
   const copyFight = copyInto(fight);
+  const copyAbsorption = copyInto(absorption);
 
   const binding: CharacterBinding = {
     view: {
@@ -306,6 +310,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
       kills,
       attributes,
       derived,
+      absorption,
       unspentPoints,
       proficiency,
       phaseElapsedMs,
@@ -351,6 +356,7 @@ function bindCharacter(first: CharacterState, data: GameData, firstKills: Readon
       bagUsedCells.value = usedCells(character.bag, itemOf);
       copyAttributes(character.attributes);
       copyDerived(stats);
+      copyAbsorption(character.absorption);
       copyProficiency(character.proficiency);
       returnHealthThreshold.value = character.settings.returnHealthThreshold;
       cityHealing.value = character.settings.cityHealing;
@@ -844,6 +850,58 @@ export function bestiaryEntries(myCharacterId: string | null): readonly Bestiary
     });
   }
   return entries.sort((a, b) => b.totalKills - a.totalKills || a.name.localeCompare(b.name));
+}
+
+export interface AbsorbedTrait {
+  readonly id: string;
+  readonly name: string;
+  /** Absorbed value, a percent (design 4.7). */
+  readonly have: number;
+  /** The most that can be absorbed: the highest value any enemy carries for this trait. */
+  readonly cap: number;
+  /** Names of the enemies that carry the trait. */
+  readonly sources: readonly string[];
+}
+
+/** Magical trait id to the highest value any enemy carries and the enemies that carry it. */
+function magicalTraitIndex(data: GameData): Map<string, { cap: number; sources: string[] }> {
+  const index = new Map<string, { cap: number; sources: string[] }>();
+  for (const enemy of data.enemies as unknown as readonly FullEnemyRow[]) {
+    for (const trait of enemy.traits) {
+      if (!trait.magical) continue;
+      const entry = index.get(trait.id) ?? { cap: 0, sources: [] };
+      entry.cap = Math.max(entry.cap, trait.value);
+      if (!entry.sources.includes(enemy.name)) entry.sources.push(enemy.name);
+      index.set(trait.id, entry);
+    }
+  }
+  return index;
+}
+
+/** The character's absorbed traits (design 4.7), each with the amount absorbed, the cap and which enemies carry it. */
+export function absorbedTraits(absorption: Readonly<Record<string, number>>): readonly AbsorbedTrait[] {
+  const data = requireGameData();
+  const index = magicalTraitIndex(data);
+  return Object.entries(absorption)
+    .filter(([, have]) => have > 0)
+    .map(([id, have]) => {
+      const info = index.get(id);
+      return { id, name: nameIn(data, 'traits', id), have, cap: info?.cap ?? have, sources: info?.sources ?? [] };
+    })
+    .sort((a, b) => b.have - a.have);
+}
+
+/** The magical traits of the enemy being fought, with how much is absorbed so far against this enemy's value (design 4.7). */
+export function nowAbsorbing(
+  enemyId: string,
+  absorption: Readonly<Record<string, number>>,
+): readonly { readonly name: string; readonly have: number; readonly cap: number }[] {
+  const data = requireGameData();
+  const enemy = enemyRow(enemyId) as FullEnemyRow | undefined;
+  if (enemy === undefined) return [];
+  return enemy.traits
+    .filter((trait) => trait.magical)
+    .map((trait) => ({ name: nameIn(data, 'traits', trait.id), have: absorption[trait.id] ?? 0, cap: trait.value }));
 }
 
 export interface ItemInfo {
