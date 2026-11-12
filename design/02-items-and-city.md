@@ -40,6 +40,7 @@ Each system uses the same template: **Purpose**, **Rules** (decided), **Proposed
 - The backpack slot holds a backpack. A backpack adds bag cells and sets the bag's max stack, so a better backpack allows larger stacks of potions and materials (2.3).
 - A two-handed weapon blocks the off hand (default, revisit after playtesting).
 - The equipped weapon decides which proficiency is trained: one-handed, two-handed, or unarmed when no weapon is equipped. More types can follow, such as staffs that only cast spells.
+- Equipment can be changed in any phase except dead, including while fighting or travelling (decisions A5). A weapon swap takes effect on the next attack; an active fight keeps running.
 
 **Data.** slot list, which equipment types each slot accepts, weapon scaling (attribute, required value), penalty per missing point and cap (`constants.combat.weaponPenalty`).
 

@@ -257,7 +257,9 @@ function applyEquipItem(
   command: Extract<Command, { type: 'equipItem' }>,
   data: GameData,
 ): string | null {
-  if (!inCity(character)) return `${character.name} has to be in the city to change gear.`;
+  // Equipment can be changed in any phase but dead (decisions A5): a weapon swap only changes the next tick's
+  // damage, which `derivedStats` reads fresh, so an active fight keeps running.
+  if (character.phase === 'dead') return `${character.name} cannot change equipment while dead.`;
   const stack = character.bag[command.bagIndex];
   if (stack === undefined) return `No stack in bag slot ${command.bagIndex}.`;
   const slots = data.equipmentSlots as unknown as readonly SlotRow[];
@@ -309,7 +311,7 @@ function applyUnequipItem(
   command: Extract<Command, { type: 'unequipItem' }>,
   data: GameData,
 ): string | null {
-  if (!inCity(character)) return `${character.name} has to be in the city to change gear.`;
+  if (character.phase === 'dead') return `${character.name} cannot change equipment while dead.`;
   const stack = character.equipment[command.slot];
   if (stack === undefined) return `Slot ${command.slot} is empty.`;
   const item = knownItem(data, stack.itemId);

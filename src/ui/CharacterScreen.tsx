@@ -4,7 +4,7 @@ import { dropLevelModifier } from '../game/formulas';
 import { proficiencyTitle, type ProficiencyId } from '../game/proficiency';
 import { pointMarks, respawnHealth, xpToNextLevel } from '../game/progression';
 import type { AttributeId } from '../game/stats';
-import { formatGold, inCity, phaseDescriptor } from './format';
+import { formatGold, phaseDescriptor } from './format';
 import { Icon } from './Icon';
 import { BagGrid, ItemSlot } from './ItemSlot';
 import { hrefFor } from './router';
@@ -476,21 +476,80 @@ function slotFor(view: CharacterView, equipmentType: string | null): string | nu
   return (fits.find((slot) => view.equipment.value[slot.id] === undefined) ?? fits[0])?.id ?? null;
 }
 
-function Gear({ view }: { view: CharacterView }) {
+const CATEGORY_LABEL: Record<string, string> = {
+  equipment: 'Equipment',
+  consumable: 'Consumable',
+  material: 'Upgrade material',
+  rare: 'Rare item',
+};
+
+/** The item detail sheet (design 2.2): what the item is, and Equip when it fits a slot. Replaces the inline button. */
+function ItemSheet({ view, bagIndex, onClose }: { view: CharacterView; bagIndex: number; onClose: () => void }) {
+  const stack = view.bag.value[bagIndex];
+  if (stack === undefined) return null;
+  const info = itemInfo(stack.itemId);
+  const dead = view.activity.value === 'dead';
+  const slotId = info.category !== 'equipment' ? null : slotFor(view, info.equipmentType);
+  const slotLabel = equipmentSlots().find((slot) => slot.id === slotId)?.label;
+  const tooLow = (info.requiredLevel ?? 1) > view.level.value;
+  return (
+    <div
+      class="ab-scrim app__scrim"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose();
+      }}
+    >
+      <section class="ab-sheet app__sheet" role="dialog" aria-modal="true" aria-labelledby="item-title">
+        <span class="ab-sheet__grip" aria-hidden="true" />
+        <div class="app__field-head">
+          <h2 id="item-title" class="app__sheet-title app__grow">
+            {info.name}{stack.qty > 1 ? ` ×${stack.qty}` : ''}
+          </h2>
+          <button type="button" class="ab-btn ab-btn--ghost ab-btn--icon" aria-label="Close" onClick={onClose}>
+            <svg class="ab-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+        <p class="app__field-help ab-c-muted">{CATEGORY_LABEL[info.category] ?? info.category}</p>
+        {slotId !== null && (
+          <>
+            {tooLow && <p class="app__field-help ab-c-warning">Needs Lv {info.requiredLevel}.</p>}
+            {dead && <p class="app__field-help ab-c-warning">{view.name} cannot change equipment while dead.</p>}
+            <div class="ab-sheet__actions">
+              <button
+                type="button"
+                class="ab-btn ab-btn--primary ab-btn--block"
+                disabled={dead || tooLow}
+                onClick={() => {
+                  send({ type: 'equipItem', characterId: view.id, bagIndex, slot: slotId }, { saveAfter: true });
+                  onClose();
+                }}
+              >
+                Equip in {slotLabel}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Inventory({ view }: { view: CharacterView }) {
   const [picked, setPicked] = useState<number | null>(null);
-  const here = inCity(view.activity.value);
+  const dead = view.activity.value === 'dead';
   const bag = view.bag.value;
   const worn = view.equipment.value;
   const twoHanded = itemInfo(worn['main-hand']?.itemId ?? '').equipmentType === 'two-handed-weapon';
-  const stack = picked === null ? undefined : bag[picked];
-  const info = stack === undefined ? null : itemInfo(stack.itemId);
-  const slotId = info === null || info.category !== 'equipment' ? null : slotFor(view, info.equipmentType);
-  const slotLabel = equipmentSlots().find((slot) => slot.id === slotId)?.label;
-  const tooLow = info !== null && (info.requiredLevel ?? 1) > view.level.value;
   const packId = worn['backpack']?.itemId;
+  // A stale selection (the stack was consumed or moved) closes the sheet rather than showing the wrong item.
+  const openIndex = picked !== null && bag[picked] !== undefined ? picked : null;
   return (
     <>
-      {!here && <p class="app__field-help ab-c-warning">{view.name} has to be in the city to change gear.</p>}
       <button type="button" class="ab-btn ab-btn--block" onClick={() => openSettings(view.id)}>
         <Icon name="lootFilter" /> Loot filter
       </button>
@@ -507,7 +566,7 @@ function Gear({ view }: { view: CharacterView }) {
                 ) : item === undefined ? (
                   <ItemSlot stack={null} />
                 ) : (
-                  <ItemSlot stack={item} onClick={here ? () => send({ type: 'unequipItem', characterId: view.id, slot: slot.id }, { saveAfter: true }) : undefined} />
+                  <ItemSlot stack={item} onClick={dead ? undefined : () => send({ type: 'unequipItem', characterId: view.id, slot: slot.id }, { saveAfter: true })} />
                 )}
                 <span class="app__target-body">
                   <span class="ab-label">{slot.label}</span>
@@ -523,34 +582,12 @@ function Gear({ view }: { view: CharacterView }) {
           <h2 id="bag-h" class="ab-label app__grow">Bag</h2>
           <span class="ab-num">{view.bagUsedCells.value}/{view.bagCapacity.value}</span>
         </div>
-        <BagGrid label={`${view.name}'s bag`} stacks={bag} capacity={view.bagCapacity.value} used={view.bagUsedCells.value} selected={new Set(picked === null ? [] : [picked])} onToggle={(i) => setPicked(picked === i ? null : i)} />
+        <BagGrid label={`${view.name}'s bag`} stacks={bag} capacity={view.bagCapacity.value} used={view.bagUsedCells.value} selected={new Set()} onToggle={(i) => setPicked(i)} />
         <p class="app__field-help ab-c-muted">
           Max stack {view.bagMaxStack.value}{packId === undefined ? ', no backpack' : `, set by the ${itemInfo(packId).name}`}.
         </p>
-        {info !== null && picked !== null && (
-          <div class="app__stack">
-            <span class="ab-num">{info.name}{stack !== undefined && stack.qty > 1 ? ` ×${stack.qty}` : ''}</span>
-            {slotId === null ? (
-              <p class="app__field-help ab-c-muted">Not equipment.</p>
-            ) : (
-              <>
-                {tooLow && <p class="app__field-help ab-c-warning">Needs Lv {info.requiredLevel}.</p>}
-                <button
-                  type="button"
-                  class="ab-btn ab-btn--primary ab-btn--block"
-                  disabled={!here || tooLow}
-                  onClick={() => {
-                    send({ type: 'equipItem', characterId: view.id, bagIndex: picked, slot: slotId }, { saveAfter: true });
-                    setPicked(null);
-                  }}
-                >
-                  Equip in {slotLabel}
-                </button>
-              </>
-            )}
-          </div>
-        )}
       </section>
+      {openIndex !== null && <ItemSheet view={view} bagIndex={openIndex} onClose={() => setPicked(null)} />}
     </>
   );
 }
@@ -605,7 +642,7 @@ function Bestiary({ view }: { view: CharacterView }) {
 }
 
 export function CharacterScreen() {
-  const [tab, setTab] = useState<'farm' | 'stats' | 'gear' | 'bestiary'>('farm');
+  const [tab, setTab] = useState<'farm' | 'stats' | 'inventory' | 'bestiary'>('farm');
   const view = selectedCharacter.value;
   if (view === null) return null;
   const status = phaseDescriptor(view.activity.value);
@@ -626,15 +663,15 @@ export function CharacterScreen() {
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'stats'} onClick={() => setTab('stats')}>
           Stats{view.unspentPoints.value > 0 && <span class="ab-c-gold" aria-label={`${view.unspentPoints.value} points to spend`}>&nbsp;{view.unspentPoints.value}</span>}
         </button>
-        <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'gear'} onClick={() => setTab('gear')}>Gear</button>
+        <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'inventory'} onClick={() => setTab('inventory')}>Inventory</button>
         <button type="button" role="tab" class="ab-seg__item" aria-selected={tab === 'bestiary'} onClick={() => setTab('bestiary')}>Bestiary</button>
       </div>
       {tab === 'farm' ? (
         <Farm view={view} />
       ) : tab === 'stats' ? (
         <Stats view={view} />
-      ) : tab === 'gear' ? (
-        <Gear view={view} />
+      ) : tab === 'inventory' ? (
+        <Inventory view={view} />
       ) : (
         <Bestiary view={view} />
       )}
